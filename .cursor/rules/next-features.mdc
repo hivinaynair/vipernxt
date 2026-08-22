@@ -6,7 +6,8 @@ alwaysApply: false
 
 # Feature modules
 
-- `app/` — routes only. Import `@/features/<name>`.
-- `features/<name>/` — one domain. Add `components/`, `hooks/`, `lib/`, `server/queries/`, `server/actions/` as needed. Relative imports inside the feature; never `@/features/...` from another feature.
+- `app/` and `src/proxy.ts` — composition roots. Import `@/features/<name>`.
+- `features/<name>/` — one domain. Add `components/`, `hooks/`, `lib/`, `server/queries/`, `server/actions/` as needed. Relative imports inside the feature — not `@/features/<this-feature>/...`. Never import another feature.
 - `shared/` — this app only; never import a feature.
 - Cross-app libraries go in `packages/`.
+- `src/lib` and `src/components` at the app root are not composition roots. Put that code in `shared/` or a feature.

@@ -1,9 +1,11 @@
 import { readdir, stat } from "node:fs/promises";
 import { join } from "node:path";
+import { formatReport, summarizeViolations } from "./lib/boundary-report.mjs";
 
 const repoRoot = join(import.meta.dir, "..");
 const config = join(repoRoot, "tooling/dependency-cruiser/nextjs.mjs");
 const appsDir = join(repoRoot, "apps");
+const strict = process.argv.includes("--strict");
 
 const entries = await readdir(appsDir);
 let failed = false;
@@ -35,15 +37,33 @@ for (const name of entries) {
   }
 
   cruised += 1;
-  const proc = Bun.spawn(["bunx", "depcruise", "src", "--config", config], {
+  const args = ["bunx", "depcruise", "src", "--config", config, "--output-type", "json"];
+  const proc = Bun.spawn(args, {
     cwd: appDir,
-    stdout: "inherit",
+    stdout: "pipe",
     stderr: "inherit",
   });
+  const raw = await new Response(proc.stdout).text();
   const code = await proc.exited;
-  if (code !== 0) {
+
+  let report;
+  try {
+    report = JSON.parse(raw);
+  } catch {
+    console.error(`${name}: dependency-cruiser did not return JSON (exit ${code}).`);
     failed = true;
+    continue;
   }
+
+  const violations = Array.isArray(report.summary?.violations) ? report.summary.violations : [];
+  const summary = summarizeViolations(violations, { strict });
+  if (summary.pairs.length === 0) {
+    continue;
+  }
+
+  failed = true;
+  console.error(`${name}:`);
+  console.error(formatReport(summary, { strict }));
 }
 
 if (cruised === 0) {

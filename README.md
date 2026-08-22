@@ -17,7 +17,7 @@ Bun-only [Turborepo](https://turborepo.dev) boilerplate for a Next.js SaaS: one 
 | `e2e/web` | Playwright for `web` |
 | `test/` | `bun test` runner preload only (not a suite) |
 
-Features must not import each other. Compose in `app/`, or hoist to `shared/` / `packages/`. `bun run check-boundaries` enforces that.
+Features must not import each other. Compose in `app/` or `src/proxy.ts`, or hoist to `shared/` / `packages/`. Inside a feature, use a relative import — not `@/features/<this-feature>/...`. `bun run check-boundaries` enforces the graph (tests are ignored; pass `--strict` to include them).
 
 ## Commands
 
@@ -27,6 +27,7 @@ bun run dev              # all apps
 bun run build
 bun run check-types
 bun run check-boundaries
+bun run check-boundaries -- --strict   # include test files
 bun test
 bunx playwright install chromium   # once
 bun run e2e
@@ -69,7 +70,7 @@ Paste the following into Cursor (or any coding agent) in this repo. It should **
 ````markdown
 You are customizing this ViperNxt clone. Use Bun only (`bun`, `bunx`, `bun test`).
 Do not add Vitest, ESLint, or another package manager. Keep feature-folder
-boundaries (`app` / `features` / `shared`). After edits: `bun install`,
+boundaries (`app` / `src/proxy.ts` / `features` / `shared`). After edits: `bun install`,
 `bun run check-types`, `bun run check-boundaries`.
 
 Ask one question at a time. Wait for the answer before the next.

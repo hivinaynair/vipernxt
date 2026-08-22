@@ -97,7 +97,7 @@
                 "patterns": [
                   {
                     "group": ["@/features", "@/features/**"],
-                    "message": "Features cannot import other features. Use relative imports inside the feature, or hoist shared code to src/shared or packages/."
+                    "message": "Inside a feature, import with a relative path. Another feature means hoist to src/shared or packages/, or compose in app/ / src/proxy.ts."
                   }
                 ]
               }

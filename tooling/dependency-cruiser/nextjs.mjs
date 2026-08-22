@@ -24,9 +24,10 @@ export default {
     },
     {
       name: "only-app-imports-features",
-      comment: "Only src/app may import features (features may import themselves).",
+      comment:
+        "Only composition roots may import features: src/app and src/proxy.ts. Features may import themselves. src/lib and src/components still belong in shared/ or a feature.",
       severity: "error",
-      from: { pathNot: ["^src/app/", "^src/features/"] },
+      from: { pathNot: ["^src/app/", "^src/features/", "^src/proxy\\.ts$"] },
       to: { path: "^src/features/" },
     },
   ],
