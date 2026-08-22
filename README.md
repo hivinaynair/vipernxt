@@ -1,6 +1,6 @@
 # ViperNxt
 
-Bun-only [Turborepo](https://turborepo.dev) boilerplate for a Next.js SaaS: one app (`apps/web`), shared UI, Clerk, Zod 4, [shadcn/ui](https://ui.shadcn.com), and Vercel Workflows. Clone it, answer the prompt below, then start building product.
+Bun-only [Turborepo](https://turborepo.dev) boilerplate for a Next.js SaaS: one app (`apps/web`), shared UI, Clerk, Zod 4, [shadcn/ui](https://ui.shadcn.com), and Vercel Workflows. Clone it, shape the product, then answer the customize prompt below, then start building.
 
 **Requires** [Bun](https://bun.sh) `1.4.x` (see `packageManager` in `package.json`). Installs with anything else will fail (`only-allow bun`).
 
@@ -56,6 +56,12 @@ Create GitHub Environments named `staging` and `production`. Each needs a secret
 
 After the first push of `staging`, set it as the GitHub default branch so new PRs target it.
 
+## Shape the product
+
+Before renaming packages or writing product UI, shape the SaaS: interview, research, user journeys, low-fi screens, then a design doc. Invoke the **shaping-saas** skill (Cursor, Claude Code, or any agent that reads `.agents/skills`), or ask the agent to shape the product. It asks one question at a time, writes the design doc as it goes so a shape survives a lost session, and does not start implementing until you say the doc is right. The design-canvas step is Cursor-only and skips elsewhere.
+
+The rename / strip-Clerk checklist is the next section — keep that separate.
+
 ## Customize this clone
 
 Paste the following into Cursor (or any coding agent) in this repo. It should **ask these questions one at a time**, then apply the answers. Skip anything you want to leave as-is.
@@ -91,6 +97,11 @@ Ask one question at a time. Wait for the answer before the next.
 7. Default site metadata (title, description, `lang` on `<html>`)?
 
 8. Database: keep Drizzle + Neon (`@repo/db`), or strip it?
+
+9. Keep the `shaping-saas` skill? It talks about "this ViperNxt clone" and
+   `@repo`, so it goes stale once you have shaped. Keep it for the next
+   product, or delete `.agents/skills/shaping-saas` and the
+   `.claude/skills/shaping-saas` symlink.
 
 Apply only what was answered. Do not invent a product or UI kit.
 ````
