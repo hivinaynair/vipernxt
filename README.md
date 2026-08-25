@@ -59,7 +59,21 @@ After the first push of `staging`, set it as the GitHub default branch so new PR
 
 ## Shape the product
 
-Before renaming packages or writing product UI, shape the SaaS: interview, research, user journeys, low-fi screens, then a design doc. Invoke the **shaping-saas** skill (Cursor, Claude Code, or any agent that reads `.agents/skills`), or ask the agent to shape the product. It asks one question at a time, writes the design doc as it goes so a shape survives a lost session, and does not start implementing until you say the doc is right. The design-canvas step is Cursor-only and skips elsewhere.
+Before renaming packages or writing product UI, shape the SaaS. The playbook ships in this
+clone under `.agents/skills/` (Cursor reads that directly; `.claude/skills/` symlinks cover
+Claude Code), so it travels to cloud agents too. Type `/next` and it works out what happens now.
+
+| Skill | Does |
+|---|---|
+| `next` | The only one you invoke. Runs what it can alone, stops to ask you a decision or send you to gather real-world facts. |
+| `salvage` | Mines prior art — an old build, the software being replaced — for domain facts. |
+| `field-kit` | Writes the field-research homework, then absorbs what comes back. |
+| `shape` | The gated interview → design doc. |
+| `journeys` | The ID'd journey spine + generated Mermaid. |
+| `design-system` | Component inventory and layout primitives; visual direction later. |
+
+Source of truth is [saas-playbook](https://github.com/hivinaynair/saas-playbook); re-vendor
+with its `sync.sh`. `shape` asks one question at a time, writes the design doc as it goes so a shape survives a lost session, and stops at an approved doc. `journeys` then turns the confirmed journeys into an ID'd spine under `docs/journeys/` that features and plans cite. Both read [AGENTS.md](AGENTS.md) for this repo's constraints.
 
 The rename / strip-Clerk checklist is the next section — keep that separate.
 
@@ -98,11 +112,6 @@ Ask one question at a time. Wait for the answer before the next.
 7. Default site metadata (title, description, `lang` on `<html>`)?
 
 8. Database: keep Drizzle + Neon (`@repo/db`), or strip it?
-
-9. Keep the `shaping-saas` skill? It talks about "this ViperNxt clone" and
-   `@repo`, so it goes stale once you have shaped. Keep it for the next
-   product, or delete `.agents/skills/shaping-saas` and the
-   `.claude/skills/shaping-saas` symlink.
 
 Apply only what was answered. Do not invent a product or UI kit.
 ````

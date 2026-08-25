@@ -6,7 +6,7 @@ This file is the **only** place the option lists live. `SKILL.md` points here ra
 
 A user who arrives with a brief has already answered much of this. Extract those answers, then ask only what is still open — see "If they already know" in `SKILL.md`.
 
-Do not ask customize-clone mechanics here (root package name, `@repo` scope, renaming `apps/web`).
+Do not ask setup mechanics here (package names, scopes, directory renames).
 
 ---
 
@@ -78,7 +78,7 @@ Ask these only when a finding created a real decision. Examples — pick the one
 
 **C3. Honest limit** — Docs say [constraint]. Disclose it in the README and v1, or change the claim?
 
-**C4. Vendor** — Keep the boilerplate’s [Clerk / Drizzle / Workflows] for this claim, or is it off-story?
+**C4. Vendor** — Keep the vendor the project already wires in [name it], or is it off-story for this claim?
 
 Always attach 2–3 cited findings **above** the single question.
 
@@ -116,23 +116,25 @@ Recommended: A for a demo/clip.
 
 Canonical list for skill step 8. Ask only what is still unknown. One at a time.
 
-**F1. Auth** — Clerk?
+Read the project's constraints doc first (step 1) and name the actual vendors it ships. Ask one question per vendor, in this shape:
+
+**F1. Auth** — the project wires in [vendor]. For this claim?
 
 - A) Keep
-- B) Strip (public clip / no SaaS login)
+- B) Strip (public clip / no login)
 - C) Keep and enable organizations (B2B)
 
-**F2. Database** — Drizzle + Neon (`@repo/db`)?
+**F2. Database** — [ORM + host] as wired?
 
 - A) Keep
 - B) Strip (static artifacts / no persistence in v1)
 
-**F3. Workflows** — Vercel Workflows?
+**F3. Background work** — [jobs/workflow vendor]?
 
 - A) Keep
 - B) Strip
 
-**F4. Extra apps** — Another Next app (`marketing`, `admin`) in this monorepo for v1?
+**F4. Extra apps** — another app (`marketing`, `admin`) in this repo for v1?
 
 - A) No (default)
 - B) Yes (they asked; still do not scaffold it in this skill)
@@ -148,4 +150,4 @@ Recommended: A.
 - A) Yes — stop shaping
 - B) No — say which section is wrong
 
-**G2. After yes** — Do **not** ask a bundle of implementation questions. If they volunteer “go build it,” point at writing-plans or the customize-clone prompt; do not start either until they pick.
+**G2. After yes** — Do **not** ask a bundle of implementation questions. If they volunteer “go build it,” point at the **journeys** skill (spine first), then per-feature work; do not start either until they pick.

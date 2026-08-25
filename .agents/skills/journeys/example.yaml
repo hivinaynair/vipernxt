@@ -1,0 +1,94 @@
+# Example spine. Small on purpose: one clip, two seats, three screens.
+product: ledgerly
+source: docs/plans/2026-08-25-ledgerly-design.md
+
+actors:
+  - id: owner
+    name: Account owner
+    type: person
+  - id: reviewer
+    name: Reviewer
+    type: person
+
+screens:
+  - id: dashboard
+    route: /app
+    bands: [header, stage, list, actions]
+    states: [empty, populated]
+  - id: ledger
+    route: /app/ledger/[id]
+    bands: [header, summary, rows, evidence]
+    states: [importing, reconciled, flagged]
+
+journeys:
+  - id: J1
+    title: First reconciled ledger
+    actor: owner
+    goal: Get one statement in and see a balance that matches
+    proves: The product can ingest and reconcile without setup work
+    steps:
+      - id: J1.S1
+        title: Lands on an empty dashboard
+        screen: dashboard
+        state: empty
+        sees: No ledgers, one primary action, no settings to configure first
+        does: Clicks "New ledger"
+        next: J1.S2
+        satisfaction: 3
+        criteria:
+          - WHEN an owner with no ledgers opens the dashboard THE SYSTEM SHALL show the empty state with a single primary action
+      - id: J1.S2
+        title: Uploads a statement
+        screen: ledger
+        state: importing
+        sees: Row count climbing, no blocking modal
+        does: Drops a CSV
+        next: J1.S3
+        satisfaction: 4
+        criteria:
+          - WHEN an owner drops a supported file THE SYSTEM SHALL begin import without navigating away
+          - IF the file is not a supported format THE SYSTEM SHALL reject it and name the formats it accepts
+      - id: J1.S3
+        title: Sees the balance match
+        screen: ledger
+        state: reconciled
+        sees: Matched total, and the rows that did not match
+        does: Nothing — this is the payoff
+        satisfaction: 5
+        criteria:
+          - WHEN import completes THE SYSTEM SHALL display the reconciled total and list every unmatched row
+
+  - id: J2
+    title: Reviewer flags a row
+    actor: reviewer
+    goal: Question one row without being able to change the ledger
+    proves: Seats are real — a reviewer can act without owning the data
+    steps:
+      - id: J2.S1
+        title: Opens a shared ledger
+        screen: ledger
+        state: reconciled
+        sees: The same ledger the owner sees, with no destructive controls
+        does: Clicks a row
+        next: J2.S2
+        criteria:
+          - WHEN a reviewer opens a ledger THE SYSTEM SHALL hide every control that mutates the ledger
+      - id: J2.S2
+        title: Flags it
+        screen: ledger
+        state: flagged
+        sees: Their flag attached to the row, visible to the owner
+        does: Leaves a reason
+        criteria:
+          - WHEN a reviewer flags a row THE SYSTEM SHALL record the flag with its author and reason
+
+features:
+  - id: F1
+    title: Ledger creation and import
+    serves: [J1.S1, J1.S2]
+  - id: F2
+    title: Reconciliation view
+    serves: [J1.S3, J2.S1]
+  - id: F3
+    title: Row flagging
+    serves: [J2.S2]

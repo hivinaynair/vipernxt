@@ -1,18 +1,18 @@
 ---
-name: shaping-saas
+name: shape
 description: >-
-  Shapes a new SaaS from this ViperNxt boilerplate before product code:
-  interviews one question at a time, researches the domain, drafts user
-  journeys and low-fi screens, optionally shows a Cursor design canvas, and
-  writes docs/plans design docs. Use when starting a new product from this clone,
-  when the product is still uncertain, or when the user asks to shape the
-  product, draft journeys, low-fi screens, a design canvas, or a design doc.
+  Shapes a new SaaS before any product code: interviews one question at a time,
+  researches the domain, drafts user journeys and low-fi screens, optionally
+  shows a Cursor design canvas, and writes a design doc under docs/plans. Use
+  when starting a new product, when the product is still uncertain, or when the
+  user asks to shape the product, draft journeys, low-fi screens, a design
+  canvas, or a design doc.
 ---
 
 # Shape the SaaS
 
 Interview → research → claim → actors → journeys → low-fi screens → stack. The design doc is written as you go, not at the end; the canvas is an optional Cursor view of it.
-Then **stop**. This is not implementation and not the README “Customize this clone” rename/strip checklist.
+Then **stop**. This is not implementation, and not whatever setup or rename checklist the project ships.
 
 Copy this checklist and keep it updated:
 
@@ -40,10 +40,10 @@ Violate none of these:
 - **Confirm in order: claim paragraph → actors → journeys → THEN screens.** Do not skip journey confirmation.
 - **Canvas only if the host has one.** Step 9 is skippable, not a blocker; every other gate is mandatory.
 - **Canvas is a VIEW of the design doc, not a second source of truth.** Canvas files live at `~/.cursor/projects/<workspace>/canvases/<name>-design.canvas.tsx`. Import only from `cursor/canvas`. Read the canvas skill before writing one. Host theme tokens, no hardcoded hex, no emoji/gradients/shadows.
-- **Low-fi screens = layout bands + per-role copy.** Not Figma. Not implementing `apps/web`.
+- **Low-fi screens = layout bands + per-role copy.** Not Figma. Not implementing the app.
 - **Do NOT write product UI, features, or routes until the user says the design doc is right.**
 - **Do not invent a second app/login per persona unless the user asks.** Default: one URL, seats/roles, shared state.
-- **ViperNxt constraints:** Bun only; feature-folder boundaries stay. Stack choices are recorded, never applied (step 8).
+- **Respect the project's constraints** as written in its `AGENTS.md` / `CLAUDE.md` / README — package manager, module boundaries, existing vendors. Stack choices are recorded, never applied (step 8).
 - **Do not commit the design doc unless the user asks.**
 - **After the doc is approved, STOP.** Do not start implementing. Mention writing-plans / implementation only as a next step if they say go.
 
@@ -68,17 +68,17 @@ Lock these with the user on first use; they go in the doc glossary.
 
 | They want | Do instead |
 |---|---|
-| Rename packages, `@repo` scope, strip Clerk/Drizzle/Workflows in the tree | README **Customize this clone** prompt |
+| Rename packages, change scopes, strip vendors in the tree | The project's own setup/customize checklist |
 | Product UI, routes, features | Wait for design-doc approval, then a later plan |
-| A Figma file or production screens in `apps/web` | Stay on low-fi bands (plus the canvas, if the host has one) |
+| A Figma file or production screens | Stay on low-fi bands (plus the canvas, if the host has one) |
 
-If they want both shape and customize: **shape first**. Record stack choices in the design doc; do not apply the checklist in this session.
+If they want both shape and setup: **shape first**. Record stack choices in the design doc; do not run the project's setup checklist in this session.
 
 If `superpowers:brainstorming` fires too, **this skill wins** for a new product in this repo — it is the same interview with gates, a doc, and a stop. Run one, not both.
 
 ## Facts vs decisions
 
-Finding **facts** is your job (this repo, official docs, first-party APIs). Do not ask “does this boilerplate use Bun?”
+Finding **facts** is your job (this repo, official docs, first-party APIs). Do not ask which package manager the repo uses — read it.
 
 **Decisions** are the user’s. Put each to them and wait.
 
@@ -124,7 +124,7 @@ The express lane collapses the interview. It does not skip the doc, and it does 
 
 ## 1. Orient
 
-Read `README.md` and `apps/web/src` enough to know the layout (`app` / `features` / `shared`, Clerk, Drizzle, Workflows). Do not edit product code.
+Read the project's `README.md`, `AGENTS.md` / `CLAUDE.md`, and enough of the source tree to know its layout, its module boundaries, and which vendors are already wired in (auth, database, jobs, UI kit). Record what you find — step 8 asks about exactly these. Do not edit product code.
 
 If `docs/plans/*-design.md` already exists, check its `## Shaping status` block. Unticked gates mean a shape is in progress — say so and pick up at the next one (see Resume). If every gate is ticked, ask **one** question: revise that doc, or start a new product shape?
 
@@ -151,7 +151,7 @@ Wait. Do not ask the next question in the same message.
 
 If they paste a brief, extract answers, lock terms, then ask only the next **unanswered** decision. Never re-ask what they already settled.
 
-Skip customize-clone mechanics (npm name, `@repo` scope, renaming `apps/web`) unless they block a product decision.
+Skip setup mechanics (package names, scopes, directory renames) unless they block a product decision.
 
 ## 3. Research
 
@@ -169,7 +169,7 @@ If the notes will still matter after this chat, write `docs/research/<topic>.md`
 
 Research is a loop: findings → one question → maybe more search. Do not “finish research” as a dump and skip confirmation gates.
 
-A low-fi **prototype** here is the canvas (clip DAG, journey table, screen bands) — throwaway visual to answer a design question. Do not add routes under `apps/web` to explore UI.
+A low-fi **prototype** here is the canvas (clip DAG, journey table, screen bands) — throwaway visual to answer a design question. Do not add app routes to explore UI.
 
 ## 4. Claim paragraph
 
@@ -191,6 +191,12 @@ Default unless they ask otherwise: **one URL**, seats or roles, **shared state**
 
 Show a compact actor table. Confirm before journeys, then append it to the doc and tick the gate.
 
+**One customer is not the market.** When the product is being built for a first, specific
+customer, test every request against: is this the domain, or is this this customer's habit?
+Building exactly what the first one asks for produces software for one of them. Treat them
+as the first instance of a product, and say plainly when a request looks like a local habit
+rather than a domain requirement.
+
 ## 6. Journeys
 
 For each actor/seat: goal, what they can click, what they see at the turning points of the **clip** (the short path that proves the claim).
@@ -206,15 +212,15 @@ For each screen the clip needs:
 - **Bands** (header, stage, list, actions, evidence, …) and what sits in each.
 - **Copy per seat/role** for the same event.
 
-No pixel mock, no component API, no `apps/web` files. Confirm, append bands and per-seat copy to the doc, tick the gate. Then stack if not already recorded.
+No pixel mock, no component API, no app files. Confirm, append bands and per-seat copy to the doc, tick the gate. Then stack if not already recorded.
 
 ## 8. Stack (record, do not apply)
 
 Ask what is still unknown, one at a time. Bank section F has the options — do not restate them from memory.
 
-Do not silently add a new app, auth vendor, ORM, or package manager. Bun only. Features must not import each other.
+Do not silently add an app, auth vendor, ORM, or package manager. Honour the package manager and module boundaries the project already declares.
 
-Append the answers to the doc and tick the gate. Leave `package.json` and Clerk code alone in this skill.
+Append the answers to the doc and tick the gate. Change no dependency and no vendor code in this skill.
 
 ## 9. Canvas (skip if the host has none)
 
@@ -237,9 +243,13 @@ The doc is the product design, not a line-by-line implementation plan. Say so at
 Ask one question: is this document right?
 
 - If no: patch the doc (and canvas), ask again.
-- If yes: **STOP.** Do not scaffold features, routes, or UI. Do not run the customize-clone prompt unless they ask.
+- If yes: **STOP.** Do not scaffold features, routes, or UI. Do not run the project's setup checklist unless they ask.
 
-You may say: next is an implementation plan (writing-plans) or the README customize prompt — **only** as a next step, and only if they say go.
+You may name what comes next — **only** as a next step, and only if they say go:
+
+1. **[journeys](../journeys/SKILL.md)** — turn the confirmed journeys into an ID'd spine that features and plans can cite. This is the usual next move.
+2. The project's own setup/rename checklist.
+3. Per-feature work: `worth-it` → `nah-fam` → `game-plan` → `lets-cook`, each feature citing the journey step IDs it serves.
 
 Do not commit unless they ask.
 
