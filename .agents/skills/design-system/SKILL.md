@@ -50,6 +50,26 @@ Write `docs/product/components.md`: each component, which bands it serves, which
 steps depend on it, and whether the UI library already provides it, needs composing from
 primitives, or must be built.
 
+### Shared, or duplicated
+
+When two features need the same thing, the options are hoist it to shared code, compose
+both in `app/` instead, or duplicate. Features never import each other.
+
+Hoisting is right when it is genuinely one thing. The test is not whether the two look
+alike today — it is **whether a change to one is necessarily a change to the other**.
+
+The spine answers that better than taste does. Two uses serving the **same journey step**
+are one thing: hoist. Two uses serving **different steps** are two things that currently
+resemble each other, and they will diverge the moment one step's requirements move.
+Duplicate, and hoist later if they stay identical through real use.
+
+Data access and UI behave differently here. A shared way to read a booking is almost
+always worth hoisting — one place that knows the query. A shared UI component is far more
+likely to drift, because two steps rarely stay visually identical once real content lands.
+
+The symptom of hoisting too early is a shared component growing boolean props, one per
+caller. When that starts, split it back apart; the abstraction was wrong, not incomplete.
+
 ### 2. Layout primitives first
 
 Before feature components: `Page`, `Section`, `Toolbar`, list and table shells, empty
