@@ -46,3 +46,6 @@ for a shaping session so it stays in context. `status` is the glance. `shape` an
 Until `shape` is `done`, do not edit product UI, routes, or features
 (`apps/*/src/app`, `apps/*/src/features`). A project hook denies those writes. No state
 file means no product yet — the boilerplate may be edited.
+
+Parallel salvage/research on Cursor uses `.cursor/agents/` on **Cursor Grok 4.6**. Do not
+fan that work out to Gemini.

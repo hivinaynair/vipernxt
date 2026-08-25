@@ -144,6 +144,12 @@ Phases 0 and 1 are wide and human-free: dispatch independent investigations in p
 one per source or feature area, and reconcile the results yourself. Use whatever
 parallelism this harness offers; do not depend on a specific one.
 
+On Cursor, that fan-out is the project subagents in `.cursor/agents/`
+(`salvage-miner`, `domain-researcher`). They are pinned to **Cursor Grok 4.6**. Do not
+send playbook work to Gemini. Pass the skill path in the task prompt — subagents do not
+inherit the parent's skill catalog. `spine-checker` validates a journey YAML;
+`ui-gate-auditor` checks product-UI writes against `shape`.
+
 ## Every run
 
 1. Read `docs/product/state.yaml`.

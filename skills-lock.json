@@ -47,7 +47,7 @@
       "source": ".",
       "sourceType": "local",
       "skillPath": ".agents/skills/next/SKILL.md",
-      "computedHash": "c7e8bcb0bc138f4cbda4a9b4f283e59498418ecc328d376d84cec95e93667aea"
+      "computedHash": "f2e15bb1a43d05e284fd7f24ad2d643790e362d2d68af711830d15329ca9279e"
     },
     "ontology": {
       "source": ".",
