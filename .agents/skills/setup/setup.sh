@@ -7,7 +7,7 @@
 set -uo pipefail
 
 BOLD=$'\033[1m'; DIM=$'\033[2m'; OK=$'\033[32m'; WARN=$'\033[33m'; OFF=$'\033[0m'
-TOTAL=6; STAGE=0
+TOTAL=7; STAGE=0
 stage() { STAGE=$((STAGE+1)); printf '\n%s[%d/%d] %s%s\n' "$BOLD" "$STAGE" "$TOTAL" "$1" "$OFF"; }
 say()  { printf '      %s\n' "$1"; }
 good() { printf '      %s✓%s %s\n' "$OK" "$OFF" "$1"; }
@@ -101,7 +101,42 @@ else
   say "skipped"
 fi
 
-# ── 4. linear ────────────────────────────────────────────────────────────────
+# ── 4. clerk ─────────────────────────────────────────────────────────────────
+stage "Clerk"
+if ! have clerk; then
+  warn "clerk CLI not found — skipping"
+  say "Install with: bun add -g @clerk/clerk-cli   (then: clerk auth login)"
+elif ! clerk whoami >/dev/null 2>&1; then
+  warn "clerk not authenticated"
+  say "Run: clerk auth login   then re-run this script"
+else
+  good "clerk authenticated"
+  linked=$(clerk whoami 2>/dev/null | python3 -c "import sys,json;print('yes' if json.load(sys.stdin).get('linked') else 'no')" 2>/dev/null || echo no)
+  if [ "$linked" = yes ]; then
+    good "project already linked to a Clerk application"
+  else
+    say "This project is not linked to a Clerk application yet."
+    if confirm "Create a new Clerk app named ${PRODUCT}?"; then
+      clerk apps create "$PRODUCT" && good "created $PRODUCT" || warn "create failed"
+      clerk link 2>/dev/null && good "linked" || warn "link failed — run 'clerk link' manually"
+    elif confirm "Link an existing app instead?"; then
+      clerk link 2>/dev/null && good "linked" || warn "link failed"
+    else
+      say "skipped"
+    fi
+  fi
+
+  # The CLI writes the env file itself: keys never pass through this script,
+  # never appear in output, and never reach an agent's context.
+  if clerk whoami 2>/dev/null | grep -q '"linked": *true'; then
+    clerk env pull --file "$ENVFILE" >/dev/null 2>&1 \
+      && good "development keys written to $ENVFILE" \
+      || warn "env pull failed — run: clerk env pull --file $ENVFILE"
+    have clerk && clerk doctor >/dev/null 2>&1 && good "clerk doctor passed" || true
+  fi
+fi
+
+# ── 5. linear ────────────────────────────────────────────────────────────────
 stage "Linear team"
 say "Linear has no CLI and its API cannot create teams."
 say "Create a team for ${PRODUCT} at https://linear.app/settings/teams"
@@ -113,13 +148,13 @@ else
   say "skipped — linear-sync will ask again later"
 fi
 
-# ── 5. done ──────────────────────────────────────────────────────────────────
+# ── 6. done ──────────────────────────────────────────────────────────────────
 stage "Summary"
 good "product: $PRODUCT"
 [ -f "$ENVFILE" ] && good "env: $ENVFILE" || warn "no env file written"
 say ""
 say "Not done here, on purpose:"
-say "  · Clerk keys — paste into $ENVFILE from the Clerk dashboard"
+say "  · Production Clerk keys — run 'clerk env pull --instance prod' at deploy time"
 say "  · GitHub Environments 'staging' and 'production' if secrets failed"
 say ""
 say "Next: bun install, then /next to start shaping."

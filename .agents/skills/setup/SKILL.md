@@ -40,12 +40,15 @@ provisioning conversation produces duplicates.
 | Two Neon projects: `<product>-staging`, `<product>-production` | `neonctl` |
 | Connection strings into `.env.local`, direct URLs into GitHub environment secrets | `neonctl`, `gh secret` |
 | Vercel link | `vercel link` |
+| Clerk app created or linked, dev keys pulled | `clerk apps create`, `clerk link`, `clerk env pull` |
 | Linear team key recorded | manual — no API for team creation |
 
 ## What it deliberately leaves alone
 
-**Clerk keys.** Pasted by hand from the dashboard. Never ask an agent to handle them and
-never read them into context.
+**Production Clerk keys.** Development keys are pulled by `clerk env pull`, which writes
+the env file itself — the values never pass through the script, never appear in output,
+and never reach your context. Production keys are pulled at deploy time with
+`--instance prod`. Never read any of them into context, and never echo them.
 
 **Linear team creation.** No API exists. The script prints the URL and records the key
 once they have made it.
