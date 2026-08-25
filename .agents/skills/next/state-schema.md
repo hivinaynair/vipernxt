@@ -72,3 +72,9 @@ it does not, that is a contradiction to report, not to fix silently.
 
 **`decisions:` is append-only.** It is the record of what was settled and when, so nothing
 gets re-asked and no later session quietly reverses it.
+
+**`ui_writes`.** Optional. When omitted, a Cursor hook denies writes under
+`apps/*/src/app` and `apps/*/src/features` until the `shape` phase is `done`, then
+allows them (the walking skeleton). Set `ui_writes: allow` to open that tree early, or
+`ui_writes: deny` to keep it closed after shape. Boilerplate work with no state file is
+not gated.

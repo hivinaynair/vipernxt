@@ -144,6 +144,12 @@ Phases 0 and 1 are wide and human-free: dispatch independent investigations in p
 one per source or feature area, and reconcile the results yourself. Use whatever
 parallelism this harness offers; do not depend on a specific one.
 
+On Cursor, that fan-out is the project subagents in `.cursor/agents/`
+(`salvage-miner`, `domain-researcher`). They are pinned to **Cursor Grok 4.6**. Do not
+send playbook work to Gemini. Pass the skill path in the task prompt — subagents do not
+inherit the parent's skill catalog. `spine-checker` validates a journey YAML;
+`ui-gate-auditor` checks product-UI writes against `shape`.
+
 ## Every run
 
 1. Read `docs/product/state.yaml`.
@@ -152,6 +158,9 @@ parallelism this harness offers; do not depend on a specific one.
    does not depend on it.
 4. Otherwise: run the current phase's skill until it completes or raises an item.
 5. Write state back. Commit it if the repo is already committing these artifacts.
+
+A Cursor hook denies writes under `apps/*/src/app` and `apps/*/src/features` until
+`shape` is `done`. Do not bypass it. `ui_writes` in the state file is the override.
 
 Before advancing from any phase into building, check the artifacts still agree with each
 other: does every feature trace to journey steps, does every screen in the spine exist in

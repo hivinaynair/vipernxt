@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "command": ".cursor/hooks/playbook.py session"
+      }
+    ],
+    "preToolUse": [
+      {
+        "command": ".cursor/hooks/playbook.py gate",
+        "failClosed": true,
+        "matcher": "Write|StrReplace|Delete|EditNotebook"
+      }
+    ]
+  }
+}

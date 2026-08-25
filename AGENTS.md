@@ -37,6 +37,15 @@ migrate workflow.
 
 ## Shaping a new product
 
-The playbook ships in this clone under `.agents/skills/`. Type `/next`; it reads
-`docs/product/state.yaml` and works out what happens now. `shape` and `design-system` read
-this file for the constraints above.
+The playbook ships in this clone under `.agents/skills/` (also linked from
+`.cursor/skills/` and `.claude/skills/`). Type `/next`; it reads
+`docs/product/state.yaml` and works out what happens now. Pin `/next` as a Custom Mode
+for a shaping session so it stays in context. `status` is the glance. `shape` and
+`design-system` read this file for the constraints above.
+
+Until `shape` is `done`, do not edit product UI, routes, or features
+(`apps/*/src/app`, `apps/*/src/features`). A project hook denies those writes. No state
+file means no product yet — the boilerplate may be edited.
+
+Parallel salvage/research on Cursor uses `.cursor/agents/` on **Cursor Grok 4.6**. Do not
+fan that work out to Gemini.

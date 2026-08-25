@@ -1,0 +1,17 @@
+---
+description: Playbook harness — read pipeline state; do not ship UI before the design doc
+alwaysApply: true
+---
+
+At the start of a session, read `docs/product/state.yaml` if it exists.
+
+- **No file** — there is no product being shaped. The boilerplate may be edited. Offer to start a product if they want one.
+- **File exists, `shape` is not `done`** — do not add or edit product UI, routes, or features under `apps/*/src/app` or `apps/*/src/features`. The design doc is not approved. A project hook denies those writes; do not bypass it with the shell. Work in `docs/` instead.
+- **`shape` is `done`** — the design doc is approved. A thin slice through real data may be built; `next` owns that.
+
+If `next`, `status`, `shape`, or the other playbook skills are missing from your skill list, read `.agents/skills/<name>/SKILL.md` (also linked from `.cursor/skills/`). Tell the user the catalog omitted them.
+
+`status` is the glance. `next` does the work. For a shaping session, pin `/next` as a Custom Mode (Option+Enter / Alt+Enter on the skill) so it stays in context.
+
+Playbook subagents (`.cursor/agents/`) run **Cursor Grok 4.6**, not Gemini. Pass
+`.agents/skills/<name>/SKILL.md` in the task prompt; they do not inherit skills.
