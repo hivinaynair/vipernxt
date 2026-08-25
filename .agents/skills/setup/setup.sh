@@ -133,6 +133,12 @@ else
       && good "development keys written to $ENVFILE" \
       || warn "env pull failed — run: clerk env pull --file $ENVFILE"
     have clerk && clerk doctor >/dev/null 2>&1 && good "clerk doctor passed" || true
+
+    if confirm "Enable organizations (B2B — teams, seats, roles)?"; then
+      clerk enable orgs && good "organizations enabled" || warn "enable orgs failed"
+    else
+      say "organizations off — enable later with: clerk enable orgs"
+    fi
   fi
 fi
 
