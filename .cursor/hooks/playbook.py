@@ -51,17 +51,161 @@ def read_stdin() -> str:
     return sys.stdin.read() if not sys.stdin.isatty() else ""
 
 
+# ── minimal YAML subset, used when pyyaml is unavailable ─────────────────────
+# The state file uses a small, documented subset: nested block maps, inline flow
+# maps, and block sequences of maps. A gate that guards the build must not
+# depend on a third-party library being installed in every environment.
+
+
+def _scalar(tok: str) -> Any:
+    tok = tok.strip()
+    if not tok:
+        return None
+    if tok[0] in "\"'" and tok[-1] == tok[0] and len(tok) > 1:
+        return tok[1:-1]
+    low = tok.lower()
+    if low in ("true", "yes"):
+        return True
+    if low in ("false", "no"):
+        return False
+    if low in ("null", "~"):
+        return None
+    try:
+        return int(tok)
+    except ValueError:
+        return tok
+
+
+def _split_top(text: str, sep: str = ",") -> list[str]:
+    parts, depth, buf = [], 0, ""
+    for ch in text:
+        if ch in "[{":
+            depth += 1
+        elif ch in "]}":
+            depth -= 1
+        if ch == sep and depth == 0:
+            parts.append(buf)
+            buf = ""
+        else:
+            buf += ch
+    if buf.strip():
+        parts.append(buf)
+    return parts
+
+
+def _flow(tok: str) -> Any:
+    tok = tok.strip()
+    if tok.startswith("{") and tok.endswith("}"):
+        out: dict[str, Any] = {}
+        for part in _split_top(tok[1:-1]):
+            if ":" in part:
+                k, _, v = part.partition(":")
+                out[k.strip()] = _flow(v)
+        return out
+    if tok.startswith("[") and tok.endswith("]"):
+        return [_flow(p) for p in _split_top(tok[1:-1])]
+    return _scalar(tok)
+
+
+def _strip_comment(line: str) -> str:
+    out, quote = "", ""
+    for ch in line:
+        if quote:
+            if ch == quote:
+                quote = ""
+        elif ch in "\"'":
+            quote = ch
+        elif ch == "#":
+            break
+        out += ch
+    return out.rstrip()
+
+
+def _parse_block(lines: list[tuple[int, str]], idx: int, indent: int) -> tuple[Any, int]:
+    if idx < len(lines) and lines[idx][1].startswith("- "):
+        items: list[Any] = []
+        while idx < len(lines) and lines[idx][0] == indent and lines[idx][1].startswith("- "):
+            rest = lines[idx][1][2:].strip()
+            idx += 1
+            if rest.startswith("{") or not (":" in rest and not rest.startswith("{")):
+                items.append(_flow(rest))
+                continue
+            item: dict[str, Any] = {}
+            k, _, v = rest.partition(":")
+            if v.strip():
+                item[k.strip()] = _flow(v)
+            else:
+                child, idx = _parse_block(lines, idx, lines[idx][0] if idx < len(lines) else indent + 2)
+                item[k.strip()] = child
+            while idx < len(lines) and lines[idx][0] > indent:
+                k2, _, v2 = lines[idx][1].partition(":")
+                if v2.strip():
+                    item[k2.strip()] = _flow(v2)
+                    idx += 1
+                else:
+                    inner_indent = lines[idx + 1][0] if idx + 1 < len(lines) else lines[idx][0] + 2
+                    key2 = k2.strip()
+                    idx += 1
+                    child, idx = _parse_block(lines, idx, inner_indent)
+                    item[key2] = child
+            items.append(item)
+        return items, idx
+
+    mapping: dict[str, Any] = {}
+    while idx < len(lines) and lines[idx][0] == indent:
+        line = lines[idx][1]
+        if ":" not in line:
+            idx += 1
+            continue
+        key, _, val = line.partition(":")
+        key = key.strip()
+        if val.strip():
+            mapping[key] = _flow(val)
+            idx += 1
+        else:
+            idx += 1
+            if idx < len(lines) and lines[idx][0] > indent:
+                child, idx = _parse_block(lines, idx, lines[idx][0])
+            elif idx < len(lines) and lines[idx][1].startswith("- ") and lines[idx][0] == indent:
+                child, idx = _parse_block(lines, idx, indent)
+            else:
+                child = None
+            mapping[key] = child
+    return mapping, idx
+
+
+def mini_yaml_load(text: str) -> Any:
+    lines: list[tuple[int, str]] = []
+    for raw in text.splitlines():
+        stripped = _strip_comment(raw)
+        if not stripped.strip():
+            continue
+        lines.append((len(stripped) - len(stripped.lstrip()), stripped.strip()))
+    if not lines:
+        return {}
+    value, _ = _parse_block(lines, 0, lines[0][0])
+    return value
+
+
+def load_yaml_text(text: str) -> Any:
+    """Parse YAML with pyyaml when present, the bundled subset parser otherwise."""
+    if yaml is None:
+        return mini_yaml_load(text)
+    return yaml.safe_load(text)
+
+
 def load_state(text: str | None = None) -> dict[str, Any] | None:
     """Return parsed state, empty dict on missing file, or None on parse failure."""
     if text is None:
         if not STATE_PATH.is_file():
             return {}
         text = STATE_PATH.read_text(encoding="utf-8")
-    if yaml is None:
-        return None
     try:
-        data = yaml.safe_load(text) or {}
-    except yaml.YAMLError:
+        if yaml is None:
+            data = mini_yaml_load(text) or {}
+        else:
+            data = yaml.safe_load(text) or {}
+    except Exception:
         return None
     if not isinstance(data, dict):
         return None
@@ -309,14 +453,14 @@ def cmd_selftest() -> int:
         if got != expected:
             failures.append(f"{name}: got {got!r} expected {expected!r}")
 
-    pending = yaml.safe_load(
+    pending = load_yaml_text(
         """
 phase: 3
 phases:
   3: { name: shape, status: pending }
 """
     )
-    done = yaml.safe_load(
+    done = load_yaml_text(
         """
 phase: 4
 phases:
@@ -324,14 +468,14 @@ phases:
   4: { name: journeys, status: in-progress }
 """
     )
-    deny_override = yaml.safe_load(
+    deny_override = load_yaml_text(
         """
 ui_writes: deny
 phases:
   3: { name: shape, status: done }
 """
     )
-    allow_override = yaml.safe_load(
+    allow_override = load_yaml_text(
         """
 ui_writes: allow
 phases:
@@ -393,7 +537,7 @@ phases:
     if "no product being shaped" not in empty.lower():
         failures.append(f"empty digest: {empty!r}")
     digest = status_digest(
-        yaml.safe_load(
+        load_yaml_text(
             """
 phase: 2
 phases:
