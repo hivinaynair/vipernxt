@@ -61,7 +61,6 @@ it — do not just let it grow.
 | field findings | 2 pages | Observations, then quotes, then contradictions, then open |
 | `ontology.md` | Entity table + one block each | Table first; blocks only for entities with real states |
 | design doc | **2 pages** | See the template |
-| `components.md` | 1 page | A table |
 | `DESIGN.md` | 1 page | Roles, scale, density, taste rules |
 | homework | 1 page per stage | Form to fill, not prose to read |
 | state.yaml | no cap | Structured; caps do not apply |
