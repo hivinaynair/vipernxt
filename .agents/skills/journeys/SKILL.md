@@ -95,6 +95,16 @@ The render lists any step no feature serves yet. That list is your v1 scope
 conversation — the **walking skeleton** is the thinnest set of features that
 still gets one actor from their first step to a terminal one.
 
+**A feature is a module, not a label.** Name it so it works as a directory: `F2
+Reconciliation view` becomes `features/reconciliation/`, and later a Linear ticket.
+One name, three places.
+
+That makes the feature cut an architectural decision, not bookkeeping. If two features
+turn out to need each other's internals, the boundary check will say so — and that is a
+signal the journey cut is wrong, not that the rule is inconvenient. Either the two are
+one feature, or what they share belongs in shared code. Re-cut the spine rather than
+reaching across the boundary.
+
 ### 5. Show it and confirm
 
 Show the rendered markdown (the Mermaid flowchart is the part people react to).

@@ -46,12 +46,29 @@ list of things somebody once wanted.
 | EARS criteria on those steps | The issue's acceptance criteria, verbatim |
 | Walking skeleton | Milestone, or a `v1` label |
 | Tasks from a plan | Sub-issues of the feature issue |
+| The module it becomes | `features/<slug>/`, named in the issue |
 
 The criteria are **already written**. Copy them; do not paraphrase them into something
 looser. They were argued over during `journeys` and they are what "done" means.
 
 Every issue description opens with a link back to the spine file and the design doc, so
-whoever picks it up can find the reasoning without asking.
+whoever picks it up can find the reasoning without asking. It also names the directory the
+feature becomes, so the ticket, the module and the spine entry are obviously one thing.
+
+## Sub-issues
+
+The feature issue is the unit of meaning. Sub-issues are the unit of work, and they come
+from planning that feature — not from splitting it arbitrarily. Create them when the
+feature is picked up, not in advance: a backlog of stale sub-issues is worse than none.
+
+Order them so the first one is a thin slice that runs end to end, then hardening. The
+acceptance criteria live on the parent, where they came from the spine; sub-issues inherit
+them rather than restating them in looser words.
+
+Label a sub-issue **`ui`** when it introduces a screen, a new component, or a new state.
+That label is the signal to run `prototype` before writing the component — build the
+variants, look at them, then implement the one that won. Without the label, UI gets
+invented one screen at a time, which is the thing `design-system` exists to prevent.
 
 ## Idempotency
 
