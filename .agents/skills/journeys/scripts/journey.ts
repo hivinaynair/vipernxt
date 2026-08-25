@@ -108,7 +108,7 @@ function validate(spine: Spine): void {
       if (!s.criteria?.length) warn(`${s.id}: no acceptance criteria`);
     }
 
-    const first = j.steps[0]!.id;
+    const first = j.steps[0]?.id;
     for (const s of j.steps)
       if (s.id !== first && !referenced.has(s.id))
         err(`${s.id}: unreachable — no step points at it`);
@@ -132,7 +132,6 @@ const cell = (t?: string) => (t ? esc(t) : "—");
 
 function render(spine: Spine): string {
   const out: string[] = [];
-  const screens = new Map((spine.screens ?? []).map((s) => [s.id, s]));
   const actors = new Map((spine.actors ?? []).map((a) => [a.id, a]));
 
   out.push(`# ${spine.product ?? "Product"} — journey spine`, "");
@@ -185,7 +184,7 @@ function render(spine: Spine): string {
       out.push(`### ${j.id} acceptance criteria`, "");
       for (const s of withCriteria) {
         out.push(`**\`${s.id}\`** ${esc(s.title)}`, "");
-        for (const c of s.criteria!) out.push(`- ${c}`);
+        for (const c of s.criteria ?? []) out.push(`- ${c}`);
         out.push("");
       }
     }
@@ -263,9 +262,10 @@ if (cmd === "validate") {
 
 const md = render(spine);
 const outIdx = rest.indexOf("--out");
-if (outIdx !== -1 && rest[outIdx + 1]) {
-  await Bun.write(rest[outIdx + 1]!, md + "\n");
-  console.error(`wrote ${rest[outIdx + 1]}`);
+const outPath = outIdx === -1 ? undefined : rest[outIdx + 1];
+if (outPath) {
+  await Bun.write(outPath, `${md}\n`);
+  console.error(`wrote ${outPath}`);
 } else {
   console.log(md);
 }
