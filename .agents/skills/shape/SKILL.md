@@ -42,6 +42,8 @@ Violate none of these:
 - **Canvas is a VIEW of the design doc, not a second source of truth.** Canvas files live at `~/.cursor/projects/<workspace>/canvases/<name>-design.canvas.tsx`. Import only from `cursor/canvas`. Read the canvas skill before writing one. Host theme tokens, no hardcoded hex, no emoji/gradients/shadows.
 - **Low-fi screens = layout bands + per-role copy.** Not Figma. Not implementing the app.
 - **Do NOT write product UI, features, or routes until the user says the design doc is right.**
+  Cursor denies writes under `apps/*/src/app` and `apps/*/src/features` until `shape` is
+  `done` on the state file. Do not bypass the hook with the shell.
 - **Do not invent a second app/login per persona unless the user asks.** Default: one URL, seats/roles, shared state.
 - **Respect the project's constraints** as written in its `AGENTS.md` / `CLAUDE.md` / README — package manager, module boundaries, existing vendors. Stack choices are recorded, never applied (step 8).
 - **Do not commit the design doc unless the user asks.**

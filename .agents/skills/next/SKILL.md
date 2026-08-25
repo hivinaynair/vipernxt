@@ -153,6 +153,9 @@ parallelism this harness offers; do not depend on a specific one.
 4. Otherwise: run the current phase's skill until it completes or raises an item.
 5. Write state back. Commit it if the repo is already committing these artifacts.
 
+A Cursor hook denies writes under `apps/*/src/app` and `apps/*/src/features` until
+`shape` is `done`. Do not bypass it. `ui_writes` in the state file is the override.
+
 Before advancing from any phase into building, check the artifacts still agree with each
 other: does every feature trace to journey steps, does every screen in the spine exist in
 the design doc, does the code still match the spine. Report drift; do not silently fix it.

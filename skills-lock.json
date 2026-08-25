@@ -12,6 +12,78 @@
       "sourceType": "github",
       "skillPath": "skills/turborepo/SKILL.md",
       "computedHash": "33d4adbcd2fd56074cf9b72b23804cd0e72f4ce24d1d427079e369b87a671ae5"
+    },
+    "artifacts": {
+      "source": ".",
+      "sourceType": "local",
+      "skillPath": ".agents/skills/artifacts/SKILL.md",
+      "computedHash": "a5f0623b4ade2af10027a4ac04ddfc0c1ce7caad1aac736f9eff6c386475bbf3"
+    },
+    "design-system": {
+      "source": ".",
+      "sourceType": "local",
+      "skillPath": ".agents/skills/design-system/SKILL.md",
+      "computedHash": "ce39efb9d57dd5548558a8bc24ff5149345fc726a0514836257eff4f4e8324cb"
+    },
+    "field-kit": {
+      "source": ".",
+      "sourceType": "local",
+      "skillPath": ".agents/skills/field-kit/SKILL.md",
+      "computedHash": "852dc04f5cdfc0578aea017e64bcde8d3ec8478f0d0f5de1bbe1b1a44c6a79fb"
+    },
+    "journeys": {
+      "source": ".",
+      "sourceType": "local",
+      "skillPath": ".agents/skills/journeys/SKILL.md",
+      "computedHash": "13bd190f82802d14247f13262d671e6f9115964aaf6e45781929d26dbf33d4b9"
+    },
+    "linear-sync": {
+      "source": ".",
+      "sourceType": "local",
+      "skillPath": ".agents/skills/linear-sync/SKILL.md",
+      "computedHash": "1e8008bdde51399a7c7f709b7803a33411ee30136c6980dd3009a46d53105cdb"
+    },
+    "next": {
+      "source": ".",
+      "sourceType": "local",
+      "skillPath": ".agents/skills/next/SKILL.md",
+      "computedHash": "c7e8bcb0bc138f4cbda4a9b4f283e59498418ecc328d376d84cec95e93667aea"
+    },
+    "ontology": {
+      "source": ".",
+      "sourceType": "local",
+      "skillPath": ".agents/skills/ontology/SKILL.md",
+      "computedHash": "e522854dd1aa90f514491bf6bb17889ad1440b60f93e252019c3d14abcc43948"
+    },
+    "prototype": {
+      "source": ".",
+      "sourceType": "local",
+      "skillPath": ".agents/skills/prototype/SKILL.md",
+      "computedHash": "83e1a64fe3e2a31f371b5a5aa89619750b96255d39273081a5c38be2dcd57575"
+    },
+    "salvage": {
+      "source": ".",
+      "sourceType": "local",
+      "skillPath": ".agents/skills/salvage/SKILL.md",
+      "computedHash": "56398c3c05e1742869d0f50511c84d9842c4a6cbfa009cb6b7b9bf58fa3864d5"
+    },
+    "setup": {
+      "source": ".",
+      "sourceType": "local",
+      "skillPath": ".agents/skills/setup/SKILL.md",
+      "computedHash": "a0873a62ee63699752f7a4d4392c6b4126ac4be779161bb62eb905ab3c7f97cc"
+    },
+    "shape": {
+      "source": ".",
+      "sourceType": "local",
+      "skillPath": ".agents/skills/shape/SKILL.md",
+      "computedHash": "f132010dad6ac6243e43453e15865aee6cf76b69ad509dd71ef6fbc24c1e289f"
+    },
+    "status": {
+      "source": ".",
+      "sourceType": "local",
+      "skillPath": ".agents/skills/status/SKILL.md",
+      "computedHash": "f7e68e83d6542b00c07cfcf5b6f38a817bedf96376c2f8c33b4fdb99738ade39"
     }
   }
 }
