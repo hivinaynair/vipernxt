@@ -201,13 +201,21 @@ rather than a domain requirement.
 
 ## 6. Journeys
 
-For each actor/seat: goal, what they can click, what they see at the turning points of the **clip** (the short path that proves the claim).
+Same clip, one row per seat. Confirm **this table** before any screen layout, then
+append it to the doc and tick the gate. Do not invent a second shape.
 
-Same event, different voice. Confirm this table **before** any screen layout, then append it to the doc and tick the gate.
+```markdown
+## Journeys
 
-This is prose, not the spine. After the doc is approved, the `journeys` skill maps
-each confirmed path into States, Transitions, and named exits — read that skill's
-glossary before writing YAML. Do not invent UJG JSON-LD here.
+| Seat | Wants | Can click | Sees after beat 1 | Sees at the end |
+| Owner | | | | |
+```
+
+Forbidden click: which seat never gets the dangerous control — that row must not
+list it.
+
+This table is what the `journeys` skill reads. It is not the ID'd spine. After
+the doc is approved, that skill expands each row + the clip beats into YAML.
 
 ## 7. Low-fi screens
 
@@ -253,7 +261,7 @@ Ask one question: is this document right?
 
 You may name what comes next — **only** as a next step, and only if they say go:
 
-1. **[journeys](../journeys/SKILL.md)** — turn the confirmed journeys into an ID'd spine that features and plans can cite. This is the usual next move.
+1. **[journeys](../journeys/SKILL.md)** — expand the Journeys table and clip beats into an ID'd YAML spine. This is the usual next move.
 2. The `customize` skill (name the clone), then `setup.sh`.
 3. Per-feature work: each feature cites the journey step IDs it serves, and a test title names those IDs.
 

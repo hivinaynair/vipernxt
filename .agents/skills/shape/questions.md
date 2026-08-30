@@ -86,7 +86,7 @@ Always attach 2–3 cited findings **above** the single question.
 
 ## D. Journeys (after actors confirmed)
 
-**D1. Table** — Reflect a journey table (seat / wants / can click / sees at clip beat 1 / sees at the end). Ask: is this the journey, or who is wrong?
+**D1. Table** — Reflect a journey table with these columns only: Seat / Wants / Can click / Sees after beat 1 / Sees at the end. Ask: is this the journey, or who is wrong?
 
 **D2. Forbidden click** — Which actor must **never** get the dangerous control (publish, refund, approve, delete org)? Confirm that seat’s row has no such click.
 

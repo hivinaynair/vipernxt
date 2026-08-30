@@ -41,7 +41,7 @@
       "source": ".",
       "sourceType": "local",
       "skillPath": ".agents/skills/journeys/SKILL.md",
-      "computedHash": "c6c702fc85d4ce4cfa93cd4b92b803c97806aa30b6bd19225bd313491d47478e"
+      "computedHash": "9e201ff3459bb17848064be1f0a615ff5dacaa744556b855969e7536509ca8e8"
     },
     "linear-sync": {
       "source": ".",
@@ -53,7 +53,7 @@
       "source": ".",
       "sourceType": "local",
       "skillPath": ".agents/skills/next/SKILL.md",
-      "computedHash": "4f20d5d73e38d37dbaf2b0082449485d5ce4f7d4d448655cd1d81a48d735f504"
+      "computedHash": "52625658b97a2d90dc89806aaec9f253e9220c73ba8a175a710caeb1271a2ebf"
     },
     "ontology": {
       "source": ".",
@@ -83,7 +83,7 @@
       "source": ".",
       "sourceType": "local",
       "skillPath": ".agents/skills/shape/SKILL.md",
-      "computedHash": "816adbcd83d1fbc6e3176fa676d43cfb82eedb411a865fd3089cea9cd3a87803"
+      "computedHash": "cee6b26773ebb6624e30e1a8a82310fb8cb6db6fa06c7ae721a20ed83aa7fa02"
     },
     "status": {
       "source": ".",

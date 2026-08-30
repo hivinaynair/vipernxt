@@ -24,12 +24,15 @@ A spine that does not validate is not a spine. Report every error. Warnings: say
 steps have no criteria. After features are cut, `check-journeys` must pass — every
 served step with criteria is named in a test title.
 
-Also check: IDs look stable (no renumber-to-close-gap); criteria are EARS
-(`WHEN`/`IF` … `THE SYSTEM SHALL`); every step has `screen` + `state` or you name the
-gap. Forks that the product distinguishes use labeled `next: { to, when }`, not a
-bare list. If a journey declares `exits:`, every terminal step names one. A
-`uses:` step maps each child exit on `next.when`. Reject JSON-LD, IRIs, or UJG
-Runtime/Surface fields — this dialect is YAML only.
+Also check the YAML against the design doc the spine's `source:` points at:
+
+- every Journeys-table seat has a journey; no extra journeys the doc did not confirm
+- clip beats show up as steps on the seat the clip is about
+- IDs look stable (no renumber-to-close-gap)
+- criteria are EARS (`WHEN`/`IF` … `THE SYSTEM SHALL`)
+- every step has `screen` + `state` or you name the gap
+- forks the doc distinguishes use labeled `next: { to, when }`, not a bare list
+- if a journey declares `exits:`, every terminal step names one
 
 Return pass/fail, the command output, and a short list of gaps. Do not write files.
 

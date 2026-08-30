@@ -4,8 +4,8 @@ One YAML file per product (or per large surface). Keys not listed here are ignor
 by the renderer, so notes are safe to add — but anything the team relies on should
 be in the schema, not freeform.
 
-UJG Graph names → these keys: see the glossary in [SKILL.md](SKILL.md). Do not
-serialize JSON-LD.
+How to fill this file: [SKILL.md](SKILL.md) (read the design-doc tables, then
+expand). Keys not listed here are ignored.
 
 ```yaml
 product: <slug>                  # required
@@ -101,8 +101,7 @@ such check.
 
 ## Why not the full W3C User Journey Graph
 
-The [UJG community group](https://www.w3.org/groups/cg/ujg/) defines journeys,
-states, transitions, nesting, plus Surface / Runtime / Mapping for real events.
-We take the Graph vocabulary only — see the SKILL.md glossary — and write YAML.
-The spec is an editor's draft ([ujg.specs.openuji.org](https://ujg.specs.openuji.org/ed/graph));
-we do not depend on JSON-LD or IRIs. Revisit full UJG when it is a stable TR.
+The [UJG community group](https://www.w3.org/groups/cg/ujg/) is an editor's draft
+for a machine-readable journey graph. We write YAML the design doc can feed and
+the validator can check. Agents are not asked to speak UJG. Revisit if the spec
+becomes a stable TR and we need runtime observation.
