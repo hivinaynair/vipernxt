@@ -1,8 +1,9 @@
 # ViperNxt map
 
-Clone this repo, type `/next`, then `/customize` before setup. Do not invent a
-product UI first. The stack stays: Bun, Clerk, Drizzle + Neon, shadcn in
-`packages/ui`, Vercel Workflows, Biome, Playwright.
+Clone this repo, type `/next`. It names the clone when the design doc is
+approved — you do not type `/customize`. Do not invent a product UI first. The
+stack stays: Bun, Clerk, Drizzle + Neon, shadcn in `packages/ui`, Vercel
+Workflows, Biome, Playwright.
 
 This file is the map a future clone reads. The Cursor canvas is a view of it.
 
@@ -13,10 +14,11 @@ This file is the map a future clone reads. The Cursor canvas is a view of it.
 | 1. Clone | you | New repo from this tree. Keep the opinions. |
 | 2. `/next` | agent | Creates `docs/product/state.yaml`, researches, interviews one question at a time. Pin `/next` as a Custom Mode. |
 | 3. Approve the design doc | you | Until `shape` is `done`, a hook denies writes under `apps/*/src/app` and `apps/*/src/features`. |
-| 4. Customize | you + agent | `/customize` — name first, then keep/strip. Writes `PRODUCT` to `.env.playbook`. |
+| 4. Name the clone | `/next` | Invokes `customize` — name first, then keep/strip. Writes `PRODUCT` to `.env.playbook`. |
 | 5. `setup` | script | [`.agents/skills/setup/setup.sh`](../.agents/skills/setup/setup.sh) — GitHub, one Neon project with `staging` + `production` databases, Vercel, Clerk, Linear key. |
-| 6. Journey spine | agent | `journeys` writes `docs/journeys/<name>.yaml`. IDs are permanent. |
+| 6. Journey spine | `/next` | `journeys` expands the design-doc table. IDs are permanent. |
 | 7. Thin slice | agent | One journey through real data before the full component inventory. |
+| Journey is the wrong story | `/next` | Reopen `shape` on the clip + journeys table, confirm, re-expand. No new skill. Same moments keep IDs. |
 
 `status` is the glance. `setup` provisions. `shape` does not rename packages.
 
@@ -75,12 +77,12 @@ Type `/next`. It reads `docs/product/state.yaml` and does every step that is not
 | `linear-sync` | Spine → Linear issues. IDs come back; nothing else. |
 | `design-system` | Layout primitives and semantic tokens before pages. |
 | `prototype` | Three variants of one component, mid-build. |
-| `customize` | Names the clone and applies keep/strip. Before setup. |
+| `customize` | Names the clone and applies keep/strip. `/next` runs it after shape; before setup. |
 | `setup` | Runs `setup.sh`. One Neon project, two databases. |
 | `next-dev-loop` | Runtime verify after app edits (`/_next/mcp` + browser). |
 | `turborepo` | Vendor skill for the monorepo. |
 
-Phases, from [`next/SKILL.md`](../.agents/skills/next/SKILL.md): salvage → research → field → shape → ontology → journeys → structure / visual → Linear → build. Ship one walking skeleton after the spine exists. `prototype` is not a phase.
+Phases, from [`next/SKILL.md`](../.agents/skills/next/SKILL.md): salvage → research → field → shape → ontology → journeys → structure / visual → Linear → build. Ship one walking skeleton after the spine exists. `prototype` is not a phase. A wrong product story reopens `shape` on the journeys table, then `journeys` — still `/next`, no new skill.
 
 No `docs/product/state.yaml` means no product. Boilerplate may be edited. This repo is in that state.
 

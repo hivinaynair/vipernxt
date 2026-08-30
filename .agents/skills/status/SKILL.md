@@ -28,7 +28,9 @@ action from them.
 
 **Where we are** — the current phase, one line on what it is doing, and what is finished.
 A compact line, not a phase-by-phase table: `done: salvage, research · now: field ·
-next: shape`.
+next: shape`. If `shape` is done and the clone is not yet named, say `/next` will
+name it next — do not tell them to type another skill. If `journeys` is
+`in-progress` after it was once `done`, the product story is being rewritten.
 
 **Deferred** — items with an `until` date, and when they resurface.
 

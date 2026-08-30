@@ -5,7 +5,9 @@ description: >-
   features, plans and tests can cite, then generates the Mermaid diagrams and
   tables from it. Use after a product design doc exists, when the user asks to
   map journeys, map a feature's journey, add a screen or state, cut features
-  from journeys, or regenerate journey diagrams.
+  from journeys, regenerate journey diagrams, or fix an expansion that does
+  not match the design-doc table. If the product story itself is wrong, /next
+  reopens shape first — this skill does not invent a new clip.
 ---
 
 # Journey spine
@@ -103,8 +105,10 @@ Spine (write): Owner row + three clip beats → `J1.S1`–`J1.S3`. Reviewer row 
 - **One question per message** when something is genuinely undecided, with a
   recommendation. Do not interview for things the design doc already settled.
 - **Do not invent journeys the design doc has not confirmed.** This skill
-  transcribes and sharpens; it does not shape. If the product is still uncertain,
-  use the `shape` skill first.
+  transcribes and sharpens; it does not shape. If the **story** is wrong — wrong
+  clip, wrong seat, they want a simpler path — stop and let `/next` reopen
+  `shape` on the journeys table. Do not “fix” the YAML into a product the doc
+  does not describe.
 
 ## Workflow
 
@@ -189,8 +193,16 @@ that no test or spec cites.
 
 ## Keeping it alive
 
-Building teaches you things the spine did not know. When that happens, change the
-spine **first**, then the code — it is a two-line YAML edit and a re-render.
+Two different “wrong”:
+
+- **Expansion** — the table is right, the Mermaid is not. Patch the YAML, re-render,
+  ask which step is wrong. Same moment keeps its ID.
+- **Story** — they want a different or simpler clip. Do not invent beats here.
+  `/next` reopens `shape` on the journeys table; after they confirm, come back and
+  re-expand. New beats get new IDs. Never reuse `J1.S2` for a new meaning.
+
+Building teaches you the same split. A missing state on a known screen is a YAML
+edit, then the code. A different payoff is a new table first.
 
 Be honest about the failure mode: a spine nobody regenerates is a stale diagram.
 The render step is cheap on purpose. If it stops being run, the spine is dead and

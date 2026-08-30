@@ -70,7 +70,7 @@ Lock these with the user on first use; they go in the doc glossary.
 
 | They want | Do instead |
 |---|---|
-| Rename packages, change scopes, strip vendors in the tree | The `customize` skill, then `setup.sh` |
+| Rename packages, change scopes, strip vendors in the tree | `/next` runs `customize`, then `setup.sh` |
 | Product UI, routes, features | Wait for design-doc approval, then a later plan |
 | A Figma file or production screens | Stay on low-fi bands (plus the canvas, if the host has one) |
 
@@ -217,6 +217,11 @@ list it.
 This table is what the `journeys` skill reads. It is not the ID'd spine. After
 the doc is approved, that skill expands each row + the clip beats into YAML.
 
+**Reopen.** If they say the journey is the wrong product story — too hard, wrong
+payoff, not what they meant — do not restart the bank. Patch **The clip** and
+this table, confirm that table only, then stop so `/next` can re-run `journeys`.
+Re-ask actors or the claim only if they said those are wrong too.
+
 ## 7. Low-fi screens
 
 Only after journeys are confirmed.
@@ -261,8 +266,10 @@ Ask one question: is this document right?
 
 You may name what comes next — **only** as a next step, and only if they say go:
 
-1. **[journeys](../journeys/SKILL.md)** — expand the Journeys table and clip beats into an ID'd YAML spine. This is the usual next move.
-2. The `customize` skill (name the clone), then `setup.sh`.
+1. **`/next`** — it names the clone (`customize`) if the package is still
+   `vipernxt`, then [journeys](../journeys/SKILL.md). Do not tell them to type
+   `/customize`.
+2. `setup.sh` after `PRODUCT` exists — `/next` points at it; do not run it from here.
 3. Per-feature work: each feature cites the journey step IDs it serves, and a test title names those IDs.
 
 Do not commit unless they ask.
@@ -271,4 +278,5 @@ Do not commit unless they ask.
 
 The doc is the state; this chat is not. On a new session or after lost context, read `docs/plans/*-design.md`: the `## Shaping status` block says which gates passed, and the written sections **are** the confirmed answers. Read `docs/research/*` if present. Rebuild the checklist from that, then ask the next unanswered question.
 
-Never re-confirm a section the doc already contains. Do not restart the bank.
+Never re-confirm a section the doc already contains — unless they said that
+section is wrong (usually the clip and Journeys table). Do not restart the bank.

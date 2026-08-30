@@ -41,7 +41,8 @@ The playbook ships in this clone under `.agents/skills/` (also linked from
 `.cursor/skills/` and `.claude/skills/`). Type `/next`; it reads
 `docs/product/state.yaml` and works out what happens now. The clone map is
 [docs/map.md](docs/map.md). Pin `/next` as a Custom Mode
-for a shaping session so it stays in context. `status` is the glance. `customize` names the clone before `setup.sh`. `shape` and
+for a shaping session so it stays in context. `status` is the glance. `/next`
+runs `customize` after the design doc, before `setup.sh`. `shape` and
 `design-system` read this file for the constraints above.
 
 Until `shape` is `done`, do not edit product UI, routes, or features

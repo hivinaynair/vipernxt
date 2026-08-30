@@ -74,19 +74,20 @@ Claude Code), so it travels to cloud agents too. Type `/next` and it works out w
 | `field-kit` | Writes the field-research homework, then absorbs what comes back. |
 | `shape` | The gated interview → design doc. |
 | `journeys` | The ID'd journey spine + generated Mermaid. |
-| `customize` | Names the clone and applies keep/strip. Run before `setup.sh`. |
+| `customize` | Names the clone and applies keep/strip. `/next` runs it after the design doc; before `setup.sh`. |
 | `design-system` | Component inventory and layout primitives; visual direction later. |
 
 Source of truth is [saas-playbook](https://github.com/hivinaynair/saas-playbook); re-vendor
 with its `sync.sh`. `shape` asks one question at a time, writes the design doc as it goes so a shape survives a lost session, and stops at an approved doc. `journeys` then turns the confirmed journeys into an ID'd spine under `docs/journeys/` that features and plans cite. Both read [AGENTS.md](AGENTS.md) for this repo's constraints.
 
-The rename / strip checklist is the `customize` skill — keep that separate from shaping.
+The rename / strip checklist is the `customize` skill — keep that separate from
+shaping. `/next` invokes it; you do not have to.
 
 ## Customize this clone
 
-Type `/customize` (or let `/next` run it before setup). It asks one question at a
-time, starting with the product name, writes `PRODUCT` to `.env.playbook`, and
-applies keep/strip. Then run `./.agents/skills/setup/setup.sh` — one Neon
+After the design doc is approved, `/next` runs `customize`. It asks one question
+at a time, starting with the product name, writes `PRODUCT` to `.env.playbook`,
+and applies keep/strip. Then run `./.agents/skills/setup/setup.sh` — one Neon
 project, databases `staging` and `production`.
 
 Questions live in [`.agents/skills/customize/SKILL.md`](.agents/skills/customize/SKILL.md).

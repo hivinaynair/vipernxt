@@ -38,7 +38,7 @@ provisioning conversation produces duplicates.
 | Stage | Tool |
 |---|---|
 | Preflight — tools present and authenticated | `gh`, `neonctl` |
-| Product name | `.env.playbook` `PRODUCT` from `customize`, or ask once and record it |
+| Product name | `.env.playbook` `PRODUCT` from `/next` → `customize`, or ask once and record it |
 | Private GitHub repo, pushed | `gh repo create` |
 | One Neon project `<product>`, databases `staging` and `production` | `neonctl` |
 | Staging URLs into `.env.local`; each database’s direct URL into the matching GitHub Environment secret | `neonctl`, `gh secret` |
@@ -60,7 +60,7 @@ once they have made it.
 
 ## Your job around it
 
-Before: the `customize` skill should already have written `PRODUCT` to
+Before: `/next` should already have run `customize` so `PRODUCT` is in
 `.env.playbook`. If it has not, the script asks once and records it. Confirm
 this is the right repo.
 

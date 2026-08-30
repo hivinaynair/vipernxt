@@ -2,9 +2,9 @@
 name: customize
 description: >-
   Names this clone and applies the keep/strip answers — product name, package
-  scope, apps, Clerk, Workflows, metadata, database. Use when starting a new
-  repo from the boilerplate, before setup.sh, or when the root package is still
-  vipernxt.
+  scope, apps, Clerk, Workflows, metadata, database. Invoked by /next after the
+  design doc is approved and before setup, or when the user asks to customize,
+  or the root package is still vipernxt.
 ---
 
 # customize
@@ -12,9 +12,13 @@ description: >-
 Rename and strip this clone. One question at a time. Apply only what they
 answered. Do not invent a product or a UI kit.
 
-`setup.sh` provisions infra under the name you write here. Run this **before**
-setup. Shape may have already recorded keep/strip in the design doc — honour
-those answers; do not re-ask them.
+`/next` runs this after `shape` is done. They should not have to type
+`/customize`. `setup.sh` provisions under the name you write here — always
+before setup. Shape may have already recorded keep/strip in the design doc —
+honour those answers; do not re-ask them.
+
+When the last question is applied, set `clone.customized: done` in
+`docs/product/state.yaml` if that file exists.
 
 ## Hard rules
 

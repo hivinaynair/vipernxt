@@ -4,8 +4,8 @@ description: >-
   The single entry point for taking a product idea to something buildable. Reads
   the pipeline state, does every step that does not need the human, and stops
   only to hold an item for them. Use when the user says "next", "what's next",
-  has a new product idea, wants to resume shaping or planning a product, or
-  answers a held question.
+  has a new product idea, wants to resume shaping or planning a product,
+  answers a held question, or says the journey or clip is the wrong story.
 ---
 
 # next
@@ -136,6 +136,32 @@ wrong. Then return to 5a.
 `prototype` is not a phase — reach for it mid-build whenever a component's shape is
 genuinely open and describing it is not settling it.
 
+`customize` is not a phase either. After `shape` is `done`, before `setup`, if the
+root `package.json` `name` is still `vipernxt` or `.env.playbook` has no `PRODUCT`:
+read [customize](../customize/SKILL.md) and run it now. One question at a time.
+Honour keep/strip the design doc already recorded. They do not type `/customize`.
+Do not run `setup.sh` under the boilerplate name.
+
+## The journey is wrong
+
+The spine is the product umbrella. If they say it is unsatisfactory — the agent
+wrote the wrong story, or a later week proved the clip is too hard or the wrong
+payoff — do **not** start a new skill or a second journey file. Reopen this loop:
+
+1. **Ask once**, only if it is unclear: is the **design-doc table / clip** wrong
+   (the story), or only the **YAML expansion** (the Mermaid)?
+2. **Story** (the usual case) — set `phases.4` (journeys) to `in-progress`. Keep
+   `shape` `done` unless they say the **claim** is wrong too (then set `shape` to
+   `in-progress`; the UI gate closes again). Run `shape` from the journeys gate
+   (and the clip): new table, they confirm. Then `journeys` re-expands that table.
+3. **Expansion only** — run `journeys` on the existing table. Do not reopen shape.
+4. Same moments keep their IDs. A new beat gets a new ID (`J1.S2b`, or a new
+   `J3`). Never reuse `J1.S2` for a different moment. Dropped steps leave
+   `features.serves` (and Linear) until those citations are removed.
+5. `linear-sync` after the spine is confirmed again.
+
+They keep typing `/next`. They do not type `/shape` or `/journeys` to revise.
+
 Phase 0 runs on every new product, not only rebuilds — there is almost always something being replaced, even if it is a spreadsheet. It is skipped only when `salvage` reports there is genuinely nothing to read. Phase 1 can run in parallel with 2 — send
 them out to gather, then keep researching while they are gone. **Never idle while a
 `gather` item is open.**
@@ -156,8 +182,12 @@ inherit the parent's skill catalog. `spine-checker` validates a journey YAML;
 2. Any answered items to record? Record them verbatim, close them.
 3. Any live `gather` item? Report what is still outstanding, then work on anything that
    does not depend on it.
-4. Otherwise: run the current phase's skill until it completes or raises an item.
-5. Write state back. Commit it if the repo is already committing these artifacts.
+4. If they said the journey or clip is wrong, follow **The journey is wrong**
+   before advancing build.
+5. If `shape` is `done` and the clone is still named `vipernxt` (or has no `PRODUCT`),
+   run `customize` before any later phase and before setup. Stop after each question.
+6. Otherwise: run the current phase's skill until it completes or raises an item.
+7. Write state back. Commit it if the repo is already committing these artifacts.
 
 A Cursor hook denies writes under `apps/*/src/app` and `apps/*/src/features` until
 `shape` is `done`. Do not bypass it. `ui_writes` in the state file is the override.
@@ -172,6 +202,5 @@ No `docs/product/state.yaml`? This is a new product. Create it, set phase 0, and
 for the idea in a paragraph — then get to work. Do not interview them yet; `shape` owns
 that, and it comes after research.
 
-If the root package is still `vipernxt` and they are about to provision infra, run
-`customize` first so `setup.sh` gets a real `PRODUCT`. Shape records keep/strip;
-`customize` applies it; `setup` provisions. Do not run setup under the boilerplate name.
+On create, set `clone.customized: pending`. `/next` will invoke `customize` after
+the design doc is approved — do not ask them to type that skill.

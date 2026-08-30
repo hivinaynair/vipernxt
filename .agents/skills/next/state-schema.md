@@ -19,6 +19,9 @@ phases:
   5b: { name: visual,      status: pending, optional: true }
   6: { name: build,        status: pending }
 
+clone:
+  customized: pending          # pending | done — /next runs customize after shape
+
 held:
   - id: H3
     kind: gather                       # gather | decide
@@ -58,6 +61,9 @@ decisions:                  # closed items, kept for the record
 
 **`status` values.** `pending` → not started. `in-progress` → being worked. `blocked` →
 waiting on an open `gather` item. `done` → artifact exists at `artifact:`.
+A later reopen is allowed: set `journeys` back to `in-progress` when the product
+story changed. Set `shape` back to `in-progress` only when the **claim** is in
+doubt (that closes the UI gate). Do not invent a second spine file.
 
 **`answer` is verbatim.** Their words, spelling and all. Never a paraphrase, never
 cleaned up. The paraphrase is how a decision quietly becomes a different decision.
@@ -72,6 +78,12 @@ it does not, that is a contradiction to report, not to fix silently.
 
 **`decisions:` is append-only.** It is the record of what was settled and when, so nothing
 gets re-asked and no later session quietly reverses it.
+
+**`clone.customized`.** `pending` until `/next` finishes the `customize` skill
+(name + keep/strip applied, `PRODUCT` in `.env.playbook`). Infer from reality if
+needed: root `package.json` `name` is no longer `vipernxt`. If the flag says
+`done` but the package is still `vipernxt`, that is drift — report it, do not
+silently flip the flag.
 
 **`ui_writes`.** Optional. When omitted, a Cursor hook denies writes under
 `apps/*/src/app` and `apps/*/src/features` until the `shape` phase is `done`, then
