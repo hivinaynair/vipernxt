@@ -178,14 +178,14 @@ Patch the YAML, re-render. Never patch the markdown.
 
 ## Handing off to feature work
 
-Each feature in the spine carries the step IDs it serves. The plan cites them:
+Each feature in the spine carries the step IDs it serves. The [plan](../plan/SKILL.md)
+skill cites them and does not rewrite the EARS:
 
 ```
 F2 Reconciliation view — serves J1.S3, J2.S1
 ```
 
-The acceptance criteria on those steps are the feature's acceptance criteria.
-They are already written; do not rewrite them from scratch in the plan.
+Then [build](../build/SKILL.md) implements one slice. `/next` runs both.
 
 A test that covers a step names the ID in its title: `it("J1.S3: …")`. After
 features are cut, `bun run check-journeys` fails any served step with criteria

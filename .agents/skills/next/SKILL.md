@@ -5,7 +5,8 @@ description: >-
   the pipeline state, does every step that does not need the human, and stops
   only to hold an item for them. Use when the user says "next", "what's next",
   has a new product idea, wants to resume shaping or planning a product,
-  answers a held question, or says the journey or clip is the wrong story.
+  answers a held question, says the journey or clip is the wrong story, or
+  names a feature to plan and build.
 ---
 
 # next
@@ -124,7 +125,7 @@ Running a six-phase pipeline over "add a column" is a failure, not thoroughness.
 | 5a | Structure | `design-system` | you |
 | 5b | Visual direction | `design-system` | them, optional, any time |
 | 4.5 | Publish to Linear | `linear-sync` | you |
-| 6 | Build | cite journey IDs in tests, `prototype` | you |
+| 6 | Build | `plan` then `build`; cite journey IDs; `prototype` when a component is open | you |
 
 **Ship something before the planning is finished.** Once the spine exists, build one
 journey end to end — a thin slice through real data — before the full component inventory.
@@ -135,6 +136,12 @@ wrong. Then return to 5a.
 `linear-sync` runs after the spine is confirmed and again whenever features change.
 `prototype` is not a phase — reach for it mid-build whenever a component's shape is
 genuinely open and describing it is not settling it.
+
+After the spine is confirmed and they name a feature (or it is time to ship the
+walking skeleton), run [plan](../plan/SKILL.md) then [build](../build/SKILL.md)
+on the first slice. Do not wait for them to type those skills. Do not refuse
+because of which host or model this session is. A missing browser or preview
+URL is a verification gap, not a reason to stop planning or implementing.
 
 `customize` is not a phase either. After `shape` is `done`, before `setup`, if the
 root `package.json` `name` is still `vipernxt` or `.env.playbook` has no `PRODUCT`:

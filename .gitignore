@@ -30,6 +30,10 @@ blob-report
 .next/
 out/
 build
+!/.agents/skills/build/
+!/.agents/skills/build/**
+!/.claude/skills/build
+!/.cursor/skills/build
 dist
 
 

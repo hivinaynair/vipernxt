@@ -78,6 +78,8 @@ Type `/next`. It reads `docs/product/state.yaml` and does every step that is not
 | `journeys` | Expand the design-doc journey table into an ID’d YAML spine. |
 | `linear-sync` | Spine → Linear issues. IDs come back; nothing else. |
 | `design-system` | Layout primitives and semantic tokens before pages. |
+| `plan` | One spine feature → short spec + slices. `/next` runs it after the spine. |
+| `build` | Implements one slice. Tests cite step IDs. PR to `staging`. Host-agnostic. |
 | `prototype` | Three variants of one component, mid-build. |
 | `customize` | Names the clone and applies keep/strip. `/next` runs it after shape; before setup. |
 | `setup` | Runs `setup.sh`. One Neon project, two databases. |
@@ -122,4 +124,4 @@ CI: [`.github/workflows/check.yml`](../.github/workflows/check.yml) on PRs and o
 | Starter leftovers | “Create Next App” copy. `customize` question 1 and 7 delete it on the first real clone. |
 | Billing | Not in the tree. Extend `customize` when a product asks. |
 | Clerk orgs | Setup can flip the flag. No org UI until a product is B2B. |
-| Build-skill names | Not `nah-fam` / `lets-cook`. Local skills later; do not vendor a verbose ticket writer. |
+| Build-skill names | Closed. `plan` and `build` — not `game-plan` / `lets-cook`. No verbose ticket writer. |

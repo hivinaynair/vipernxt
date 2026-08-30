@@ -270,7 +270,7 @@ You may name what comes next — **only** as a next step, and only if they say g
    `vipernxt`, then [journeys](../journeys/SKILL.md). Do not tell them to type
    `/customize`.
 2. `setup.sh` after `PRODUCT` exists — `/next` points at it; do not run it from here.
-3. Per-feature work: each feature cites the journey step IDs it serves, and a test title names those IDs.
+3. Per-feature work: `/next` runs `plan` then `build`. Tests name the step IDs.
 
 Do not commit unless they ask.
 

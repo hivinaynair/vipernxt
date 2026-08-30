@@ -58,7 +58,7 @@ feature becomes, so the ticket, the module and the spine entry are obviously one
 ## Sub-issues
 
 The feature issue is the unit of meaning. Sub-issues are the unit of work, and they come
-from planning that feature — not from splitting it arbitrarily. Create them when the
+from the `plan` skill — not from splitting it arbitrarily. Create them when the
 feature is picked up, not in advance: a backlog of stale sub-issues is worse than none.
 
 Order them so the first one is a thin slice that runs end to end, then hardening. The

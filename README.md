@@ -61,8 +61,10 @@ If the journey is the **wrong product story** — too hard, wrong payoff, not wh
 you meant — say so. `/next` rewrites the clip and that table, you confirm, then
 it expands the spine again. Same moment keeps `J1.S2`. A new beat gets a new ID.
 
-`status` is the glance. `prototype` is three variants of **one** component,
-mid-build, when looking beats arguing. It is not a phase.
+`status` is the glance. After the spine, `/next` runs `plan` (one feature →
+spec + slices) then `build` (one slice, tests name `J1.S3`). `prototype` is
+three variants of **one** component, mid-build. None of those skills name a
+host or a model as a prerequisite.
 
 Playbook source: [saas-playbook](https://github.com/hivinaynair/saas-playbook).
 In Cursor, the same picture is a canvas titled **ViperNxt map** (a view of
