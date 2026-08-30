@@ -21,6 +21,66 @@ docs/journeys/<name>.md     generated — never hand-edited
 
 Schema: [spine-schema.md](spine-schema.md). Worked example: [example.yaml](example.yaml).
 
+You do not need W3C UJG words. You need the design doc's tables and this expansion.
+Write our YAML keys (`step`, `next`, `sees`, `does`). Do not invent a second format.
+
+## How to read, then write
+
+`shape` leaves four things in `docs/plans/*-design.md`. Read all four before typing
+YAML. If a section is missing, stop — run `shape`, or ask one question.
+
+| In the design doc | What you take from it |
+|---|---|
+| **Actors** | `actors[]`. One id per seat. |
+| **The clip** | Numbered beats. These become steps for the seat the clip is about. |
+| **Journeys** | One row per seat: wants / can click / sees after beat 1 / sees at the end. Each row is one journey (`J1`, `J2`). |
+| **Screens** | `screens[]` — `bands` and every `state`. A step lands on one screen + one state. |
+
+Do not invent a seat, a beat, or a click the doc did not confirm.
+
+### Expand a row into steps
+
+1. **One journey per table row.** Same clip, two seats → `J1` and `J2`, not one graph
+   with both voices.
+2. **A step is a turning point they can see.** Clip beat 1 → `J1.S1`, beat 2 → `J1.S2`.
+   Two clicks that leave the picture unchanged stay one step. `sees` and `does` come
+   from the row plus that beat. `screen` + `state` come from the Screens table.
+3. **`next` is the next beat.** Linear clip: `next: J1.S2`. The doc names two
+   outcomes (supported vs refused file): label the edges. Do not fork because you
+   can imagine a failure.
+   ```yaml
+   next:
+     - { to: J1.S3, when: supported file }
+     - { to: J1.S2b, when: unsupported format }
+   ```
+4. **Two endings the product must tell apart** → journey `exits:` and the terminal
+   step names `exit:`. One quiet payoff: omit `exits:`.
+5. **The same opening copied twice** → extract a small journey and `uses:` it.
+   One shared step is cheaper to write twice. Do not nest for style.
+6. **EARS on each step**, then cut `features` from steps. IDs never renumber
+   (`J1.S2b` to insert).
+7. **Validate, render, ask.** Show the Mermaid. One question: is this the journey,
+   or which step is wrong?
+
+### From this doc, write this YAML
+
+Design doc (read):
+
+```markdown
+## The clip
+1. Lands on an empty dashboard
+2. Drops a CSV
+3. Sees the balance match
+
+## Journeys
+| Seat | Wants | Can click | Sees after beat 1 | Sees at the end |
+| Owner | One reconciled ledger | New ledger, drop CSV | Empty dashboard, one action | Matched total |
+| Reviewer | Question one row | Flag, leave a reason | Same ledger, no mutate | Flag visible to owner |
+```
+
+Spine (write): Owner row + three clip beats → `J1.S1`–`J1.S3`. Reviewer row →
+`J2` (their clicks are not the owner's clip). Full file: [example.yaml](example.yaml).
+
 ## Hard rules
 
 - **The YAML is the source. The markdown is output.** Never edit the `.md`. If it
@@ -58,17 +118,17 @@ draft a spine from what they tell you now and accept it is unconfirmed.
 
 ### 2. Draft the spine
 
-Transcribe into `docs/journeys/<name>.yaml`:
+Follow **How to read, then write**. `docs/journeys/<name>.yaml`:
 
-- **actors** — from the doc's actor table.
-- **screens** — one per screen the journeys touch, with its `bands` and the
-  `states` it can be in. States matter: most bugs live in the states nobody drew.
-- **journeys** — one per actor goal. Steps in narrative order, each with what the
-  actor `sees` and `does`, the `screen` + `state` it happens on, and `next`.
-- **criteria** — EARS lines per step. This is the step that turns a journey into
-  something buildable; do not skip it because it feels like paperwork.
+- **actors** — from the Actors table.
+- **screens** — from the Screens table. States matter: most bugs live in the
+  states nobody drew.
+- **journeys** — one per Journeys-table row. Steps from clip beats (and that
+  seat's clicks). `exits` / `uses` only when the expansion rules call for them.
+- **criteria** — EARS per step. Skip this and the spine is a picture again.
 
-A step with no `next` is terminal. Branches are a list: `next: [J1.S4, J1.S5]`.
+A step with no `next` is terminal. Unlabeled `next: [J1.S4, J1.S5]` only when
+the doc does not distinguish why.
 
 ### 3. Validate and render
 
@@ -114,9 +174,7 @@ Patch the YAML, re-render. Never patch the markdown.
 
 ## Handing off to feature work
 
-Each feature in the spine is the unit the feature-tier skills consume. When a
-feature enters `worth-it`, `nah-fam`, `game-plan` or `lets-cook`, it carries its
-step IDs, and the plan cites them:
+Each feature in the spine carries the step IDs it serves. The plan cites them:
 
 ```
 F2 Reconciliation view — serves J1.S3, J2.S1
@@ -124,6 +182,10 @@ F2 Reconciliation view — serves J1.S3, J2.S1
 
 The acceptance criteria on those steps are the feature's acceptance criteria.
 They are already written; do not rewrite them from scratch in the plan.
+
+A test that covers a step names the ID in its title: `it("J1.S3: …")`. After
+features are cut, `bun run check-journeys` fails any served step with criteria
+that no test or spec cites.
 
 ## Keeping it alive
 

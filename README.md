@@ -2,6 +2,8 @@
 
 Bun-only [Turborepo](https://turborepo.dev) boilerplate for a Next.js SaaS: one app (`apps/web`), shared UI, Clerk, Zod 4, [shadcn/ui](https://ui.shadcn.com), and Vercel Workflows. Clone it, shape the product, then answer the customize prompt below, then start building.
 
+Map of the repo, playbook, and clone path: [docs/map.md](docs/map.md).
+
 **Requires** [Bun](https://bun.sh) `1.4.x` (see `packageManager` in `package.json`). Installs with anything else will fail (`only-allow bun`).
 
 ## Layout
@@ -16,6 +18,8 @@ Bun-only [Turborepo](https://turborepo.dev) boilerplate for a Next.js SaaS: one 
 | `tooling/dependency-cruiser` | Feature-folder import rules |
 | `e2e/web` | Playwright for `web` |
 | `test/` | `bun test` runner preload only (not a suite) |
+| `docs/map.md` | Repo + playbook map for a fresh clone |
+| `.agents/skills/` | Playbook and vendor skills (symlinked from `.cursor/skills/` and `.claude/skills/`) |
 
 Features must not import each other. Compose in `app/` or `src/proxy.ts`, or hoist to `shared/` / `packages/`. Inside a feature, use a relative import — not `@/features/<this-feature>/...`. `bun run check-boundaries` enforces the graph (tests are ignored; pass `--strict` to include them).
 
@@ -70,53 +74,23 @@ Claude Code), so it travels to cloud agents too. Type `/next` and it works out w
 | `field-kit` | Writes the field-research homework, then absorbs what comes back. |
 | `shape` | The gated interview → design doc. |
 | `journeys` | The ID'd journey spine + generated Mermaid. |
+| `customize` | Names the clone and applies keep/strip. Run before `setup.sh`. |
 | `design-system` | Component inventory and layout primitives; visual direction later. |
 
 Source of truth is [saas-playbook](https://github.com/hivinaynair/saas-playbook); re-vendor
 with its `sync.sh`. `shape` asks one question at a time, writes the design doc as it goes so a shape survives a lost session, and stops at an approved doc. `journeys` then turns the confirmed journeys into an ID'd spine under `docs/journeys/` that features and plans cite. Both read [AGENTS.md](AGENTS.md) for this repo's constraints.
 
-The rename / strip-Clerk checklist is the next section — keep that separate.
+The rename / strip checklist is the `customize` skill — keep that separate from shaping.
 
 ## Customize this clone
 
-Paste the following into Cursor (or any coding agent) in this repo. It should **ask these questions one at a time**, then apply the answers. Skip anything you want to leave as-is.
+Type `/customize` (or let `/next` run it before setup). It asks one question at a
+time, starting with the product name, writes `PRODUCT` to `.env.playbook`, and
+applies keep/strip. Then run `./.agents/skills/setup/setup.sh` — one Neon
+project, databases `staging` and `production`.
 
-````markdown
-You are customizing this ViperNxt clone. Use Bun only (`bun`, `bunx`, `bun test`).
-Do not add Vitest, ESLint, or another package manager. Keep feature-folder
-boundaries (`app` / `src/proxy.ts` / `features` / `shared`). After edits: `bun install`,
-`bun run check-types`, `bun run check-boundaries`.
-
-Ask one question at a time. Wait for the answer before the next.
-
-1. Product name (human title) and repo/package name (npm-safe, e.g. `acme`)?
-   Today the root package is `vipernxt`. Rename `package.json`, README title,
-   and any user-facing “ViperNxt” / “Create Next App” copy.
-
-2. Workspace scope instead of `@repo` (e.g. `@acme`)? Update every
-   `package.json` `name` / dependency and tsconfig `extends`.
-
-3. Rename `apps/web` (and matching `e2e/web`)? Keep `web` if unsure.
-   Update workspace names, Playwright `webDir`, filters, and docs.
-
-4. Extra Next.js apps now (e.g. `marketing`, `admin`)? Scaffold the same
-   `src/app` + `src/features` + `src/shared` layout, or skip.
-
-5. Auth: keep Clerk, strip it, or keep it and enable organizations (B2B)?
-   Stripping must remove `@clerk/nextjs`, `src/proxy.ts`, `ClerkProvider`,
-   `features/auth`, and env examples.
-
-6. Keep Vercel Workflows (`workflow` + `withWorkflow` in `next.config`)?
-   Remove the package and wrapper if not.
-
-7. Default site metadata (title, description, `lang` on `<html>`)?
-
-8. Database: keep Drizzle + Neon (`@repo/db`), or strip it?
-
-Apply only what was answered. Do not invent a product or UI kit.
-````
-
-Later, when you add billing, extend this prompt — that is not in the tree yet.
+Questions live in [`.agents/skills/customize/SKILL.md`](.agents/skills/customize/SKILL.md).
+Billing is not in the tree; extend that skill when a product asks.
 
 ## Links
 

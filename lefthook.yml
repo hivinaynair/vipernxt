@@ -10,6 +10,14 @@ pre-commit:
       glob: "apps/*/src/**/*.{ts,tsx}"
       run: bun run check-boundaries
 
+    check-tokens:
+      glob: "{apps,packages/ui}/src/**/*.{ts,tsx,css}"
+      run: bun run check-tokens
+
+    check-journeys:
+      glob: "{docs/journeys/**/*.yaml,**/*.{test,spec}.{ts,tsx}}"
+      run: bun run check-journeys
+
     check-types:
       glob: "*.{ts,tsx}"
       run: TURBO_UI=0 bunx turbo run check-types --filter='...[HEAD]'

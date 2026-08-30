@@ -11,3 +11,4 @@ Do not add Vitest or Jest.
 - Unit/integration: `bun:test`, colocated `*.test.ts` / `*.test.tsx`. Use `mock()` from `bun:test`, not `vi.fn`.
 - HTTP stubs: `@repo/mocks` (already started from `test/setup.ts`).
 - E2E: `e2e/<app>`, files named `*.spec.ts`. Import `test` / `expect` from that app’s `playwright.setup`, not `@playwright/test`.
+- A test that covers a journey step names that ID in the title: `it("J1.S3: …")`. `bun run check-journeys` fails a served step with criteria that no test cites.

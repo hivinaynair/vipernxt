@@ -106,7 +106,7 @@ Not every idea needs the whole pipeline. Ask one question if it is unclear:
 | Size | Route |
 |---|---|
 | **New product** | The full pipeline below |
-| **New feature** in a product that already has a spine | `journeys` to add the steps, then straight to the feature-tier skills |
+| **New feature** in a product that already has a spine | `journeys` to add the steps, then build citing those step IDs |
 | **Small change** | Nothing here. Say so and get on with it |
 
 Running a six-phase pipeline over "add a column" is a failure, not thoroughness.
@@ -120,11 +120,11 @@ Running a six-phase pipeline over "add a column" is a failure, not thoroughness.
 | 2 | Field research | `field-kit` | **them**, in the real world |
 | 3 | Shape | `shape` | interview |
 | 3.5 | Domain model | `ontology` | you draft, they confirm |
-| 4 | Journey spine | `journeys` | you draft, they confirm |
+| 4 | Journey spine | `journeys` — expand the design-doc table into ID'd YAML | you draft, they confirm |
 | 5a | Structure | `design-system` | you |
 | 5b | Visual direction | `design-system` | them, optional, any time |
 | 4.5 | Publish to Linear | `linear-sync` | you |
-| 6 | Build | feature-tier skills, `prototype` | you |
+| 6 | Build | cite journey IDs in tests, `prototype` | you |
 
 **Ship something before the planning is finished.** Once the spine exists, build one
 journey end to end — a thin slice through real data — before the full component inventory.
@@ -171,3 +171,7 @@ the design doc, does the code still match the spine. Report drift; do not silent
 No `docs/product/state.yaml`? This is a new product. Create it, set phase 0, and ask them
 for the idea in a paragraph — then get to work. Do not interview them yet; `shape` owns
 that, and it comes after research.
+
+If the root package is still `vipernxt` and they are about to provision infra, run
+`customize` first so `setup.sh` gets a real `PRODUCT`. Shape records keep/strip;
+`customize` applies it; `setup` provisions. Do not run setup under the boilerplate name.

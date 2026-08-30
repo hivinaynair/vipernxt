@@ -32,7 +32,7 @@ Use `useCanvasState` + `Pill` for tabs. **Omit a tab until that gate is confirme
 |---|---|---|---|
 | `claim` | Claim / clip | Claim confirmed | One-paragraph claim. Optional horizontal DAG of clip beats (`computeDAGLayout` + SVG using **theme** stroke/fill). Table of clip steps. `Callout` for the public vs private line if any. |
 | `actors` | Actors | Actors confirmed | `Grid` of `Card`s: name, type pill, what they do, what they never do. Mark the default seat with `Pill active`. |
-| `journeys` | Journeys | Journeys confirmed | One-URL reminder. Journey `Table` (seat, wants, clicks, after beat 1, at the end). `Callout` for who must not get the dangerous control. |
+| `journeys` | Journeys | Journeys confirmed | One-URL reminder. Journey `Table` (Seat, Wants, Can click, Sees after beat 1, Sees at the end). `Callout` for who must not get the dangerous control. |
 | `screens` | Screens | Screens confirmed | Bands as a `Table` (band / what sits there). Per-seat copy in a `Grid` of cards. Layout bands + copy only. |
 | `stack` | Stack | Stack recorded | What we use vs skip (`Table`). Optional DAG of major pieces. Cite research links in `Text`, not as a dump. |
 

@@ -70,7 +70,7 @@ Lock these with the user on first use; they go in the doc glossary.
 
 | They want | Do instead |
 |---|---|
-| Rename packages, change scopes, strip vendors in the tree | The project's own setup/customize checklist |
+| Rename packages, change scopes, strip vendors in the tree | The `customize` skill, then `setup.sh` |
 | Product UI, routes, features | Wait for design-doc approval, then a later plan |
 | A Figma file or production screens | Stay on low-fi bands (plus the canvas, if the host has one) |
 
@@ -201,9 +201,21 @@ rather than a domain requirement.
 
 ## 6. Journeys
 
-For each actor/seat: goal, what they can click, what they see at the turning points of the **clip** (the short path that proves the claim).
+Same clip, one row per seat. Confirm **this table** before any screen layout, then
+append it to the doc and tick the gate. Do not invent a second shape.
 
-Same event, different voice. Confirm this table **before** any screen layout, then append it to the doc and tick the gate.
+```markdown
+## Journeys
+
+| Seat | Wants | Can click | Sees after beat 1 | Sees at the end |
+| Owner | | | | |
+```
+
+Forbidden click: which seat never gets the dangerous control — that row must not
+list it.
+
+This table is what the `journeys` skill reads. It is not the ID'd spine. After
+the doc is approved, that skill expands each row + the clip beats into YAML.
 
 ## 7. Low-fi screens
 
@@ -249,9 +261,9 @@ Ask one question: is this document right?
 
 You may name what comes next — **only** as a next step, and only if they say go:
 
-1. **[journeys](../journeys/SKILL.md)** — turn the confirmed journeys into an ID'd spine that features and plans can cite. This is the usual next move.
-2. The project's own setup/rename checklist.
-3. Per-feature work: `worth-it` → `nah-fam` → `game-plan` → `lets-cook`, each feature citing the journey step IDs it serves.
+1. **[journeys](../journeys/SKILL.md)** — expand the Journeys table and clip beats into an ID'd YAML spine. This is the usual next move.
+2. The `customize` skill (name the clone), then `setup.sh`.
+3. Per-feature work: each feature cites the journey step IDs it serves, and a test title names those IDs.
 
 Do not commit unless they ask.
 

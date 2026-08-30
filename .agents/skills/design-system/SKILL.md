@@ -37,9 +37,10 @@ The states matter as much as the happy path, and the spine lists those too. Empt
 loading, error, over-full: cheapest to build alongside the component, most expensive
 retrofitted per page.
 
-**Semantic tokens only.** Never a raw palette value in a component — always the semantic
-token. Add a check that fails the build on raw values, in the same place the project's
-other checks run. A convention nothing enforces lasts about three weeks.
+**Semantic tokens only.** Never a raw palette value in a product component — always the
+semantic token. `bun run check-tokens` fails `bg-red-500`, `text-blue-600`, and hex/rgb
+arbitrary values under `apps/*/src`. `packages/ui` is shadcn; do not rewrite overlays
+to please the check. A convention nothing enforces lasts about three weeks.
 
 **Then pages.** Primitives before the screens that use them. This ordering is most of the
 difference between an app that looks designed and one that looks assembled.

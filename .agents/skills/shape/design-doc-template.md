@@ -8,7 +8,7 @@ This document holds only what no other artifact holds. It does not repeat:
 | Belongs elsewhere | Lives in |
 |---|---|
 | Entities, vocabulary, states | `docs/product/ontology.md` |
-| Journeys, screens, criteria | `docs/journeys/<name>.yaml` |
+| ID'd steps, screens, criteria | `docs/journeys/<name>.yaml` (after the journeys skill) |
 | Repo layout, package manager, boundaries | `AGENTS.md` |
 | Colour, type, density | `DESIGN.md` |
 | Build order | Linear |
@@ -46,6 +46,21 @@ Idle: <one sentence>
 3. <beat>
 
 Evidence it leaves behind: <rows, receipts, hashes — not an animation>
+
+## Journeys
+
+Same clip, one row per seat. The `journeys` skill expands this table — do not
+change the columns.
+
+| Seat | Wants | Can click | Sees after beat 1 | Sees at the end |
+| | | | | |
+
+Forbidden click: <actor> never gets <control>.
+
+## Screens
+
+| Screen | Bands | States |
+| | | |
 
 ## Not this
 
