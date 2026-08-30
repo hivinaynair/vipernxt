@@ -1,106 +1,119 @@
 # ViperNxt
 
-Bun-only [Turborepo](https://turborepo.dev) boilerplate for a Next.js SaaS: one app (`apps/web`), shared UI, Clerk, Zod 4, [shadcn/ui](https://ui.shadcn.com), and Vercel Workflows. Clone it, shape the product, then answer the customize prompt below, then start building.
+An opinionated Bun + Next.js SaaS kit **and** the playbook that shapes a product
+before anyone writes UI. Clone it, type `/next`, approve a design doc, then build
+one journey through real data.
 
-Map of the repo, playbook, and clone path: [docs/map.md](docs/map.md).
+The valuable part is not the starter page. It is a hook that denies product UI
+until the doc is approved, a journey spine that screens and tests cite, and one
+command that runs the rest. Full map: [docs/map.md](docs/map.md). Agents:
+[AGENTS.md](AGENTS.md).
 
-**Requires** [Bun](https://bun.sh) `1.4.x` (see `packageManager` in `package.json`). Installs with anything else will fail (`only-allow bun`).
+**Requires** [Bun](https://bun.sh) `1.4.x`. Anything else fails (`only-allow bun`).
+
+## What it is not
+
+| Not this | Why |
+|---|---|
+| A demo SaaS to restyle | `apps/web` is leftover create-turbo copy until a product exists |
+| A vendor catalog | The stack is decided. A product records keep/strip; it does not reopen the list |
+| “Just start building” | Until `shape` is done, writes under `apps/*/src/app` and `src/features` are denied |
+| A second journey file | A wrong product story reopens the design-doc table, then the spine. Same IDs |
+| npm / pnpm / yarn, ESLint, Vitest, Prisma, NextAuth | Those fights are closed on purpose |
+
+Billing and Clerk org UI are not in the tree. Add them when a product asks.
+
+## Opinions worth keeping
+
+These are the kit. `/next` may **strip** a vendor after the design doc says so.
+It does not add a second option “just in case”.
+
+| Layer | Use | Skip |
+|---|---|---|
+| Install | Bun `1.4.x` | npm, pnpm, yarn |
+| App | Next.js 16, one `apps/web` | Extra apps until customize asks |
+| Auth | Clerk | NextAuth, hand-rolled JWT |
+| Database | Drizzle + Neon, import `env` from `@/env` | Prisma, `process.env` in app code |
+| Jobs | Vercel Workflows | A second queue on day one |
+| UI | shadcn in `packages/ui` | Components installed into `apps/web` |
+| Lint | Biome | ESLint, Prettier |
+| Test | `bun test`, Playwright | Vitest, Jest, Cypress |
+| Branches | PRs → `staging`; `main` is production | Trunk-only until you change it on purpose |
+
+Features must not import each other. Compose in `app/` or hoist to `shared/` or a
+package. `bun run check-boundaries` enforces that.
+
+## From clone
+
+You type `/next`. You do not type `/customize` or `/journeys`.
+
+| Step | Who | What |
+|---|---|---|
+| 1. Clone | you | New repo from this tree. Keep the opinions. |
+| 2. `/next` | agent | Researches, then interviews one question at a time. Pin `/next` as a Custom Mode. |
+| 3. Approve the design doc | you | Until then, product UI is locked. |
+| 4. Name the clone | `/next` | Product name, then keep/strip. Writes `PRODUCT`. Never set up as `vipernxt`. |
+| 5. `setup.sh` | script | One Neon project, `staging` + `production` databases, Vercel, Clerk, Linear. |
+| 6. Journey spine | `/next` | Expands the Seat / Wants / Can click table into ID’d YAML. IDs never renumber. |
+| 7. Thin slice | agent | One journey through real data before the full component inventory. |
+
+If the journey is the **wrong product story** — too hard, wrong payoff, not what
+you meant — say so. `/next` rewrites the clip and that table, you confirm, then
+it expands the spine again. Same moment keeps `J1.S2`. A new beat gets a new ID.
+
+`status` is the glance. `prototype` is three variants of **one** component,
+mid-build, when looking beats arguing. It is not a phase.
+
+Playbook source: [saas-playbook](https://github.com/hivinaynair/saas-playbook).
+In Cursor, the same picture is a canvas titled **ViperNxt map** (a view of
+[docs/map.md](docs/map.md), not a second spec).
 
 ## Layout
 
 | Path | Role |
-|------|------|
-| `apps/web` | Next.js App Router (`src/app` routes, `src/features/*` domains, `src/shared`) |
-| `packages/ui` | shadcn/ui (`@repo/ui`) — never install components into `apps/web` |
-| `packages/db` | Drizzle ORM 1 (beta) + Neon (`@repo/db`) |
-| `tooling/typescript-config` | Shared `tsconfig`s |
-| `tooling/mocks` | Shared [MSW](https://mswjs.io/) handlers (`@repo/mocks`) |
-| `tooling/dependency-cruiser` | Feature-folder import rules |
-| `e2e/web` | Playwright for `web` |
-| `test/` | `bun test` runner preload only (not a suite) |
-| `docs/map.md` | Repo + playbook map for a fresh clone |
-| `.agents/skills/` | Playbook and vendor skills (symlinked from `.cursor/skills/` and `.claude/skills/`) |
-
-Features must not import each other. Compose in `app/` or `src/proxy.ts`, or hoist to `shared/` / `packages/`. Inside a feature, use a relative import — not `@/features/<this-feature>/...`. `bun run check-boundaries` enforces the graph (tests are ignored; pass `--strict` to include them).
+|---|---|
+| `apps/web` | Routes in `src/app`, domains in `src/features/*`, app-local in `src/shared` |
+| `packages/ui` | shadcn (`@repo/ui`). `bun run ui:add -- <component>` |
+| `packages/db` | Drizzle + Neon. Server-only. Schema empty until a product needs tables |
+| `e2e/web` | Playwright |
+| `docs/` | Design doc, journeys, this map — after `/next` |
+| `.agents/skills/` | Playbook. `.cursor/skills/` and `.claude/skills/` are symlinks |
 
 ## Commands
 
 ```sh
 bun install
-bun run dev              # all apps
-bun run build
-bun run check-types
-bun run check-boundaries
-bun run check-boundaries -- --strict   # include test files
-bun test
-bunx playwright install chromium   # once
-bun run e2e
-bun run db generate
-bun run db migrate
-bun run db push
-bun run db studio
-bun run ui:add -- button   # shadcn CLI in packages/ui (Turbo)
+bun run dev
+bun run check-types && bun run check-boundaries && bun run check-tokens && bun run check-journeys && bun test
+bun run ui:add -- button
+bun run db generate && bun run db migrate
 ```
 
-Lefthook runs Biome, boundaries, and affected typechecks on commit (`lefthook install` via `prepare`).
+Lefthook runs Biome, boundaries, and affected typechecks on commit.
 
-Clerk keys: copy `apps/web/.env.example` → `apps/web/.env.local`, or use keyless in `next dev`. Env vars are validated by `@t3-oss/env-nextjs` in `apps/web/src/env.ts` — import `env` from `@/env` instead of `process.env`. Typecheck sets `SKIP_ENV_VALIDATION=1` so it can run without secrets.
+Env: copy `apps/web/.env.example` → `apps/web/.env.local`. Import `env` from
+`@/env`, not `process.env`. Neon wants `DATABASE_URL` (pooled) and
+`DATABASE_URL_UNPOOLED` (direct, for migrate).
 
-Neon: set `DATABASE_URL` (pooled, hostname has `-pooler`) for the app and `DATABASE_URL_UNPOOLED` (direct) for `db:migrate` / `db:push`. Schema lives in `packages/db`. Import `db` from `@repo/db` only in Server Components, Server Actions, Route Handlers, or `"use step"` functions.
-
-## Branches and production migrate
+## Branches
 
 | Branch | Role |
-|--------|------|
-| `staging` | Check-in branch. Open PRs against this. |
-| `main` | Production (customers). Merge `staging` → `main` to release. |
-
-On every push to `staging` or `main`, [Migrate database](.github/workflows/migrate.yml) runs `bun run db migrate` (`drizzle-kit migrate`). It is a no-op when nothing is pending, and it skips entirely until `packages/db/drizzle/meta/_journal.json` exists.
-
-Create GitHub Environments named `staging` and `production`. Each needs a secret `DATABASE_URL_UNPOOLED` pointing at a **different** Neon database (direct hostname, no `-pooler`). Vercel still deploys from Git; keep migrations additive (expand/contract) so the running app stays compatible. A failed migrate job does not roll back the deploy — fix forward, and do not merge to `main` until the same files have already migrated on staging.
-
-After the first push of `staging`, set it as the GitHub default branch so new PRs target it.
-
-## Shape the product
-
-Before renaming packages or writing product UI, shape the SaaS. The playbook ships in this
-clone under `.agents/skills/` (Cursor reads that directly; `.claude/skills/` symlinks cover
-Claude Code), so it travels to cloud agents too. Type `/next` and it works out what happens now.
-
-| Skill | Does |
 |---|---|
-| `next` | The only one you invoke. Runs what it can alone, stops to ask you a decision or send you to gather real-world facts. |
-| `salvage` | Mines prior art — an old build, the software being replaced — for domain facts. |
-| `field-kit` | Writes the field-research homework, then absorbs what comes back. |
-| `shape` | The gated interview → design doc. |
-| `journeys` | The ID'd journey spine + generated Mermaid. |
-| `customize` | Names the clone and applies keep/strip. `/next` runs it after the design doc; before `setup.sh`. |
-| `design-system` | Component inventory and layout primitives; visual direction later. |
+| `staging` | Check-in. Open PRs here. |
+| `main` | Production. Merge `staging` → `main` to release. |
 
-Source of truth is [saas-playbook](https://github.com/hivinaynair/saas-playbook); re-vendor
-with its `sync.sh`. `shape` asks one question at a time, writes the design doc as it goes so a shape survives a lost session, and stops at an approved doc. `journeys` then turns the confirmed journeys into an ID'd spine under `docs/journeys/` that features and plans cite. Both read [AGENTS.md](AGENTS.md) for this repo's constraints.
-
-The rename / strip checklist is the `customize` skill — keep that separate from
-shaping. `/next` invokes it; you do not have to.
-
-## Customize this clone
-
-After the design doc is approved, `/next` runs `customize`. It asks one question
-at a time, starting with the product name, writes `PRODUCT` to `.env.playbook`,
-and applies keep/strip. Then run `./.agents/skills/setup/setup.sh` — one Neon
-project, databases `staging` and `production`.
-
-Questions live in [`.agents/skills/customize/SKILL.md`](.agents/skills/customize/SKILL.md).
-Billing is not in the tree; extend that skill when a product asks.
+Push to either runs [migrate.yml](.github/workflows/migrate.yml). Additive
+migrations only. After the first `staging` push, make it the GitHub default
+branch.
 
 ## Links
 
-- [Turborepo](https://turborepo.dev/docs)
-- [Next.js](https://nextjs.org/docs)
-- [Clerk](https://clerk.com/docs)
-- [Drizzle ORM](https://orm.drizzle.team)
-- [Neon](https://neon.com/docs)
-- [shadcn/ui](https://ui.shadcn.com)
-- [Workflow DevKit](https://useworkflow.dev)
-- [Biome](https://biomejs.dev)
-- [Bun test](https://bun.com/docs/cli/test)
+[Turborepo](https://turborepo.dev/docs) ·
+[Next.js](https://nextjs.org/docs) ·
+[Clerk](https://clerk.com/docs) ·
+[Drizzle](https://orm.drizzle.team) ·
+[Neon](https://neon.com/docs) ·
+[shadcn/ui](https://ui.shadcn.com) ·
+[Workflow DevKit](https://useworkflow.dev) ·
+[Biome](https://biomejs.dev) ·
+[Bun test](https://bun.com/docs/cli/test)

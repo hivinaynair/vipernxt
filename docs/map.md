@@ -5,7 +5,9 @@ approved — you do not type `/customize`. Do not invent a product UI first. The
 stack stays: Bun, Clerk, Drizzle + Neon, shadcn in `packages/ui`, Vercel
 Workflows, Biome, Playwright.
 
-This file is the map a future clone reads. The Cursor canvas is a view of it.
+This file is the map a future clone and an agent read. The GitHub
+[README](../README.md) is the public scan. The Cursor canvas **ViperNxt map**
+is a view of this file — not a second spec.
 
 ## Start a product
 
