@@ -120,7 +120,7 @@ Running a six-phase pipeline over "add a column" is a failure, not thoroughness.
 | 2 | Field research | `field-kit` | **them**, in the real world |
 | 3 | Shape | `shape` | interview |
 | 3.5 | Domain model | `ontology` | you draft, they confirm |
-| 4 | Journey spine | `journeys` | you draft, they confirm |
+| 4 | Journey spine | `journeys` (UJG glossary → our YAML; never JSON-LD) | you draft, they confirm |
 | 5a | Structure | `design-system` | you |
 | 5b | Visual direction | `design-system` | them, optional, any time |
 | 4.5 | Publish to Linear | `linear-sync` | you |

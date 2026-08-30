@@ -4,6 +4,9 @@ One YAML file per product (or per large surface). Keys not listed here are ignor
 by the renderer, so notes are safe to add — but anything the team relies on should
 be in the schema, not freeform.
 
+UJG Graph names → these keys: see the glossary in [SKILL.md](SKILL.md). Do not
+serialize JSON-LD.
+
 ```yaml
 product: <slug>                  # required
 source: docs/plans/<doc>.md      # the design doc this spine views
@@ -25,14 +28,24 @@ journeys:
     actor: <actor id>
     goal: <what they are trying to do>
     proves: <which claim beat this demonstrates>
+    reusable: false              # true = other journeys may `uses` this one
+    entry: J1.S1                 # optional JourneyEntry; default first step
+    exits:                       # JourneyExits — only if endings must be named
+      - id: matched
+        title: Balance matches
     steps:
-      - id: J1.S1                # <journey id>.S<n>
+      - id: J1.S1                # <journey id>.S<n> or .S<n><letter>
         title: <one line>
         screen: <screen id>
         state: <one of that screen's states>
         sees: <what is on screen at this moment>
         does: <the action they take>
-        next: J1.S2              # omit = terminal; list = branch
+        next: J1.S2              # Transition; omit = terminal
+        # next:                  # labeled Transitions when outcomes differ
+        #   - { to: J1.S3, when: supported file }
+        #   - { to: J1.S2b, when: unsupported format }
+        uses: J0                 # CompositeState — this step is journey J0
+        exit: matched            # names a JourneyExit; illegal with next
         satisfaction: 1-5        # optional; enables the Mermaid journey diagram
         criteria:
           - WHEN <trigger> THE SYSTEM SHALL <behavior>
@@ -43,26 +56,35 @@ features:
     serves: [J1.S1, J1.S2]       # the steps this feature delivers
 ```
 
+`next` accepts a step id, a `{ to, when }` edge, or a list of either. `when` is
+the Transition label. A `uses` step maps each child JourneyExit on `next.when`,
+unless it has exactly one unlabeled `next`.
+
 ## What validation enforces
 
 Errors (spine is invalid, exit 1):
 
 - `product` present, at least one journey
-- ID formats: `J1`, `J1.S1`, `F1`; step IDs prefixed by their journey
+- ID formats: `J1`, `J1.S1` or `J1.S2b`, `F1`; step IDs prefixed by their journey
 - no duplicate step IDs
 - `actor`, `screen`, and `serves` references resolve
 - `state` is one of that screen's declared states
 - `next` resolves inside the same journey, and never points at itself
-- every step is reachable (first step, or something points at it)
+- `uses` names another journey; child exits are mapped on `next.when`
+- `exit` names a declared exit; `exit` and `next` cannot both be set
+- if the journey declares `exits:`, every terminal step names one
+- every step is reachable (`entry` or first step, or something points at it)
 - every journey has at least one terminal step
 - `satisfaction` is 1–5
 
 Warnings (advice, exit 0):
 
-- a step with no screen, or no criteria
+- a step with no screen (unless it `uses` a child), or no criteria
 - a criterion with no `SHALL` — probably not EARS
 - a screen no step uses
 - a feature that serves nothing
+- `uses` of a journey not marked `reusable: true`
+- a declared exit no step names
 
 ## Why EARS and not Gherkin
 
@@ -77,11 +99,10 @@ The renderer is the only automated consumer of the spine. It is what makes a
 malformed spine fail loudly instead of quietly rotting. Hand-drawn Mermaid has no
 such check.
 
-## Why not the W3C User Journey Graph
+## Why not the full W3C User Journey Graph
 
-The [UJG community group](https://www.w3.org/groups/cg/ujg/) is defining exactly
-this — journeys, states, transitions, nesting, plus a runtime model for real user
-events. It is the right long-term target and this schema deliberately borrows its
-shape (states and transitions, not just an ordered list of tasks). It is an
-editor's draft and not stable, so we do not depend on it yet. Revisit when it
-reaches a stable technical report.
+The [UJG community group](https://www.w3.org/groups/cg/ujg/) defines journeys,
+states, transitions, nesting, plus Surface / Runtime / Mapping for real events.
+We take the Graph vocabulary only — see the SKILL.md glossary — and write YAML.
+The spec is an editor's draft ([ujg.specs.openuji.org](https://ujg.specs.openuji.org/ed/graph));
+we do not depend on JSON-LD or IRIs. Revisit full UJG when it is a stable TR.

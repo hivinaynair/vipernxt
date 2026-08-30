@@ -205,6 +205,10 @@ For each actor/seat: goal, what they can click, what they see at the turning poi
 
 Same event, different voice. Confirm this table **before** any screen layout, then append it to the doc and tick the gate.
 
+This is prose, not the spine. After the doc is approved, the `journeys` skill maps
+each confirmed path into States, Transitions, and named exits — read that skill's
+glossary before writing YAML. Do not invent UJG JSON-LD here.
+
 ## 7. Low-fi screens
 
 Only after journeys are confirmed.

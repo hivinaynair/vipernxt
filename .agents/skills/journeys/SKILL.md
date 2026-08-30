@@ -21,6 +21,59 @@ docs/journeys/<name>.md     generated — never hand-edited
 
 Schema: [spine-schema.md](spine-schema.md). Worked example: [example.yaml](example.yaml).
 
+The agent does not inherit W3C UJG. Training data will invent IRIs, JSON-LD, Runtime,
+and Surface. **This file is the dialect.** Write our YAML keys. If the user says a UJG
+word, look it up in the glossary and emit the YAML field — never a UJG document.
+
+## Glossary (UJG Graph → our YAML)
+
+We borrow the [UJG Graph](https://ujg.specs.openuji.org/ed/graph) *shape* (states,
+transitions, named exits, nested journeys). We do not implement Core, Surface, Runtime,
+or Mapping. Do not emit `@id`, `@type`, or `ujg.specs.openuji.org` IRIs.
+
+| UJG term | Our field | What it is |
+|---|---|---|
+| Journey | `journeys[].id` `J1` | One actor, one goal. Not a sitemap. |
+| Actor | `actors[]` / `journey.actor` | Who walks this graph. |
+| State | a `step` + `screen` + `state` | A discrete moment (screen, modal). |
+| Transition | `step.next` | Directed edge to another step in the same journey. |
+| Transition `label` | `next.when` | Why this edge fires. Required when two outcomes matter. |
+| JourneyEntry | `journey.entry` | Start step. Default: first step. |
+| JourneyExit | `journeys[].exits` + `step.exit` | A named ending the product cares about. |
+| CompositeState | `step.uses` | This step *is* another journey. Map child exits on `next.when`. |
+
+Not in this dialect: JourneyEntryIndex, OutgoingTransitionGroup, Surface, Runtime,
+Mapping, JSON-LD.
+
+## How to map a design-doc journey
+
+`shape` writes prose (goal, what they click, what they see). This skill turns that
+into a graph. Do this in order:
+
+1. **One journey per actor goal.** Same clip, two seats → two journeys (`J1`, `J2`),
+   not one graph with both voices.
+2. **States, not tasks.** Each turning point they can *see* is a step with `screen`
+   + `state`. Two clicks that leave the picture unchanged stay one step.
+3. **Transitions.** One successor: `next: J1.S2`. Two outcomes the product
+   distinguishes: labeled edges.
+   ```yaml
+   next:
+     - { to: J1.S3, when: supported file }
+     - { to: J1.S2b, when: unsupported format }
+   ```
+   Do not write `next: [J1.S3, J1.S2b]` when the reasons differ.
+4. **Named exits** when the journey can end more than one way that later work
+   must tell apart (`matched` vs `rejected`). Terminal step sets `exit: <id>`.
+   A single quiet ending may omit `exits:`.
+5. **Entry** is the first step unless the clip starts mid-flow — then set `entry:`.
+6. **Include, don't copy.** If the same sequence would be pasted (open a ledger,
+   sign in), extract a journey with `reusable: true` and named exits, then
+   `uses: J0` and map each child exit on `next.when`. Do not nest for style.
+7. **EARS on each step.** Then cut `features` from steps. IDs never renumber
+   (`J1.S2b` to insert).
+8. **Validate, render, ask.** `bun scripts/journey.ts validate` then `render`.
+   Show the Mermaid. One question: is this the journey, or which step is wrong?
+
 ## Hard rules
 
 - **The YAML is the source. The markdown is output.** Never edit the `.md`. If it
@@ -58,17 +111,18 @@ draft a spine from what they tell you now and accept it is unconfirmed.
 
 ### 2. Draft the spine
 
-Transcribe into `docs/journeys/<name>.yaml`:
+Follow **How to map** above. Write `docs/journeys/<name>.yaml`:
 
 - **actors** — from the doc's actor table.
 - **screens** — one per screen the journeys touch, with its `bands` and the
   `states` it can be in. States matter: most bugs live in the states nobody drew.
-- **journeys** — one per actor goal. Steps in narrative order, each with what the
-  actor `sees` and `does`, the `screen` + `state` it happens on, and `next`.
+- **journeys** — one per actor goal. Steps are States; `next` is Transitions;
+  `exits` / `uses` only when the mapping rules call for them.
 - **criteria** — EARS lines per step. This is the step that turns a journey into
   something buildable; do not skip it because it feels like paperwork.
 
-A step with no `next` is terminal. Branches are a list: `next: [J1.S4, J1.S5]`.
+A step with no `next` is terminal. Unlabeled `next: [J1.S4, J1.S5]` is only for
+two successors that do not need a reason.
 
 ### 3. Validate and render
 

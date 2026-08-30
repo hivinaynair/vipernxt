@@ -71,7 +71,7 @@ Type `/next`. It reads `docs/product/state.yaml` and does every step that is not
 | `field-kit` | Homework only they can fill; then absorb what comes back. |
 | `shape` | Interview → design doc. Canvas is a view of that doc. |
 | `ontology` | Domain entities before schema or spine. |
-| `journeys` | ID’d YAML spine + generated Mermaid. |
+| `journeys` | ID’d YAML spine. UJG Graph terms map to our keys; see that skill’s glossary. |
 | `linear-sync` | Spine → Linear issues. IDs come back; nothing else. |
 | `design-system` | Layout primitives and semantic tokens before pages. |
 | `prototype` | Three variants of one component, mid-build. |

@@ -1,4 +1,4 @@
-# Example spine. Small on purpose: one clip, two seats, three screens.
+# Example spine. Small on purpose: one clip, two seats, a reusable open, three screens.
 product: ledgerly
 source: docs/plans/2026-08-25-ledgerly-design.md
 
@@ -18,14 +18,39 @@ screens:
   - id: ledger
     route: /app/ledger/[id]
     bands: [header, summary, rows, evidence]
-    states: [importing, reconciled, flagged]
+    states: [importing, reconciled, flagged, rejected]
 
 journeys:
+  - id: J0
+    title: Open a ledger
+    actor: reviewer
+    goal: Get the shared ledger on screen
+    reusable: true
+    entry: J0.S1
+    exits:
+      - id: opened
+        title: Ledger is on screen
+    steps:
+      - id: J0.S1
+        title: Opens a shared ledger
+        screen: ledger
+        state: reconciled
+        sees: The same ledger the owner sees, with no destructive controls
+        does: Lands on the rows
+        exit: opened
+        criteria:
+          - WHEN a reviewer opens a ledger THE SYSTEM SHALL hide every control that mutates the ledger
+
   - id: J1
     title: First reconciled ledger
     actor: owner
     goal: Get one statement in and see a balance that matches
     proves: The product can ingest and reconcile without setup work
+    exits:
+      - id: matched
+        title: Balance matches
+      - id: rejected
+        title: File refused
     steps:
       - id: J1.S1
         title: Lands on an empty dashboard
@@ -43,17 +68,30 @@ journeys:
         state: importing
         sees: Row count climbing, no blocking modal
         does: Drops a CSV
-        next: J1.S3
+        next:
+          - { to: J1.S3, when: supported file }
+          - { to: J1.S2b, when: unsupported format }
         satisfaction: 4
         criteria:
           - WHEN an owner drops a supported file THE SYSTEM SHALL begin import without navigating away
           - IF the file is not a supported format THE SYSTEM SHALL reject it and name the formats it accepts
+      - id: J1.S2b
+        title: File is refused
+        screen: ledger
+        state: rejected
+        sees: The formats the product accepts
+        does: Nothing — they must pick a supported file
+        exit: rejected
+        satisfaction: 2
+        criteria:
+          - WHEN the file is not a supported format THE SYSTEM SHALL stay on the ledger and name the formats it accepts
       - id: J1.S3
         title: Sees the balance match
         screen: ledger
         state: reconciled
         sees: Matched total, and the rows that did not match
         does: Nothing — this is the payoff
+        exit: matched
         satisfaction: 5
         criteria:
           - WHEN import completes THE SYSTEM SHALL display the reconciled total and list every unmatched row
@@ -65,14 +103,12 @@ journeys:
     proves: Seats are real — a reviewer can act without owning the data
     steps:
       - id: J2.S1
-        title: Opens a shared ledger
-        screen: ledger
-        state: reconciled
-        sees: The same ledger the owner sees, with no destructive controls
-        does: Clicks a row
-        next: J2.S2
+        title: Opens via the shared ledger journey
+        uses: J0
+        next:
+          - { to: J2.S2, when: opened }
         criteria:
-          - WHEN a reviewer opens a ledger THE SYSTEM SHALL hide every control that mutates the ledger
+          - WHEN the shared ledger journey exits opened THE SYSTEM SHALL show the reconciled rows to the reviewer
       - id: J2.S2
         title: Flags it
         screen: ledger
@@ -85,10 +121,10 @@ journeys:
 features:
   - id: F1
     title: Ledger creation and import
-    serves: [J1.S1, J1.S2]
+    serves: [J1.S1, J1.S2, J1.S2b]
   - id: F2
     title: Reconciliation view
-    serves: [J1.S3, J2.S1]
+    serves: [J1.S3, J0.S1, J2.S1]
   - id: F3
     title: Row flagging
     serves: [J2.S2]

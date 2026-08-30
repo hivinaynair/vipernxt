@@ -10,6 +10,9 @@
 
 type Actor = { id: string; name: string; type?: string };
 type Screen = { id: string; route?: string; bands?: string[]; states?: string[] };
+type Exit = { id: string; title?: string };
+export type NextEdge = { to: string; when?: string };
+type NextRaw = string | NextEdge;
 type Step = {
   id: string;
   title: string;
@@ -17,7 +20,9 @@ type Step = {
   state?: string;
   sees?: string;
   does?: string;
-  next?: string | string[];
+  next?: NextRaw | NextRaw[];
+  uses?: string;
+  exit?: string;
   satisfaction?: number;
   criteria?: string[];
 };
@@ -27,6 +32,9 @@ type Journey = {
   actor?: string;
   goal?: string;
   proves?: string;
+  reusable?: boolean;
+  entry?: string;
+  exits?: Exit[];
   steps: Step[];
 };
 type Feature = { id: string; title: string; serves?: string[] };
@@ -39,23 +47,41 @@ type Spine = {
   features?: Feature[];
 };
 
-const errors: string[] = [];
-const warnings: string[] = [];
-const err = (m: string) => errors.push(m);
-const warn = (m: string) => warnings.push(m);
+const STEP_ID = /^J\d+\.S\d+[a-z]?$/;
 
-const nexts = (s: Step): string[] =>
-  s.next == null ? [] : Array.isArray(s.next) ? s.next : [s.next];
+export function nextEdges(s: Step): NextEdge[] {
+  if (s.next == null) return [];
+  const list = Array.isArray(s.next) ? s.next : [s.next];
+  const out: NextEdge[] = [];
+  for (const n of list) {
+    if (typeof n === "string") {
+      if (n) out.push({ to: n });
+      continue;
+    }
+    if (n && typeof n === "object") out.push({ to: String(n.to ?? ""), when: n.when });
+  }
+  return out;
+}
 
-function validate(spine: Spine): void {
+export function nexts(s: Step): string[] {
+  return nextEdges(s).map((e) => e.to);
+}
+
+export function validateSpine(spine: Spine): { errors: string[]; warnings: string[] } {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+  const err = (m: string) => errors.push(m);
+  const warn = (m: string) => warnings.push(m);
+
   if (!spine.product) err("top level: `product` is required");
   if (!spine.journeys?.length) {
     err("top level: at least one journey is required");
-    return;
+    return { errors, warnings };
   }
 
   const actorIds = new Set((spine.actors ?? []).map((a) => a.id));
   const screens = new Map((spine.screens ?? []).map((s) => [s.id, s]));
+  const journeys = new Map(spine.journeys.map((j) => [j.id, j]));
   const stepIds = new Set<string>();
   const usedScreens = new Set<string>();
 
@@ -69,13 +95,18 @@ function validate(spine: Spine): void {
 
     const local = new Set(j.steps.map((s) => s.id));
     const referenced = new Set<string>();
+    const exitIds = new Set((j.exits ?? []).map((e) => e.id));
+    for (const e of j.exits ?? []) {
+      if (!e.id) err(`${j.id}: exit is missing id`);
+    }
+    if (j.entry && !local.has(j.entry)) err(`${j.id}: entry "${j.entry}" is not a step of ${j.id}`);
 
     for (const s of j.steps) {
       if (stepIds.has(s.id)) err(`${s.id}: duplicate step id`);
       stepIds.add(s.id);
 
       if (!s.id.startsWith(`${j.id}.`)) err(`${s.id}: step id must be prefixed with "${j.id}."`);
-      if (!/^J\d+\.S\d+$/.test(s.id)) err(`${s.id}: step id must look like ${j.id}.S1`);
+      if (!STEP_ID.test(s.id)) err(`${s.id}: step id must look like ${j.id}.S1 or ${j.id}.S2b`);
       if (!s.title) err(`${s.id}: missing title`);
 
       if (s.screen) {
@@ -86,14 +117,45 @@ function validate(spine: Spine): void {
           err(
             `${s.id}: state "${s.state}" is not one of screen ${s.screen}'s states (${sc.states.join(", ")})`,
           );
-      } else {
+      } else if (!s.uses) {
         warn(`${s.id}: no screen — journey steps should land somewhere`);
       }
 
-      for (const n of nexts(s)) {
-        if (n === s.id) err(`${s.id}: next points at itself`);
-        else if (!local.has(n)) err(`${s.id}: next "${n}" is not a step of ${j.id}`);
-        referenced.add(n);
+      const edges = nextEdges(s);
+      for (const e of edges) {
+        if (!e.to) err(`${s.id}: next entry is missing to`);
+        else if (e.to === s.id) err(`${s.id}: next points at itself`);
+        else if (!local.has(e.to)) err(`${s.id}: next "${e.to}" is not a step of ${j.id}`);
+        if (e.to) referenced.add(e.to);
+      }
+
+      if (s.uses) {
+        const child = journeys.get(s.uses);
+        if (!child) err(`${s.id}: uses unknown journey "${s.uses}"`);
+        else if (child.id === j.id) err(`${s.id}: uses itself`);
+        else {
+          if (!child.reusable)
+            warn(`${s.id}: uses ${child.id}, which is not marked reusable: true`);
+          const childExits = (child.exits ?? []).map((e) => e.id).filter(Boolean);
+          if (!edges.length && !s.exit) {
+            err(`${s.id}: uses ${child.id} but has no next mapping and no exit`);
+          } else if (childExits.length && edges.length) {
+            const unlabeled = edges.filter((e) => !e.when);
+            if (!(unlabeled.length === 1 && edges.length === 1)) {
+              const mapped = new Set(edges.map((e) => e.when).filter(Boolean));
+              for (const ex of childExits) {
+                if (!mapped.has(ex))
+                  err(`${s.id}: uses ${child.id} but exit "${ex}" is not mapped on next.when`);
+              }
+            }
+          }
+        }
+      }
+
+      if (s.exit) {
+        if (edges.length) err(`${s.id}: exit and next cannot both be set`);
+        if (!j.exits?.length) err(`${s.id}: names exit "${s.exit}" but ${j.id} has no exits:`);
+        else if (!exitIds.has(s.exit)) err(`${s.id}: unknown exit "${s.exit}"`);
       }
 
       if (s.satisfaction != null && (s.satisfaction < 1 || s.satisfaction > 5))
@@ -108,9 +170,20 @@ function validate(spine: Spine): void {
       if (!s.criteria?.length) warn(`${s.id}: no acceptance criteria`);
     }
 
-    const first = j.steps[0]?.id;
+    if (j.exits?.length) {
+      const terminals = j.steps.filter((s) => nexts(s).length === 0);
+      for (const s of terminals) {
+        if (!s.exit) err(`${s.id}: ${j.id} declares exits; this terminal step must name one`);
+      }
+      const hit = new Set(j.steps.map((s) => s.exit).filter(Boolean));
+      for (const e of j.exits) {
+        if (e.id && !hit.has(e.id)) warn(`${j.id}: exit "${e.id}" is never named by a step`);
+      }
+    }
+
+    const start = j.entry && local.has(j.entry) ? j.entry : j.steps[0]?.id;
     for (const s of j.steps)
-      if (s.id !== first && !referenced.has(s.id))
+      if (s.id !== start && !referenced.has(s.id))
         err(`${s.id}: unreachable — no step points at it`);
     if (!j.steps.some((s) => nexts(s).length === 0))
       err(`${j.id}: no terminal step — every step has a next`);
@@ -125,12 +198,24 @@ function validate(spine: Spine): void {
 
   for (const sc of spine.screens ?? [])
     if (!usedScreens.has(sc.id)) warn(`screen ${sc.id}: never used by any journey step`);
+
+  return { errors, warnings };
 }
 
 const esc = (t: string) => t.replace(/"/g, "'").replace(/\|/g, "\\|");
 const cell = (t?: string) => (t ? esc(t) : "—");
 
-function render(spine: Spine): string {
+function nextCell(s: Step): string {
+  const parts: string[] = [];
+  if (s.uses) parts.push(`uses \`${s.uses}\``);
+  for (const e of nextEdges(s)) {
+    parts.push(e.when ? `\`${e.to}\` · ${esc(e.when)}` : `\`${e.to}\``);
+  }
+  if (s.exit) parts.push(`exit \`${s.exit}\``);
+  return parts.join("; ") || "—";
+}
+
+export function render(spine: Spine): string {
   const out: string[] = [];
   const actors = new Map((spine.actors ?? []).map((a) => [a.id, a]));
 
@@ -151,16 +236,34 @@ function render(spine: Spine): string {
     out.push(`**Actor:** ${esc(who)}`);
     if (j.goal) out.push(`**Goal:** ${esc(j.goal)}`);
     if (j.proves) out.push(`**Proves:** ${esc(j.proves)}`);
+    if (j.reusable) out.push("Reusable sub-journey — other journeys include it with `uses`.");
+    if (j.entry) out.push(`**Entry:** \`${j.entry}\``);
     out.push("");
+    if (j.exits?.length) {
+      out.push("| Exit | Title | Named by |", "|---|---|---|");
+      for (const e of j.exits) {
+        const named = j.steps.filter((s) => s.exit === e.id).map((s) => `\`${s.id}\``);
+        out.push(`| \`${e.id}\` | ${esc(e.title ?? "") || "—"} | ${named.join(" ") || "—"} |`);
+      }
+      out.push("");
+    }
 
     out.push("```mermaid", "flowchart LR");
     for (const s of j.steps) {
       const where = s.screen ? `${s.screen}${s.state ? ` · ${s.state}` : ""}` : "";
-      const label = where ? `${esc(s.title)}<br/><small>${where}</small>` : esc(s.title);
+      const extra = s.uses ? `uses ${s.uses}` : "";
+      const small = [where, extra].filter(Boolean).join(" · ");
+      const label = small ? `${esc(s.title)}<br/><small>${small}</small>` : esc(s.title);
       out.push(`  ${s.id.replace(".", "_")}["${label}"]`);
     }
-    for (const s of j.steps)
-      for (const n of nexts(s)) out.push(`  ${s.id.replace(".", "_")} --> ${n.replace(".", "_")}`);
+    for (const s of j.steps) {
+      for (const e of nextEdges(s)) {
+        const from = s.id.replace(".", "_");
+        const to = e.to.replace(".", "_");
+        if (e.when) out.push(`  ${from} -->|"${esc(e.when)}"| ${to}`);
+        else out.push(`  ${from} --> ${to}`);
+      }
+    }
     out.push("```", "");
 
     if (j.steps.some((s) => s.satisfaction != null)) {
@@ -170,11 +273,14 @@ function render(spine: Spine): string {
       out.push("```", "");
     }
 
-    out.push("| Step | Screen · state | Sees | Does | Criteria |", "|---|---|---|---|---|");
+    out.push(
+      "| Step | Screen · state | Sees | Does | Next | Criteria |",
+      "|---|---|---|---|---|---|",
+    );
     for (const s of j.steps) {
       const where = s.screen ? `\`${s.screen}\`${s.state ? ` · ${s.state}` : ""}` : "—";
       out.push(
-        `| \`${s.id}\` ${esc(s.title)} | ${where} | ${cell(s.sees)} | ${cell(s.does)} | ${s.criteria?.length ?? 0} |`,
+        `| \`${s.id}\` ${esc(s.title)} | ${where} | ${cell(s.sees)} | ${cell(s.does)} | ${nextCell(s)} | ${s.criteria?.length ?? 0} |`,
       );
     }
     out.push("");
@@ -324,7 +430,7 @@ if (import.meta.main) {
         console.error((e as Error).message);
         process.exit(1);
       }
-      validate(spine);
+      const { errors } = validateSpine(spine);
       if (errors.length) {
         for (const e of errors) console.error(`ERROR ${e}`);
         process.exit(1);
@@ -357,7 +463,7 @@ if (import.meta.main) {
     process.exit(1);
   }
 
-  validate(spine);
+  const { errors, warnings } = validateSpine(spine);
   for (const w of warnings) console.error(`warn  ${w}`);
   for (const e of errors) console.error(`ERROR ${e}`);
 
