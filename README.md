@@ -2,6 +2,8 @@
 
 Bun-only [Turborepo](https://turborepo.dev) boilerplate for a Next.js SaaS: one app (`apps/web`), shared UI, Clerk, Zod 4, [shadcn/ui](https://ui.shadcn.com), and Vercel Workflows. Clone it, shape the product, then answer the customize prompt below, then start building.
 
+Map of the repo, playbook, and clone path: [docs/map.md](docs/map.md).
+
 **Requires** [Bun](https://bun.sh) `1.4.x` (see `packageManager` in `package.json`). Installs with anything else will fail (`only-allow bun`).
 
 ## Layout
@@ -16,6 +18,8 @@ Bun-only [Turborepo](https://turborepo.dev) boilerplate for a Next.js SaaS: one 
 | `tooling/dependency-cruiser` | Feature-folder import rules |
 | `e2e/web` | Playwright for `web` |
 | `test/` | `bun test` runner preload only (not a suite) |
+| `docs/map.md` | Repo + playbook map for a fresh clone |
+| `.agents/skills/` | Playbook and vendor skills (symlinked from `.cursor/skills/` and `.claude/skills/`) |
 
 Features must not import each other. Compose in `app/` or `src/proxy.ts`, or hoist to `shared/` / `packages/`. Inside a feature, use a relative import — not `@/features/<this-feature>/...`. `bun run check-boundaries` enforces the graph (tests are ignored; pass `--strict` to include them).
 
