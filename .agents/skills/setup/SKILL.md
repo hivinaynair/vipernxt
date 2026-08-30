@@ -19,7 +19,9 @@ Run [setup.sh](setup.sh). Do not do this with tool calls.
 
 **Determinism.** Provisioning is the same six steps every time. A script does them
 identically; an agent improvises, and improvisation against live infrastructure is how
-you end up with two Neon projects named slightly differently.
+you end up with two Neon projects named slightly differently. This script creates
+**one** Neon project and two databases (`staging`, `production`). Do not invent a
+second project.
 
 **Cost.** `gh`, `vercel` and `neonctl` are already installed and authenticated. Driving
 them through bash costs a few tokens; driving equivalent MCP servers loads tool schemas
@@ -36,9 +38,10 @@ provisioning conversation produces duplicates.
 | Stage | Tool |
 |---|---|
 | Preflight — tools present and authenticated | `gh`, `neonctl` |
+| Product name | `.env.playbook` `PRODUCT` from `customize`, or ask once and record it |
 | Private GitHub repo, pushed | `gh repo create` |
-| Two Neon projects: `<product>-staging`, `<product>-production` | `neonctl` |
-| Connection strings into `.env.local`, direct URLs into GitHub environment secrets | `neonctl`, `gh secret` |
+| One Neon project `<product>`, databases `staging` and `production` | `neonctl` |
+| Staging URLs into `.env.local`; each database’s direct URL into the matching GitHub Environment secret | `neonctl`, `gh secret` |
 | Vercel link | `vercel link` |
 | Clerk app created or linked, dev keys pulled | `clerk apps create`, `clerk link`, `clerk env pull` |
 | Linear team key recorded | manual — no API for team creation |
@@ -57,7 +60,9 @@ once they have made it.
 
 ## Your job around it
 
-Before: confirm the product name, and that this is the right repo.
+Before: the `customize` skill should already have written `PRODUCT` to
+`.env.playbook`. If it has not, the script asks once and records it. Confirm
+this is the right repo.
 
 After: read the summary back — what was created, what was skipped, what still needs their
 hands. If a stage failed, say which and why; do not silently retry it with tool calls.

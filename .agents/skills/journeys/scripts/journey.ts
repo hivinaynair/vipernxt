@@ -232,40 +232,154 @@ function render(spine: Spine): string {
   return out.join("\n");
 }
 
-const [cmd, file, ...rest] = process.argv.slice(2);
-if (!cmd || !file || !["validate", "render"].includes(cmd)) {
-  console.error("usage: bun journey.ts <validate|render> <spine.yaml> [--out <file.md>]");
-  process.exit(2);
+export function requiredStepIds(spine: Spine): string[] {
+  const byId = new Map<string, Step>();
+  for (const j of spine.journeys ?? []) {
+    for (const s of j.steps ?? []) byId.set(s.id, s);
+  }
+  const features = spine.features ?? [];
+  if (!features.length) return [];
+  const ids = new Set<string>();
+  for (const f of features) {
+    for (const ref of f.serves ?? []) {
+      const step = byId.get(ref);
+      if (step?.criteria?.length) ids.add(ref);
+    }
+  }
+  return [...ids].sort();
 }
 
-let spine: Spine;
-try {
-  spine = Bun.YAML.parse(await Bun.file(file).text()) as Spine;
-} catch (e) {
-  console.error(`could not parse ${file}: ${(e as Error).message}`);
-  process.exit(1);
+export function citedStepIds(texts: string[]): Set<string> {
+  const found = new Set<string>();
+  const re = /\bJ\d+\.S\d+[a-z]?\b/g;
+  for (const text of texts) {
+    for (const m of text.matchAll(re)) found.add(m[0]);
+  }
+  return found;
 }
 
-validate(spine);
-for (const w of warnings) console.error(`warn  ${w}`);
-for (const e of errors) console.error(`ERROR ${e}`);
-
-if (errors.length) {
-  console.error(`\n${errors.length} error(s), ${warnings.length} warning(s) — spine is not valid.`);
-  process.exit(1);
+export function missingStepIds(required: string[], cited: Set<string>): string[] {
+  return required.filter((id) => !cited.has(id));
 }
 
-if (cmd === "validate") {
-  console.error(`ok: ${file} is valid (${warnings.length} warning(s)).`);
-  process.exit(0);
+async function loadSpine(path: string): Promise<Spine> {
+  try {
+    return Bun.YAML.parse(await Bun.file(path).text()) as Spine;
+  } catch (e) {
+    throw new Error(`could not parse ${path}: ${(e as Error).message}`);
+  }
 }
 
-const md = render(spine);
-const outIdx = rest.indexOf("--out");
-const outPath = outIdx === -1 ? undefined : rest[outIdx + 1];
-if (outPath) {
-  await Bun.write(outPath, `${md}\n`);
-  console.error(`wrote ${outPath}`);
-} else {
-  console.log(md);
+if (import.meta.main) {
+  const [cmd, file, ...rest] = process.argv.slice(2);
+  if (!cmd || !["validate", "render", "ids"].includes(cmd)) {
+    console.error(
+      "usage: bun journey.ts <validate|render|ids> <spine.yaml|docs/journeys> [--out <file.md>]",
+    );
+    process.exit(2);
+  }
+  if ((cmd === "validate" || cmd === "render") && !file) {
+    console.error("usage: bun journey.ts <validate|render> <spine.yaml> [--out <file.md>]");
+    process.exit(2);
+  }
+
+  if (cmd === "ids") {
+    const root = file ?? "docs/journeys";
+    const glob = new Bun.Glob("*.yaml");
+    const spines: string[] = [];
+    const target = Bun.file(root);
+    if (await target.exists()) {
+      const stat = await target.stat();
+      if (stat.isFile()) spines.push(root);
+    }
+    if (!spines.length) {
+      try {
+        for await (const name of glob.scan(root)) {
+          if (name.endsWith(".yaml")) spines.push(`${root.replace(/\/$/, "")}/${name}`);
+        }
+      } catch {
+        console.error(`ok: no product spines at ${root} — nothing to check.`);
+        process.exit(0);
+      }
+    }
+    if (!spines.length) {
+      console.error(`ok: no product spines at ${root} — nothing to check.`);
+      process.exit(0);
+    }
+
+    const testGlob = new Bun.Glob("**/*.{test,spec}.{ts,tsx}");
+    const texts: string[] = [];
+    for await (const path of testGlob.scan(".")) {
+      if (path.includes("node_modules") || path.includes(".agents/")) continue;
+      texts.push(await Bun.file(path).text());
+    }
+    const cited = citedStepIds(texts);
+
+    let required: string[] = [];
+    for (const path of spines) {
+      let spine: Spine;
+      try {
+        spine = await loadSpine(path);
+      } catch (e) {
+        console.error((e as Error).message);
+        process.exit(1);
+      }
+      validate(spine);
+      if (errors.length) {
+        for (const e of errors) console.error(`ERROR ${e}`);
+        process.exit(1);
+      }
+      required = required.concat(requiredStepIds(spine));
+    }
+    required = [...new Set(required)].sort();
+    if (!required.length) {
+      console.error(
+        "ok: spines have no features.serves yet — ID check waits until features are cut.",
+      );
+      process.exit(0);
+    }
+    const missing = missingStepIds(required, cited);
+    if (missing.length) {
+      console.error("ERROR journey step IDs with criteria are not cited in any test or spec:");
+      for (const id of missing) console.error(`  ${id}`);
+      console.error('Name the test after the step (e.g. it("J1.S3: …")).');
+      process.exit(1);
+    }
+    console.error(`ok: ${required.length} journey ID(s) cited in tests.`);
+    process.exit(0);
+  }
+
+  let spine: Spine;
+  try {
+    spine = Bun.YAML.parse(await Bun.file(file).text()) as Spine;
+  } catch (e) {
+    console.error(`could not parse ${file}: ${(e as Error).message}`);
+    process.exit(1);
+  }
+
+  validate(spine);
+  for (const w of warnings) console.error(`warn  ${w}`);
+  for (const e of errors) console.error(`ERROR ${e}`);
+
+  if (errors.length) {
+    console.error(
+      `\n${errors.length} error(s), ${warnings.length} warning(s) — spine is not valid.`,
+    );
+    process.exit(1);
+  }
+
+  if (cmd === "validate") {
+    console.error(`ok: ${file} is valid (${warnings.length} warning(s)).`);
+    process.exit(0);
+  }
+
+  const md = render(spine);
+  const outIdx = rest.indexOf("--out");
+  const outPath = outIdx === -1 ? undefined : rest[outIdx + 1];
+  if (outPath) {
+    await Bun.write(outPath, `${md}\n`);
+    console.error(`wrote ${outPath}`);
+  } else {
+    console.log(md);
+  }
 }

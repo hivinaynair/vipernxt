@@ -13,6 +13,12 @@
       "skillPath": "skills/turborepo/SKILL.md",
       "computedHash": "33d4adbcd2fd56074cf9b72b23804cd0e72f4ce24d1d427079e369b87a671ae5"
     },
+    "customize": {
+      "source": ".",
+      "sourceType": "local",
+      "skillPath": ".agents/skills/customize/SKILL.md",
+      "computedHash": "0832ffb8c121ca142ac4b0787b8741e98be0b494112da0d3746e7985e2eded82"
+    },
     "artifacts": {
       "source": ".",
       "sourceType": "local",
@@ -23,7 +29,7 @@
       "source": ".",
       "sourceType": "local",
       "skillPath": ".agents/skills/design-system/SKILL.md",
-      "computedHash": "ce39efb9d57dd5548558a8bc24ff5149345fc726a0514836257eff4f4e8324cb"
+      "computedHash": "646ff14ce517afc2cc30bf3dfad82abc947cdfdd8dbb46838e873714d9f1d4b0"
     },
     "field-kit": {
       "source": ".",
@@ -35,7 +41,7 @@
       "source": ".",
       "sourceType": "local",
       "skillPath": ".agents/skills/journeys/SKILL.md",
-      "computedHash": "13bd190f82802d14247f13262d671e6f9115964aaf6e45781929d26dbf33d4b9"
+      "computedHash": "7a381cb99fad4c0022be88380ca10f68ed598059f595a5ff35aae2317341d0d0"
     },
     "linear-sync": {
       "source": ".",
@@ -47,7 +53,7 @@
       "source": ".",
       "sourceType": "local",
       "skillPath": ".agents/skills/next/SKILL.md",
-      "computedHash": "f2e15bb1a43d05e284fd7f24ad2d643790e362d2d68af711830d15329ca9279e"
+      "computedHash": "79dffa42a66d86ad010409cc829efb12d60bfc54d1d38b7834c7eb7df5b60f5c"
     },
     "ontology": {
       "source": ".",
@@ -71,13 +77,13 @@
       "source": ".",
       "sourceType": "local",
       "skillPath": ".agents/skills/setup/SKILL.md",
-      "computedHash": "a0873a62ee63699752f7a4d4392c6b4126ac4be779161bb62eb905ab3c7f97cc"
+      "computedHash": "459ae01e21cef8c9d8f30b2598169be56c014d253cad47086ac538a885fc4b06"
     },
     "shape": {
       "source": ".",
       "sourceType": "local",
       "skillPath": ".agents/skills/shape/SKILL.md",
-      "computedHash": "f132010dad6ac6243e43453e15865aee6cf76b69ad509dd71ef6fbc24c1e289f"
+      "computedHash": "368e57db75771d9d1f86fa6d3009e213ad5da50b2abecdda638f5baedd307ac1"
     },
     "status": {
       "source": ".",

@@ -17,10 +17,12 @@ Run:
 
 ```
 bun scripts/journey.ts validate <file>
+bun run check-journeys
 ```
 
 A spine that does not validate is not a spine. Report every error. Warnings: say which
-steps have no criteria.
+steps have no criteria. After features are cut, `check-journeys` must pass — every
+served step with criteria is named in a test title.
 
 Also check: IDs look stable (no renumber-to-close-gap); criteria are EARS
 (`WHEN`/`IF` … `THE SYSTEM SHALL`); every step has `screen` + `state` or you name the

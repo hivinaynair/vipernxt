@@ -43,8 +43,21 @@ good "gh authenticated as $(gh api user --jq .login 2>/dev/null || echo '?')"
 neonctl me >/dev/null 2>&1 || { warn "neonctl not authenticated"; say "Run: neonctl auth"; exit 1; }
 good "neonctl authenticated"
 
-PRODUCT="$(ask 'Product name (kebab-case, e.g. kubera):')"
-[ -n "$PRODUCT" ] || { warn "A name is required."; exit 1; }
+playbook_get() {
+  local k="$1"
+  [ -f .env.playbook ] || return 0
+  grep "^${k}=" .env.playbook 2>/dev/null | tail -1 | cut -d= -f2-
+}
+
+PRODUCT="$(playbook_get PRODUCT)"
+if [ -z "$PRODUCT" ]; then
+  PRODUCT="$(ask 'Product name (kebab-case, e.g. kubera):')"
+  [ -n "$PRODUCT" ] || { warn "A name is required. Run the customize skill first, or type one here."; exit 1; }
+  env_put ".env.playbook" PRODUCT "$PRODUCT"
+  good "recorded PRODUCT=$PRODUCT in .env.playbook"
+else
+  good "product name from customize: $PRODUCT"
+fi
 ENVFILE="apps/web/.env.local"
 [ -d apps/web ] || ENVFILE=".env.local"
 
@@ -62,34 +75,68 @@ else
 fi
 
 # ── 2. neon ──────────────────────────────────────────────────────────────────
-stage "Neon databases (staging + production)"
-say "Two projects keeps environments genuinely separate."
-for envname in staging production; do
-  proj="${PRODUCT}-${envname}"
-  if neonctl projects list --output json 2>/dev/null | grep -q "\"name\": *\"$proj\""; then
-    good "$proj exists"
-  elif confirm "Create Neon project $proj?"; then
-    neonctl projects create --name "$proj" --output json >/tmp/neon-$envname.json 2>/dev/null \
-      && good "created $proj" || { warn "create failed for $proj"; continue; }
-  else
-    say "skipped $proj"; continue
-  fi
-  pid=$(neonctl projects list --output json 2>/dev/null \
-        | python3 -c "import sys,json;ps=json.load(sys.stdin);ps=ps.get('projects',ps) if isinstance(ps,dict) else ps;print(next((p['id'] for p in ps if p.get('name')=='$proj'),''))" 2>/dev/null)
-  [ -n "$pid" ] || { warn "could not resolve project id for $proj"; continue; }
-  pooled=$(neonctl connection-string --project-id "$pid" --pooled 2>/dev/null)
-  direct=$(neonctl connection-string --project-id "$pid" 2>/dev/null)
-  if [ "$envname" = staging ]; then
-    [ -n "$pooled" ] && env_put "$ENVFILE" DATABASE_URL "$pooled" && good "DATABASE_URL → $ENVFILE"
-    [ -n "$direct" ] && env_put "$ENVFILE" DATABASE_URL_UNPOOLED "$direct" && good "DATABASE_URL_UNPOOLED → $ENVFILE"
-  fi
-  if [ -n "$direct" ] && gh repo view >/dev/null 2>&1; then
-    gh_env=$([ "$envname" = production ] && echo production || echo staging)
-    gh secret set DATABASE_URL_UNPOOLED --env "$gh_env" --body "$direct" 2>/dev/null \
-      && good "GitHub secret set for $gh_env" \
-      || warn "could not set secret — create the '$gh_env' Environment in GitHub first"
-  fi
-done
+stage "Neon (one project, staging + production databases)"
+say "One project named ${PRODUCT}. Two databases on the default branch: staging, production."
+
+neon_project_id() {
+  neonctl projects list --output json 2>/dev/null | python3 -c "
+import sys, json
+name = sys.argv[1]
+ps = json.load(sys.stdin)
+ps = ps.get('projects', ps) if isinstance(ps, dict) else ps
+print(next((p['id'] for p in ps if p.get('name') == name), ''))
+" "$1"
+}
+
+neon_has_db() {
+  neonctl databases list --project-id "$1" --output json 2>/dev/null | python3 -c "
+import sys, json
+want = sys.argv[1]
+data = json.load(sys.stdin)
+dbs = data.get('databases', data) if isinstance(data, dict) else data
+print('yes' if any(d.get('name') == want for d in dbs) else 'no')
+" "$2"
+}
+
+pid="$(neon_project_id "$PRODUCT")"
+if [ -n "$pid" ]; then
+  good "project $PRODUCT exists ($pid)"
+elif confirm "Create Neon project $PRODUCT?"; then
+  neonctl projects create --name "$PRODUCT" --database staging --output json --no-secrets \
+    >/tmp/neon-project.json 2>/dev/null \
+    && good "created $PRODUCT (database: staging)" \
+    || warn "create failed for $PRODUCT"
+  pid="$(neon_project_id "$PRODUCT")"
+else
+  say "skipped Neon"
+  pid=""
+fi
+
+if [ -n "$pid" ]; then
+  for db in staging production; do
+    if [ "$(neon_has_db "$pid" "$db")" = yes ]; then
+      good "database $db exists"
+    elif confirm "Create database $db on $PRODUCT?"; then
+      neonctl databases create --name "$db" --project-id "$pid" --output json \
+        >/tmp/neon-db-$db.json 2>/dev/null \
+        && good "created database $db" \
+        || { warn "create failed for $db"; continue; }
+    else
+      say "skipped database $db"; continue
+    fi
+    pooled=$(neonctl connection-string --project-id "$pid" --database-name "$db" --pooled 2>/dev/null)
+    direct=$(neonctl connection-string --project-id "$pid" --database-name "$db" 2>/dev/null)
+    if [ "$db" = staging ]; then
+      [ -n "$pooled" ] && env_put "$ENVFILE" DATABASE_URL "$pooled" && good "DATABASE_URL (staging) → $ENVFILE"
+      [ -n "$direct" ] && env_put "$ENVFILE" DATABASE_URL_UNPOOLED "$direct" && good "DATABASE_URL_UNPOOLED (staging) → $ENVFILE"
+    fi
+    if [ -n "$direct" ] && gh repo view >/dev/null 2>&1; then
+      gh secret set DATABASE_URL_UNPOOLED --env "$db" --body "$direct" 2>/dev/null \
+        && good "GitHub secret set for $db" \
+        || warn "could not set secret — create the '$db' Environment in GitHub first"
+    fi
+  done
+fi
 
 # ── 3. vercel ────────────────────────────────────────────────────────────────
 stage "Vercel project"

@@ -10,6 +10,8 @@
     "test": "bun test",
     "e2e": "turbo run e2e",
     "check-boundaries": "bun scripts/check-boundaries.mjs",
+    "check-tokens": "bun scripts/check-tokens.mjs",
+    "check-journeys": "bun scripts/journey.ts ids docs/journeys",
     "ui:add": "turbo run add --filter=@repo/ui",
     "db": "bun scripts/db.mjs",
     "db:generate": "turbo run db:generate --filter=@repo/db",

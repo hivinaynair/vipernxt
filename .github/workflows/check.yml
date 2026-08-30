@@ -27,6 +27,12 @@ jobs:
       - name: Feature-folder boundaries
         run: bun run check-boundaries
 
+      - name: Semantic tokens
+        run: bun run check-tokens
+
+      - name: Journey IDs
+        run: bun run check-journeys
+
       - name: Types
         run: bun run check-types
 

@@ -35,6 +35,7 @@ PLAYBOOK_SKILLS = (
     "shape",
     "salvage",
     "setup",
+    "customize",
     "ontology",
     "prototype",
     "field-kit",

@@ -70,7 +70,7 @@ Lock these with the user on first use; they go in the doc glossary.
 
 | They want | Do instead |
 |---|---|
-| Rename packages, change scopes, strip vendors in the tree | The project's own setup/customize checklist |
+| Rename packages, change scopes, strip vendors in the tree | The `customize` skill, then `setup.sh` |
 | Product UI, routes, features | Wait for design-doc approval, then a later plan |
 | A Figma file or production screens | Stay on low-fi bands (plus the canvas, if the host has one) |
 
@@ -250,8 +250,8 @@ Ask one question: is this document right?
 You may name what comes next — **only** as a next step, and only if they say go:
 
 1. **[journeys](../journeys/SKILL.md)** — turn the confirmed journeys into an ID'd spine that features and plans can cite. This is the usual next move.
-2. The project's own setup/rename checklist.
-3. Per-feature work: `worth-it` → `nah-fam` → `game-plan` → `lets-cook`, each feature citing the journey step IDs it serves.
+2. The `customize` skill (name the clone), then `setup.sh`.
+3. Per-feature work: each feature cites the journey step IDs it serves, and a test title names those IDs.
 
 Do not commit unless they ask.
 

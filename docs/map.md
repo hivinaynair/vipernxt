@@ -1,6 +1,6 @@
 # ViperNxt map
 
-Clone this repo, type `/next`, then run the customize prompt. Do not invent a
+Clone this repo, type `/next`, then `/customize` before setup. Do not invent a
 product UI first. The stack stays: Bun, Clerk, Drizzle + Neon, shadcn in
 `packages/ui`, Vercel Workflows, Biome, Playwright.
 
@@ -13,8 +13,8 @@ This file is the map a future clone reads. The Cursor canvas is a view of it.
 | 1. Clone | you | New repo from this tree. Keep the opinions. |
 | 2. `/next` | agent | Creates `docs/product/state.yaml`, researches, interviews one question at a time. Pin `/next` as a Custom Mode. |
 | 3. Approve the design doc | you | Until `shape` is `done`, a hook denies writes under `apps/*/src/app` and `apps/*/src/features`. |
-| 4. Customize | you + agent | Paste the prompt in [README.md](../README.md). Rename, keep or strip vendors. Record the choice; do not silently drop Clerk or Neon. |
-| 5. `setup` | script | [`.agents/skills/setup/setup.sh`](../.agents/skills/setup/setup.sh) — GitHub, two Neon projects, Vercel link, Clerk keys, Linear team key. Not agent tool calls. |
+| 4. Customize | you + agent | `/customize` — name first, then keep/strip. Writes `PRODUCT` to `.env.playbook`. |
+| 5. `setup` | script | [`.agents/skills/setup/setup.sh`](../.agents/skills/setup/setup.sh) — GitHub, one Neon project with `staging` + `production` databases, Vercel, Clerk, Linear key. |
 | 6. Journey spine | agent | `journeys` writes `docs/journeys/<name>.yaml`. IDs are permanent. |
 | 7. Thin slice | agent | One journey through real data before the full component inventory. |
 
@@ -56,7 +56,7 @@ Features must not import each other ([`tooling/dependency-cruiser/nextjs.mjs`](.
 | E2E | Playwright | Cypress |
 | Branches | PRs → `staging`; `main` is production | Trunk-only until you change it on purpose |
 
-A new product shape records keep/strip. The customize prompt applies it. Nothing else strips vendors.
+A new product shape records keep/strip. The `customize` skill applies it. Nothing else strips vendors.
 
 ## Playbook
 
@@ -75,7 +75,8 @@ Type `/next`. It reads `docs/product/state.yaml` and does every step that is not
 | `linear-sync` | Spine → Linear issues. IDs come back; nothing else. |
 | `design-system` | Layout primitives and semantic tokens before pages. |
 | `prototype` | Three variants of one component, mid-build. |
-| `setup` | Runs `setup.sh`. Does not improvise infra. |
+| `customize` | Names the clone and applies keep/strip. Before setup. |
+| `setup` | Runs `setup.sh`. One Neon project, two databases. |
 | `next-dev-loop` | Runtime verify after app edits (`/_next/mcp` + browser). |
 | `turborepo` | Vendor skill for the monorepo. |
 
@@ -105,23 +106,16 @@ Local, on commit ([`lefthook.yml`](../lefthook.yml)): Biome, boundaries, affecte
 Declared merge bar ([`AGENTS.md`](../AGENTS.md)):
 
 ```sh
-bun run check-types && bun run check-boundaries && bun test
+bun run check-types && bun run check-boundaries && bun run check-tokens && bun run check-journeys && bun test
 ```
 
 CI: [`.github/workflows/check.yml`](../.github/workflows/check.yml) on PRs and on `staging`/`main`. [`.github/workflows/migrate.yml`](../.github/workflows/migrate.yml) applies Drizzle on push to those branches. No journal yet = skip.
 
-## Open gaps
+## Still open
 
-Ranked. Stack is not on this list.
-
-| # | Gap | Why it matters |
-|---|---|---|
-| 1 | Customize is a paste prompt, not a skill | Agents forget it. `setup.sh` provisions under the old `vipernxt` names. |
-| 2 | Feature-tier skills named, not shipped | `shape` and `journeys` hand off to `worth-it` → `nah-fam` → `game-plan` → `lets-cook`. Those files are not in `.agents/skills/`. After the spine, `/next` has no build skill. |
-| 3 | Nothing consumes journey IDs | [docs/research/agent-native-product-shaping.md](research/agent-native-product-shaping.md) §2: a spine no test names will rot. |
-| 4 | `design-system` asks for a raw-token check | No Biome/lint rule fails a raw palette value in `className`. |
-| 5 | Starter leftovers | `apps/web` metadata is still “Create Next App”. Home copy points at `apps/web/app/page.tsx` (wrong path). E2E clicks a dead “Open alert” button. |
-| 6 | Billing not in the tree | README says extend the customize prompt later. Keep it out until a product asks. |
-| 7 | Clerk orgs are a setup flag only | Customize asks B2B; app code has no org helpers yet. Fine until a product is B2B. |
-
-Do not add npm, Vitest, ESLint, or a second UI kit to close any of these.
+| Gap | Why it can wait |
+|---|---|
+| Starter leftovers | “Create Next App” copy. `customize` question 1 and 7 delete it on the first real clone. |
+| Billing | Not in the tree. Extend `customize` when a product asks. |
+| Clerk orgs | Setup can flip the flag. No org UI until a product is B2B. |
+| Build-skill names | Not `nah-fam` / `lets-cook`. Local skills later; do not vendor a verbose ticket writer. |
