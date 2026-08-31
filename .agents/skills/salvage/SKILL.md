@@ -3,8 +3,8 @@ name: salvage
 description: >-
   Mines whatever already exists in the domain — an earlier build, the software or
   spreadsheet being replaced, competitors, public complaints — for domain facts,
-  and reports what was built that should not be rebuilt. Use at the start of any
-  new product, not only when there is an old repo to read.
+  and records what was built and did not survive. Use at the start of any new
+  product, not only when there is an old repo to read.
 ---
 
 # salvage
@@ -70,6 +70,73 @@ system for clinics knows things a booking system for temples needs.
 Work these in parallel: dispatch one independent investigation per source, then
 reconcile. Do not read six sources serially in one context.
 
+## When the prior art is a pile, not a repository
+
+Most of the time there is no repo. There is a folder of photographs, a spreadsheet
+someone exported, screenshots of a desktop application, a wireframe drawn last month.
+
+**Ask for the pile before reading anything, and ask physically.** "Send me anything you
+have" returns nothing. A checklist returns a folder:
+
+> Drop whatever already exists into `docs/research/salvage-inbox/` — any format, don't
+> rename anything:
+>
+> - [ ] Photos of whatever they use today — the spreadsheet on screen, the register, the whiteboard
+> - [ ] One **filled-in** copy of every form or receipt — filled in, not blank
+> - [ ] The spreadsheet itself as CSV, if it can be exported
+> - [ ] Screenshots of the old software — every screen, including the ugly ones
+> - [ ] Anything printed that gets handed to a customer
+> - [ ] **Anything taped to a wall or clipped to the counter**, and anything laminated
+> - [ ] Wireframes or sketches, if any exist
+>
+> Say "nothing" for any line that genuinely does not exist — that is a finding too.
+
+The filled-in copy matters more than the blank one: a blank form gives you field names, a
+filled one gives you which fields are always empty, what people write in the margin, and
+which "required" field everyone skips. The wall and the lamination matter because that is
+where the workarounds live — a handwritten code sheet clipped to a monitor is the counter
+staff telling you exactly where the software fails them.
+
+That request is one held item, `kind: gather`, done when every row of the inventory has a
+caption. Do not start mining a half-empty inbox.
+
+**Normalise before reading.** Run `scripts/salvage-inbox.mjs <files...>`. It copies
+originals to `raw/`, writes readable JPEGs to `pages/`, and emits `INVENTORY.md`. This is
+not tidiness: an iPhone photo is HEIC, which cannot be read at all, and a 4K screenshot
+exceeds the size limit — and an unreadable image can break the whole session rather than
+failing on that one file. Look at one page afterwards; if the text runs sideways, re-run
+with `--rotate 90`. Photographs of screens and walls are usually sideways with nothing in
+the file to say so.
+
+**Ask for text wherever text exists** — the spreadsheet as CSV, the thread as `.eml`, the
+document as itself. A screenshot of a spreadsheet is the worst of both.
+
+**Transcribe before claiming.** An image cannot be cited by line. Before any fact is
+drawn from a photograph, write `pages/<name>.transcript.md`: field names exactly as
+written, in the original language, untranslated, including the crossings-out and the
+margin notes. Facts then cite `receipt-03.jpg → transcript line 7`, and the pile stays
+greppable for every phase after this one.
+
+**Read each type for what it actually holds:**
+
+| Artifact | Mine for | Do not take |
+|---|---|---|
+| Photo of a form, receipt, register | Field list, verbatim, with the handwriting | Its layout |
+| Spreadsheet | Column names, formulas, validation lists, which columns are empty | Its tabs and sheet split |
+| Screenshot of the incumbent | Vocabulary, states in dropdowns, error text | Navigation, page set |
+| Wireframe or mockup | Almost nothing — it is pure structure | All of it |
+| Diagram (flow, org, ER) | Entities, states, transitions, handoffs | The grouping of boxes |
+| Chat and email threads | Exceptions, edge cases, the argument about what a word means | — |
+
+The wireframe row is not a joke. A wireframe someone drew last month is the highest-
+temptation, lowest-fact object in the pile, and it is usually their own — which makes the
+facts/structure rule harder to hold, not easier.
+
+**What is missing is a finding.** "No photograph of what the customer walks away with"
+goes to `field-kit` as an open question. Never quietly fill the gap.
+
+**Keep `raw/` out of version control.** Photographs of a register hold real names.
+
 ## Output
 
 Write `docs/research/salvage.md`:
@@ -79,13 +146,52 @@ Write `docs/research/salvage.md`:
    (`donations` schema + photographed receipt)."
 2. **The vocabulary** the domain actually uses, including words the old build got wrong.
 3. **Entities and their real states**, from the schema, not from what feels tidy.
-4. **What was built that should not be rebuilt** — features that sprawled, half-finished
-   surfaces, anything the git history shows was reworked repeatedly. Say why.
+4. **What the prior art abandoned** — what was built and did not survive. A feature
+   imported by no route, a column added and dropped two commits later, a surface reworked
+   four times, a screen the docs call essential that was never built. Record **what was
+   built, the evidence it died, and what it cost**. Stop there. See below.
 5. **Open questions the prior art raises but cannot answer.** These usually belong in the
-   field visit; hand them to `field-kit` rather than guessing.
+   field visit; hand them to `field-kit` rather than guessing. Everything in 4 that you
+   cannot explain belongs here as a question.
 
 Cite everything to a file path, a commit, or a photograph. An uncited "fact" is a memory,
 and memories are what the rebuild is trying to escape.
+
+## Salvage does not decide scope
+
+There is a strong pull, once you have read a build that sprawled, to write the list of
+things the new one must not do. Resist it. Salvage runs before the claim is confirmed,
+before the field visit, before anyone has said what the product is for. A prohibition
+written that early is a scope decision made from the weakest possible evidence — the last
+team's mistakes — and it arrives dressed as a finding, which means every agent downstream
+reads it as settled.
+
+So the section records **what happened**, not **what to do about it**:
+
+| Write this | Not this |
+|---|---|
+| `ExportPanel` exists under `src/features/` and is imported by no route | Do not rebuild the export panel |
+| `service_type` enum added in `a1b2c3d`, deleted in `962713a` | Do not add a service-type enum |
+| Deceased/sponsor/occasion columns added then dropped (`5aa7510`) | Shraddha is out of scope |
+| The tax-filing surface exists; nothing in the stated problems mentions tax | Tax is not our problem |
+
+The left column survives the product changing. The right column is a guess about a product
+that does not exist yet.
+
+**Where the verdict actually gets made:** `shape` decides what the product claims, and the
+claim is what excludes things — an abandoned feature that the claim does not cover is out
+because the claim does not cover it, not because the last build failed at it. `plan` then
+decides what a slice contains. Both of them read this section as evidence. Neither should
+find its conclusion already written.
+
+The abandoned list has a better use than prohibition anyway: it is the sharpest interview
+material `shape` will get. "The last build built stock tracking and never linked it to
+anything — do you actually count stock?" is a far better question than a line in a
+document saying inventory is out of scope.
+
+Two things that keep leaking into this section and do not belong anywhere in salvage: a
+**design decision** ("store a code, localise the label") — that is `ontology` or `plan`;
+and a **statistic from an article** — that is research. Salvage reads what people built.
 
 ## The competitor trap
 

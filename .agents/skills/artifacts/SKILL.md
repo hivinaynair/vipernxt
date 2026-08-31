@@ -56,7 +56,7 @@ it — do not just let it grow.
 
 | Artifact | Cap | Shape |
 |---|---|---|
-| `salvage.md` | 2 pages | Facts table, then what not to rebuild, then open questions |
+| `salvage.md` | 2 pages | Facts table, then vocabulary, then what was abandoned, then open questions |
 | research note | 2 pages | Findings first, each cited; contested claims show both sides |
 | field findings | 2 pages | Observations, then quotes, then contradictions, then open |
 | `ontology.md` | Entity table + one block each | Table first; blocks only for entities with real states |

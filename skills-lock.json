@@ -23,7 +23,7 @@
       "source": ".",
       "sourceType": "local",
       "skillPath": ".agents/skills/artifacts/SKILL.md",
-      "computedHash": "a5f0623b4ade2af10027a4ac04ddfc0c1ce7caad1aac736f9eff6c386475bbf3"
+      "computedHash": "73895f78b5495df18dddc36ce85825f3bd54fcb1ef51524fc5825dad40e25f89"
     },
     "design-system": {
       "source": ".",
@@ -83,7 +83,7 @@
       "source": ".",
       "sourceType": "local",
       "skillPath": ".agents/skills/salvage/SKILL.md",
-      "computedHash": "56398c3c05e1742869d0f50511c84d9842c4a6cbfa009cb6b7b9bf58fa3864d5"
+      "computedHash": "79e93a80b52a97a5d007d0c02f590a024354c6f37c46a23cf12e9c28a65b55d4"
     },
     "setup": {
       "source": ".",
