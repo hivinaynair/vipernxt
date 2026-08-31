@@ -35,7 +35,7 @@
       "source": ".",
       "sourceType": "local",
       "skillPath": ".agents/skills/field-kit/SKILL.md",
-      "computedHash": "852dc04f5cdfc0578aea017e64bcde8d3ec8478f0d0f5de1bbe1b1a44c6a79fb"
+      "computedHash": "b39cf46c497a388b81d1b4071c9f62263ebb5e72a9a72c2d5ff16dd85742c444"
     },
     "plan": {
       "source": ".",
