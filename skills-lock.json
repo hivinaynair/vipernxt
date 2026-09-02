@@ -13,6 +13,12 @@
       "skillPath": "skills/turborepo/SKILL.md",
       "computedHash": "33d4adbcd2fd56074cf9b72b23804cd0e72f4ce24d1d427079e369b87a671ae5"
     },
+    "before-and-after": {
+      "source": "michaelshimeles/skills",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/before-and-after/SKILL.md",
+      "computedHash": "24170d8b5ea6ba68ed1fb41ce58d2d725b365e5d5a2d047462cda8289fef51b8"
+    },
     "customize": {
       "source": ".",
       "sourceType": "local",

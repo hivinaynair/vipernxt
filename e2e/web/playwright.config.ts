@@ -17,8 +17,8 @@ export default defineConfig({
   timeout: 30_000,
   use: {
     baseURL,
-    trace: "on-first-retry",
-    screenshot: "only-on-failure",
+    trace: "on",
+    screenshot: "on",
   },
   webServer: {
     command: "bun run start",

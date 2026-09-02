@@ -89,3 +89,11 @@ Confirm it with the user before the spine is drafted. One question: which entity
 Once confirmed, this vocabulary is used everywhere — journey steps, acceptance criteria,
 Linear issues, table names, component names. A domain model that survives only in one
 document is a glossary. One that reaches the schema is an ontology.
+
+`plan` and `build` read this file before writing anything, and the canonical terms are the
+**only names allowed** — tables, columns, types, components, routes, seed data, UI copy. A
+rejected synonym appearing in the code is a defect, not a style preference.
+
+This matters most when several agents build at once. Left alone, each one invents its own
+reasonable translation, and one thing ends up with three names that nobody can grep for.
+The list exists so that cannot happen.

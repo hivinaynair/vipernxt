@@ -226,6 +226,12 @@ Re-ask actors or the claim only if they said those are wrong too.
 
 Only after journeys are confirmed.
 
+**Ask the language question first**, before any copy is written: which languages does the
+interface carry at v1, and which is canonical? It reads like a detail and is not — it
+touches every string and possibly every route, so decided after the screens exist it is a
+rewrite rather than a change. "English only, for now" is a fine answer; an unasked question
+is not.
+
 For each screen the clip needs:
 
 - **Bands** (header, stage, list, actions, evidence, …) and what sits in each.

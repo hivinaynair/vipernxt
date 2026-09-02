@@ -7,10 +7,7 @@ describe("playbook hook", () => {
       stderr: "pipe",
       stdout: "pipe",
     });
-    const [stderr, exit] = await Promise.all([
-      new Response(proc.stderr).text(),
-      proc.exited,
-    ]);
+    const [stderr, exit] = await Promise.all([new Response(proc.stderr).text(), proc.exited]);
     expect(stderr).toContain("selftest passed");
     expect(exit).toBe(0);
   });

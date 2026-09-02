@@ -81,6 +81,14 @@ Title, description, `lang` on `<html>`.
 
 Keep Drizzle + Neon (`@repo/db` or the new scope), or strip it?
 
+**9. Bug board**
+
+Which reviewer looks at the PRs the factory opens — Cursor Bugbot, Codex, Greptile, or
+none? Write it to `.env.playbook` as `REVIEW_PROVIDER=<name|none>`.
+
+`build` does not care which one. It needs to know only whether a reviewer may push
+commits to a branch, because auto-merge must then require green **after** that push.
+
 Billing is not in the tree. Do not add it.
 
 ## After the last answer

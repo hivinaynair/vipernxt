@@ -125,13 +125,17 @@ Running a six-phase pipeline over "add a column" is a failure, not thoroughness.
 | 5a | Structure | `design-system` | you |
 | 5b | Visual direction | `design-system` | them, optional, any time |
 | 4.5 | Publish to Linear | `linear-sync` | you |
-| 6 | Build | `plan` then `build`; cite journey IDs; `prototype` when a component is open | you |
+| 6 | Build | `plan` then `build` in waves; cite journey IDs; `prototype` when a component is open | you |
 
 **Ship something before the planning is finished.** Once the spine exists, build one
 journey end to end — a thin slice through real data — before the full component inventory.
 Forward-deployed teams ship working code in week one for a reason: a slice tests the domain
 model in a way no further planning can, and it is the cheapest way to discover the model is
 wrong. Then return to 5a.
+
+That first slice is also the **one mandatory stop** in the build phase. Show it to them and
+wait. Everything after it can run unattended; nothing before it should. A domain model that
+is wrong costs one slice to correct here and forty to correct later.
 
 `linear-sync` runs after the spine is confirmed and again whenever features change.
 `prototype` is not a phase — reach for it mid-build whenever a component's shape is
@@ -148,6 +152,41 @@ root `package.json` `name` is still `vipernxt` or `.env.playbook` has no `PRODUC
 read [customize](../customize/SKILL.md) and run it now. One question at a time.
 Honour keep/strip the design doc already recorded. They do not type `/customize`.
 Do not run `setup.sh` under the boilerplate name.
+
+## The factory
+
+After the checkpoint, build runs in **waves**. A wave is a set of slices that share no
+surface, launched together and merged before the next one starts.
+
+| Wave | Contains |
+|---|---|
+| 0 | Schema and seed data. Every table the ontology names, landed before any feature slice |
+| 1..n | Feature slices, at most **five agents at once**, one per feature folder |
+
+Wave 0 is what makes the rest safe. If all migrations land first, feature slices never
+write one, and parallel merges cannot collide on the database. Seed data ships with it —
+deterministic, fixed ids, frozen dates. Empty tables make both the review and
+`before-and-after` worthless.
+
+Feature folders may not import each other, so agents in different folders cannot collide.
+Everything else is shared surface — `src/app`, `src/shared`, `packages/*`, the schema, any
+`package.json`. **A slice touching shared surface runs alone.**
+
+Group the waves when `linear-sync` publishes the spine, so the order is visible to them
+rather than living in this session.
+
+### Stop conditions
+
+An unattended agent stops for the right reasons instead of improvising. Hold an item and
+wait when any of these fire:
+
+- The merge bar fails twice on the same slice.
+- A product decision the spine does not settle.
+- A slice needs a column wave 0 did not create.
+- The third fix on the same theme — the abstraction is wrong, not the code.
+- Two rounds of review feedback have not closed the PR. The slice was wrong; re-plan it.
+
+Autonomy is not "never stops". It is "stops without corrupting anything, and says why".
 
 ## The journey is wrong
 
