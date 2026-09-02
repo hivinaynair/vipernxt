@@ -152,8 +152,7 @@ export function gateFromPayload(payload: Record<string, unknown>, state: State |
 
   return {
     permission: "deny",
-    user_message:
-      "Product UI/routes/features are blocked until the design doc is approved. " + `${reason}.`,
+    user_message: `Product UI/routes/features are blocked until the design doc is approved. ${reason}.`,
     agent_message:
       "HOOK-DENY: writes under apps/*/src/app or apps/*/src/features are blocked " +
       `until shape is done (or ui_writes: allow). ${reason}. ` +

@@ -3,7 +3,7 @@ import { describe, expect, it } from "bun:test";
 describe("playbook hook", () => {
   it("selftest passes", async () => {
     const proc = Bun.spawn(["bun", ".cursor/hooks/playbook.ts", "selftest"], {
-      cwd: import.meta.dir + "/..",
+      cwd: `${import.meta.dir}/..`,
       stderr: "pipe",
       stdout: "pipe",
     });
