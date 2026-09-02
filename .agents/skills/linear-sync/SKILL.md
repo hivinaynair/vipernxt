@@ -45,6 +45,11 @@ bun scripts/linear-sync.ts record docs/journeys/<name>.yaml F2 KUB-42
 Record it immediately, one at a time. An unrecorded id is a duplicate issue on
 the next run.
 
+**Before creating anything, search the team for an issue whose title starts with
+that feature id.** The script cannot see Linear, so this is the only thing
+standing between an interrupted run and a second `F2 · Reconciliation view`. If
+you find one, record its id instead of creating.
+
 No API key: the MCP is already authenticated and reaches Linear from local and
 cloud sessions alike. A second credential buys nothing until something without
 an MCP — CI — needs to do this.
@@ -68,10 +73,19 @@ introduces a screen, component or state — that label is the signal to run
 
 ## Drift
 
-`bun scripts/check-drift.ts` reports what it can see. Beyond that, an issue in
-Linear with no journey step means someone added work outside the spine: either
-it earns a step or it should not be built. Present drift as a short list with a
-recommendation each, and change nothing until they say which way it goes.
+`bun scripts/check-drift.ts` reports what it can see from the repo: a feature
+with no issue, a feature serving a step that no longer exists.
+
+Three kinds it **cannot** see, because the script never reads Linear. Check
+these through the MCP when they ask for a drift report:
+
+- an issue with no journey step — someone added work outside the spine; either
+  it earns a step or it should not be built
+- an issue whose criteria no longer match the spine's current text
+- a closed issue whose steps changed after it shipped
+
+Present drift as a short list with a recommendation each, and change nothing
+until they say which way it goes.
 
 ## What never goes to Linear
 
