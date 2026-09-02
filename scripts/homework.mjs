@@ -51,8 +51,10 @@ const plain = (s) =>
 
 const W = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
 
+const FONT = '<w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:cs="Arial"/>';
+
 const run = (text, { size = 24, bold = false, italic = false, color = null } = {}) =>
-  `<w:r><w:rPr>${bold ? "<w:b/>" : ""}${italic ? "<w:i/>" : ""}` +
+  `<w:r><w:rPr>${FONT}${bold ? "<w:b/>" : ""}${italic ? "<w:i/>" : ""}` +
   `${color ? `<w:color w:val="${color}"/>` : ""}<w:sz w:val="${size}"/></w:rPr>` +
   `<w:t xml:space="preserve">${esc(text)}</w:t></w:r>`;
 
@@ -90,66 +92,111 @@ const borders = (color) =>
 // The white box is deliberately taller than one line: a larger answer space
 // produces longer answers (Christian & Dillman 2004), and it has to hold
 // handwriting if this gets printed.
+const CONTENT_WIDTH = 9638; // A4 minus the 1134-twip margins on each side
+
+const tableProps = (fill) =>
+  "<w:tblPr>" +
+  `<w:tblW w:w="${CONTENT_WIDTH}" w:type="dxa"/>` +
+  '<w:tblLayout w:type="fixed"/>' +
+  borders(fill) +
+  '<w:tblCellMar><w:top w:w="120" w:type="dxa"/><w:left w:w="160" w:type="dxa"/>' +
+  '<w:bottom w:w="120" w:type="dxa"/><w:right w:w="160" w:type="dxa"/></w:tblCellMar>' +
+  "</w:tblPr>";
+
+// A band, not a shaded paragraph — paragraph shading does not reliably fill the
+// line, so a one-cell table is what actually reads as a section divider.
+const sectionBand = (label, title) =>
+  "<w:tbl>" +
+  tableProps("D0D0D0") +
+  '<w:tr><w:tc><w:tcPr><w:tcW w:w="' +
+  CONTENT_WIDTH +
+  '" w:type="dxa"/>' +
+  '<w:shd w:val="clear" w:fill="DCE6F0"/></w:tcPr>' +
+  para(label, { size: 18, color: "5A6B7B", after: 20 }) +
+  para(title, { size: 30, bold: true, after: 0 }) +
+  "</w:tc></w:tr></w:tbl>" +
+  para("", { size: 16, after: 0 });
+
+// One question is one table: a shaded cell carrying the number and the question,
+// then a white cell to answer in. Stacked rather than side by side so a long
+// question does not wrap into a column two words wide, and so the answer space is
+// the full width of the page whether it is typed into or written on. The white box
+// is deliberately tall: a larger answer space produces longer answers (Christian &
+// Dillman 2004), and it has to hold handwriting if this gets printed.
 const questionBlock = (n, total, question, note, tick) =>
-  "<w:tbl><w:tblPr>" +
-  '<w:tblW w:w="9350" w:type="dxa"/>' +
-  borders("C4C4C4") +
-  '<w:tblCellMar><w:top w:w="100" w:type="dxa"/><w:left w:w="140" w:type="dxa"/>' +
-  '<w:bottom w:w="100" w:type="dxa"/><w:right w:w="140" w:type="dxa"/></w:tblCellMar>' +
-  "</w:tblPr>" +
-  // Question — dark on a light field.
+  "<w:tbl>" +
+  tableProps("BFBFBF") +
   "<w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc>" +
-  '<w:tcPr><w:tcW w:w="9350" w:type="dxa"/><w:shd w:val="clear" w:fill="EFEFEF"/></w:tcPr>' +
-  para(`Question ${n} of ${total}`, { size: 18, color: "767676", after: 40 }) +
-  para((tick ? "\u2610  " : "") + question, { size: 24, bold: true, after: note ? 40 : 0 }) +
-  (note ? para(note, { size: 20, italic: true, color: "5A5A5A", after: 0 }) : "") +
+  `<w:tcPr><w:tcW w:w="${CONTENT_WIDTH}" w:type="dxa"/><w:shd w:val="clear" w:fill="EFEFEF"/></w:tcPr>` +
+  para(`Question ${n} of ${total}`, { size: 17, color: "6E6E6E", after: 30 }) +
+  para((tick ? "\u2610  " : "") + question, { size: 24, bold: true, after: note ? 30 : 0 }) +
+  (note ? para(note, { size: 21, italic: true, color: "4A4A4A", after: 0 }) : "") +
   "</w:tc></w:tr>" +
-  // Answer — white, and tall enough to invite more than three words.
-  '<w:tr><w:trPr><w:trHeight w:val="850"/></w:trPr><w:tc>' +
-  '<w:tcPr><w:tcW w:w="9350" w:type="dxa"/><w:shd w:val="clear" w:fill="FFFFFF"/></w:tcPr>' +
-  para("Your answer:", { size: 18, color: "9A9A9A", after: 0 }) +
+  '<w:tr><w:trPr><w:trHeight w:val="1000"/></w:trPr><w:tc>' +
+  `<w:tcPr><w:tcW w:w="${CONTENT_WIDTH}" w:type="dxa"/><w:shd w:val="clear" w:fill="FFFFFF"/></w:tcPr>` +
   para("", { size: 24, after: 0 }) +
   "</w:tc></w:tr>" +
   "</w:tbl>" +
   // More space between questions than inside one.
-  para("", { size: 12, after: 0 });
+  para("", { size: 20, after: 0 });
 
 function build(mdPath) {
   const md = readFileSync(mdPath, "utf8");
 
   // Pass one: parse. A line indented under a question is that question's note,
-  // not a question of its own — instructions belong where they are needed.
+  // not a question of its own — instructions belong where they are needed. A run
+  // of ordinary lines is ONE paragraph: markdown hard-wraps, and rendering each
+  // wrapped line as its own paragraph is what made the intro look broken.
   const items = [];
+  let prose = [];
+
+  const flushProse = () => {
+    if (prose.length > 0) {
+      items.push({ type: "prose", text: prose.join(" ") });
+      prose = [];
+    }
+  };
+
   for (const raw of md.split("\n")) {
-    if (!raw.trim() || /^---+$/.test(raw.trim())) continue;
     const line = raw.trim();
+
+    if (!line || /^---+$/.test(line)) {
+      flushProse();
+      continue;
+    }
 
     const h = line.match(/^(#{1,3})\s+(.*)$/);
     if (h) {
+      flushProse();
       items.push({ type: `h${h[1].length}`, text: plain(h[2]) });
       continue;
     }
 
     const tick = line.match(/^[-*]\s+\[[ xX]?\]\s+(.*)$/);
     if (tick) {
+      flushProse();
       items.push({ type: "q", text: plain(tick[1]), tick: true });
       continue;
     }
 
     const bullet = line.match(/^[-*]\s+(.*)$/);
     if (bullet) {
+      flushProse();
       items.push({ type: "q", text: plain(bullet[1]), tick: false });
       continue;
     }
 
+    // Indented under a question, and no paragraph in progress: it is that
+    // question's note rather than prose of its own.
     const last = items[items.length - 1];
-    if (/^\s\s+\S/.test(raw) && last?.type === "q" && !last.note) {
+    if (prose.length === 0 && /^\s\s+\S/.test(raw) && last?.type === "q" && !last.note) {
       last.note = plain(line);
       continue;
     }
 
-    items.push({ type: "prose", text: plain(line.replace(/^>\s?/, "")) });
+    prose.push(plain(line.replace(/^>\s?/, "")));
   }
+  flushProse();
 
   // Pass two: render, now that the totals are known — progress is only
   // reassuring if it says what it is progress towards.
@@ -169,16 +216,8 @@ function build(mdPath) {
     }
     if (item.type === "h2") {
       section += 1;
-      body.push(
-        para(`Section ${section} of ${totalSections}`, {
-          size: 18,
-          color: "767676",
-          before: seenSection ? 0 : 320,
-          after: 40,
-          pageBreak: seenSection,
-        }),
-      );
-      body.push(para(item.text, { size: 30, bold: true, after: 160, shade: "E4E4E4" }));
+      if (seenSection) body.push(para("", { size: 2, after: 0, pageBreak: true }));
+      body.push(sectionBand(`Section ${section} of ${totalSections}`, item.text));
       seenSection = true;
       continue;
     }
@@ -270,6 +309,13 @@ function read(docxPath) {
   for (const block of xml.match(/<w:tbl\b[\s\S]*?<\/w:tbl>|<w:p\b[\s\S]*?<\/w:p>/g) ?? []) {
     if (block.startsWith("<w:tbl")) {
       const cells = block.match(/<w:tc\b[\s\S]*?<\/w:tc>/g) ?? [];
+      // Section bands are one-cell tables. They are headings, not questions, and
+      // counting them would inflate the answered/total the done_when checks.
+      if (cells.length < 2) {
+        const band = cellText(cells[0] ?? "").split("\n");
+        if (band.length > 1) out.push(`\n## ${band[band.length - 1]}\n`);
+        continue;
+      }
       const q = cellText(cells[0] ?? "").replace(/^Question \d+ of \d+\s*/, "");
       const a = cellText(cells[1] ?? "").replace(/^Your answer:\s*/, "");
       if (!q) continue;
