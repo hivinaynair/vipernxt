@@ -4,7 +4,8 @@
 Commands (stdout is JSON for Cursor; diagnostics go to stderr):
 
   gate      preToolUse — deny product UI/route/feature writes until shape is done
-  session   sessionStart — inject a short pipeline digest as additional_context
+  branch    beforeShellExecution — deny pushes to main and unsafe force-pushes
+  session   sessionStart — inject the pipeline digest as additional_context
   selftest  run fixtures; exit 1 on failure
 
 Repo root is two levels above this file. Cloud and local checkouts both work.
@@ -13,8 +14,9 @@ Repo root is two levels above this file. Cloud and local checkouts both work.
 from __future__ import annotations
 
 import json
+import re
+import subprocess
 import sys
-from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -29,6 +31,8 @@ GATED_FRAGMENTS = ("/src/app/", "/src/features/")
 PLAYBOOK_SKILLS = (
     "next",
     "status",
+    "plan",
+    "build",
     "artifacts",
     "journeys",
     "design-system",
@@ -317,113 +321,6 @@ def gate_from_payload(payload: dict[str, Any], state: dict[str, Any] | None) -> 
     }
 
 
-def days_open(raised: str) -> str | None:
-    try:
-        start = date.fromisoformat(str(raised)[:10])
-    except ValueError:
-        return None
-    delta = (date.today() - start).days
-    if delta <= 0:
-        return "today"
-    if delta == 1:
-        return "1 day"
-    return f"{delta} days"
-
-
-def compact_where(state: dict[str, Any]) -> str:
-    entries = phase_entries(state)
-    done = [str(e.get("name")) for e in entries if str(e.get("status") or "") == "done"]
-    current = None
-    for entry in entries:
-        if str(entry.get("status") or "") in ("in-progress", "blocked"):
-            current = str(entry.get("name"))
-            break
-    if current is None:
-        current_key = str(state.get("phase") or "")
-        current = current_key
-        for entry in entries:
-            if str(entry.get("_key")) == current_key:
-                current = str(entry.get("name") or current_key)
-                break
-    next_name = None
-    seen_current = False
-    for entry in entries:
-        name = str(entry.get("name") or "")
-        if name == current:
-            seen_current = True
-            continue
-        if seen_current and str(entry.get("status") or "") == "pending":
-            next_name = name
-            break
-    parts = []
-    if done:
-        parts.append("done: " + ", ".join(done))
-    if current:
-        parts.append("now: " + str(current))
-    if next_name:
-        parts.append("next: " + next_name)
-    return " · ".join(parts) if parts else "in progress"
-
-
-def status_digest(state: dict[str, Any] | None) -> str:
-    if state is None:
-        return (
-            "Pipeline state file exists but could not be parsed. "
-            "Do not edit product UI until it is readable."
-        )
-    if state == {}:
-        return (
-            "There is no product being shaped here. App source may be edited (boilerplate). "
-            "Offer to start a product if they want one."
-        )
-    lines: list[str] = []
-    held = state.get("held") or []
-    open_items = [
-        h
-        for h in held
-        if isinstance(h, dict) and str(h.get("status") or "") == "open"
-    ]
-    if open_items:
-        lines.append("Waiting on you")
-        for item in open_items:
-            what = str(item.get("what") or "a decision or facts").rstrip(".")
-            age = days_open(str(item.get("raised") or ""))
-            suffix = f" (open {age})" if age else ""
-            lines.append(f"- {what}{suffix}")
-    where = compact_where(state)
-    if where:
-        lines.append("Where we are")
-        lines.append(where)
-    deferred = [
-        h
-        for h in held
-        if isinstance(h, dict) and str(h.get("status") or "") == "deferred"
-    ]
-    if deferred:
-        lines.append("Deferred")
-        for item in deferred:
-            what = str(item.get("what") or "a later choice").rstrip(".")
-            until = item.get("until")
-            when = f" — again {until}" if until else ""
-            lines.append(f"- {what}{when}")
-    allowed, reason = ui_writes_allowed(state)
-    lines.append("Do not" if not allowed else "App source")
-    if allowed:
-        lines.append(f"Writes under app routes/features are allowed ({reason}).")
-    else:
-        lines.append(
-            "Do not edit apps/*/src/app or apps/*/src/features. "
-            f"{reason}. A hook denies those writes."
-        )
-    lines.append("Harness")
-    lines.append(
-        "If next/status/shape are missing from your skill list, read "
-        ".agents/skills/<name>/SKILL.md (also .cursor/skills/). "
-        "Say that the catalog omitted them."
-    )
-    return "\n".join(lines)
-
-
 def cmd_gate() -> int:
     raw = read_stdin()
     try:
@@ -437,9 +334,81 @@ def cmd_gate() -> int:
     return 0
 
 
+HARNESS_NOTE = (
+    "Harness: if next/status/shape are missing from your skill list, read "
+    ".agents/skills/<name>/SKILL.md (also .cursor/skills/) and say the catalog omitted them."
+)
+
+
 def cmd_session() -> int:
+    """Render the digest with scripts/status.ts.
+
+    The digest is a projection of state.yaml, and there must be exactly one
+    implementation of it or the two drift. This hook is not a gate, so it is
+    free to depend on bun — which this repo requires anyway (`only-allow bun`).
+    The gate below stays pure Python on purpose.
+    """
     read_stdin()
-    emit({"additional_context": status_digest(load_state())})
+    try:
+        result = subprocess.run(
+            ["bun", "scripts/status.ts"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+        digest = result.stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        digest = ""
+
+    if not digest:
+        digest = "Could not render the pipeline digest — run `bun scripts/status.ts`."
+
+    emit({"additional_context": f"{digest}\n\n{HARNESS_NOTE}"})
+    return 0
+
+
+# Commands an agent must not run. The human can still run any of them by hand —
+# that is the point. A release is a person's decision, not a slice's side effect.
+BRANCH_RULES: tuple[tuple[str, str], ...] = (
+    (
+        r"\bgit\s+push\b(?=.*\bmain\b)",
+        "PRs target staging; main is production. Push to staging, then a human merges "
+        "staging into main. A hotfix onto main is theirs to run, not yours.",
+    ),
+    (
+        r"\bgh\s+pr\s+create\b(?=.*--base[= ]+main\b)",
+        "Open the PR against staging. main only ever receives a staging merge.",
+    ),
+    (
+        r"\bgit\s+push\b(?=.*(?:--force|-f)\b)(?!.*--force-with-lease)",
+        "Use --force-with-lease, and only on your own slice branch.",
+    ),
+)
+
+
+def branch_from_command(command: str) -> dict[str, Any]:
+    for pattern, why in BRANCH_RULES:
+        if re.search(pattern, command):
+            return {
+                "permission": "deny",
+                "user_message": f"Blocked: {command}",
+                "agent_message": (
+                    f"{why} Do not work around this with another command — "
+                    "tell the user what you wanted to run and why."
+                ),
+            }
+    return {"permission": "allow"}
+
+
+def cmd_branch() -> int:
+    raw = read_stdin()
+    try:
+        payload = json.loads(raw) if raw.strip() else {}
+    except json.JSONDecodeError:
+        payload = {}
+    command = str(payload.get("command") or "") if isinstance(payload, dict) else ""
+    emit(branch_from_command(command))
     return 0
 
 
@@ -534,28 +503,31 @@ phases:
         gate_from_payload(_payload(app), None)["permission"],
         "deny",
     )
-    empty = status_digest({})
-    if "no product being shaped" not in empty.lower():
-        failures.append(f"empty digest: {empty!r}")
-    digest = status_digest(
-        load_yaml_text(
-            """
-phase: 2
-phases:
-  0: { name: salvage, status: done }
-  2: { name: field, status: blocked }
-  3: { name: shape, status: pending }
-held:
-  - id: H3
-    what: Field visit to one temple
-    raised: 2026-08-20
-    status: open
-"""
-        )
+    def branch(command: str) -> str:
+        return str(branch_from_command(command)["permission"])
+
+    check("push to main denied", branch("git push origin main"), "deny")
+    check("push HEAD:main denied", branch("git push origin HEAD:main"), "deny")
+    check("push staging allowed", branch("git push origin HEAD:staging"), "allow")
+    check(
+        "slice branch allowed",
+        branch("git push -u origin agent/f2-1-reconciliation"),
+        "allow",
     )
-    for needle in ("Waiting on you", "Field visit", "Do not edit", "Harness"):
-        if needle not in digest:
-            failures.append(f"digest missing {needle!r}: {digest!r}")
+    check("pr base main denied", branch("gh pr create --base main --title x"), "deny")
+    check(
+        "pr base staging allowed",
+        branch("gh pr create --base staging --title x"),
+        "allow",
+    )
+    check("bare force denied", branch("git push --force origin my-branch"), "deny")
+    check(
+        "force-with-lease allowed",
+        branch("git push --force-with-lease origin my-branch"),
+        "allow",
+    )
+    check("unrelated command allowed", branch("bun test"), "allow")
+    check("empty command allowed", branch(""), "allow")
 
     if failures:
         sys.stderr.write("selftest failed:\n")
@@ -570,11 +542,13 @@ def main() -> int:
     cmd = sys.argv[1] if len(sys.argv) > 1 else ""
     if cmd == "gate":
         return cmd_gate()
+    if cmd == "branch":
+        return cmd_branch()
     if cmd == "session":
         return cmd_session()
     if cmd == "selftest":
         return cmd_selftest()
-    sys.stderr.write("usage: playbook.py gate|session|selftest\n")
+    sys.stderr.write("usage: playbook.py gate|branch|session|selftest\n")
     return 2
 
 

@@ -12,6 +12,13 @@
         "failClosed": true,
         "matcher": "Write|StrReplace|Delete|EditNotebook"
       }
+    ],
+    "beforeShellExecution": [
+      {
+        "command": ".cursor/hooks/playbook.py branch",
+        "failClosed": false,
+        "matcher": "git push|gh pr create"
+      }
     ]
   }
 }
