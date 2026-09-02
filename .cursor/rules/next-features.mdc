@@ -7,7 +7,7 @@ alwaysApply: false
 # Feature modules
 
 - `app/` and `src/proxy.ts` — composition roots. Import `@/features/<name>`.
-- `features/<name>/` — one domain. Add `components/`, `hooks/`, `lib/`, `server/queries/`, `server/actions/` as needed. Relative imports inside the feature — not `@/features/<this-feature>/...`. Never import another feature.
-- `shared/` — this app only; never import a feature.
-- Cross-app libraries go in `packages/`.
+- `features/<name>/` — one domain. Add `components/`, `hooks/`, `lib/`, `server/queries/`, `server/actions/` as needed. Relative imports inside the feature — not `@/features/<this-feature>/...`. Never import another feature. Orchestration (why/when: policy, auth, state) stays here.
+- `shared/` — this app only; never import a feature. Hoist a mechanic here when a **second** feature needs the same how.
+- Cross-app libraries go in `packages/`. Do not put journey policy in a package.
 - `src/lib` and `src/components` at the app root are not composition roots. Put that code in `shared/` or a feature.

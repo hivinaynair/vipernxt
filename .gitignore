@@ -20,6 +20,11 @@ playwright-report
 test-results
 blob-report
 
+# Agent factory
+.artifacts
+.worktrees
+.claude/worktrees
+
 # Turbo
 .turbo
 

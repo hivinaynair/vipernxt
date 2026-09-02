@@ -108,7 +108,7 @@ Not every idea needs the whole pipeline. Ask one question if it is unclear:
 |---|---|
 | **New product** | The full pipeline below |
 | **New feature** in a product that already has a spine | `journeys` to add the steps, then build citing those step IDs |
-| **Small change** | Nothing here. Say so and get on with it |
+| **Small change** | Skip the pipeline. Still `isolate` the branch and `evidence` the change. |
 
 Running a six-phase pipeline over "add a column" is a failure, not thoroughness.
 
@@ -125,7 +125,7 @@ Running a six-phase pipeline over "add a column" is a failure, not thoroughness.
 | 5a | Structure | `design-system` | you |
 | 5b | Visual direction | `design-system` | them, optional, any time |
 | 4.5 | Publish to Linear | `linear-sync` | you |
-| 6 | Build | `plan` then `build`; cite journey IDs; `prototype` when a component is open | you |
+| 6 | Build | `plan` then `build` (factory: isolate → implement → prove → ship); cite journey IDs; `prototype` when a component is open | you |
 
 **Ship something before the planning is finished.** Once the spine exists, build one
 journey end to end — a thin slice through real data — before the full component inventory.
@@ -142,6 +142,19 @@ walking skeleton), run [plan](../plan/SKILL.md) then [build](../build/SKILL.md)
 on the first slice. Do not wait for them to type those skills. Do not refuse
 because of which host or model this session is. A missing browser or preview
 URL is a verification gap, not a reason to stop planning or implementing.
+
+`build` is the factory. It runs four beats and they still type `/next`:
+
+| Beat | Skill | Does |
+|---|---|---|
+| Isolate | [isolate](../isolate/SKILL.md) | Own branch (worktree if the harness did not already isolate), from `staging` |
+| Implement | `build` + [code-structure](../code-structure/SKILL.md) | One slice in a feature folder; hoist repeated mechanics |
+| Prove | [evidence](../evidence/SKILL.md), [next-dev-loop](../next-dev-loop/SKILL.md) | Journey-ID assertions with runtime proof |
+| Ship | `build` + [review-loop](../review-loop/SKILL.md) | Draft PR onto `staging`; review bot only if already installed |
+
+Those skills are not phases and not extra commands. Skip a beat that does not
+apply (no GUI → headless evidence; no Greptile → no review loop). Do not skip
+implement.
 
 `customize` is not a phase either. After `shape` is `done`, before `setup`, if the
 root `package.json` `name` is still `vipernxt` or `.env.playbook` has no `PRODUCT`:

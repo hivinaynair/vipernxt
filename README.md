@@ -18,6 +18,7 @@ command that runs the rest. Full map: [docs/map.md](docs/map.md). Agents:
 | A demo SaaS to restyle | `apps/web` is leftover create-turbo copy until a product exists |
 | A vendor catalog | The stack is decided. A product records keep/strip; it does not reopen the list |
 | “Just start building” | Until `shape` is done, writes under `apps/*/src/app` and `src/features` are denied |
+| A second factory command | After the spine, `/next` isolates, implements, proves, and ships. Not `/greploop` |
 | A second journey file | A wrong product story reopens the design-doc table, then the spine. Same IDs |
 | npm / pnpm / yarn, ESLint, Vitest, Prisma, NextAuth | Those fights are closed on purpose |
 
@@ -55,16 +56,16 @@ You type `/next`. You do not type `/customize` or `/journeys`.
 | 4. Name the clone | `/next` | Product name, then keep/strip. Writes `PRODUCT`. Never set up as `vipernxt`. |
 | 5. `setup.sh` | script | One Neon project, `staging` + `production` databases, Vercel, Clerk, Linear. |
 | 6. Journey spine | `/next` | Expands the Seat / Wants / Can click table into ID’d YAML. IDs never renumber. |
-| 7. Thin slice | agent | One journey through real data before the full component inventory. |
+| 7. Thin slice | agent | One journey through real data before the full component inventory. Factory: isolate → implement → prove → ship. |
 
 If the journey is the **wrong product story** — too hard, wrong payoff, not what
 you meant — say so. `/next` rewrites the clip and that table, you confirm, then
 it expands the spine again. Same moment keeps `J1.S2`. A new beat gets a new ID.
 
 `status` is the glance. After the spine, `/next` runs `plan` (one feature →
-spec + slices) then `build` (one slice, tests name `J1.S3`). `prototype` is
-three variants of **one** component, mid-build. None of those skills name a
-host or a model as a prerequisite.
+spec + slices) then `build` — the factory: isolate → implement → prove →
+ship. Tests name `J1.S3`. `prototype` is three variants of **one** component,
+mid-build. None of those skills name a host or a model as a prerequisite.
 
 Playbook source: [saas-playbook](https://github.com/hivinaynair/saas-playbook).
 In Cursor, the same picture is a canvas titled **ViperNxt map** (a view of

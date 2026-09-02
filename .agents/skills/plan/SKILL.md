@@ -74,5 +74,5 @@ and continue.
 - Vendor a second story of the product. If Linear and the spec disagree, the
   spine wins.
 
-When the spec is written, `/next` runs `build` on the first slice unless they
-stop you.
+When the spec is written, `/next` runs `build` on the first slice (isolate →
+implement → prove → ship) unless they stop you.

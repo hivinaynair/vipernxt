@@ -19,7 +19,7 @@ is a view of this file — not a second spec.
 | 4. Name the clone | `/next` | Invokes `customize` — name first, then keep/strip. Writes `PRODUCT` to `.env.playbook`. |
 | 5. `setup` | script | [`.agents/skills/setup/setup.sh`](../.agents/skills/setup/setup.sh) — GitHub, one Neon project with `staging` + `production` databases, Vercel, Clerk, Linear key. |
 | 6. Journey spine | `/next` | `journeys` expands the design-doc table. IDs are permanent. |
-| 7. Thin slice | agent | One journey through real data before the full component inventory. |
+| 7. Thin slice | agent | One journey through real data before the full component inventory. Factory: isolate → implement → prove → ship. |
 | Journey is the wrong story | `/next` | Reopen `shape` on the clip + journeys table, confirm, re-expand. No new skill. Same moments keep IDs. |
 
 `status` is the glance. `setup` provisions. `shape` does not rename packages.
@@ -79,7 +79,11 @@ Type `/next`. It reads `docs/product/state.yaml` and does every step that is not
 | `linear-sync` | Spine → Linear issues. IDs come back; nothing else. |
 | `design-system` | Layout primitives and semantic tokens before pages. |
 | `plan` | One spine feature → short spec + slices. `/next` runs it after the spine. |
-| `build` | Implements one slice. Tests cite step IDs. PR to `staging`. Host-agnostic. |
+| `build` | Factory for one slice: isolate → implement → prove → ship. Tests cite step IDs. PR to `staging`. |
+| `isolate` | Own branch / worktree from `staging`. Scope-check open PRs. `/next` runs it; they do not type it. |
+| `code-structure` | Feature owns why/when; hoist how to `shared/` or a package at the second caller. |
+| `evidence` | Runtime proof named after journey steps. Before/after on the PR. Complements `next-dev-loop`. |
+| `review-loop` | Optional Greptile loop after the draft PR. Skip if the bot is not installed. |
 | `prototype` | Three variants of one component, mid-build. |
 | `customize` | Names the clone and applies keep/strip. `/next` runs it after shape; before setup. |
 | `setup` | Runs `setup.sh`. One Neon project, two databases. |
@@ -87,6 +91,12 @@ Type `/next`. It reads `docs/product/state.yaml` and does every step that is not
 | `turborepo` | Vendor skill for the monorepo. |
 
 Phases, from [`next/SKILL.md`](../.agents/skills/next/SKILL.md): salvage → research → field → shape → ontology → journeys → structure / visual → Linear → build. Ship one walking skeleton after the spine exists. `prototype` is not a phase. A wrong product story reopens `shape` on the journeys table, then `journeys` — still `/next`, no new skill.
+
+The factory lives inside phase 6, not as a second pipeline. Source:
+[michaelshimeles/skills](https://github.com/michaelshimeles/skills)
+(isolate → build → prove → ship), adapted: Bun not npm, branch from `staging`
+not `main`, feature folders not a `services/` tree, Greptile optional. They
+still type `/next`.
 
 No `docs/product/state.yaml` means no product. Boilerplate may be edited. This repo is in that state.
 
@@ -125,3 +135,4 @@ CI: [`.github/workflows/check.yml`](../.github/workflows/check.yml) on PRs and o
 | Billing | Not in the tree. Extend `customize` when a product asks. |
 | Clerk orgs | Setup can flip the flag. No org UI until a product is B2B. |
 | Build-skill names | Closed. `plan` and `build` — not `game-plan` / `lets-cook`. No verbose ticket writer. |
+| Greptile / review bot | Not a vendor. `review-loop` skips unless it is already on the clone. |

@@ -1,10 +1,10 @@
 ---
 name: build
 description: >-
-  Implements one planned slice of a spine feature — real code, tests that cite
-  journey step IDs, PR to staging. Use after plan (or a one-slice feature with
-  EARS already on the spine), for implementation, and for bug fixes against a
-  cited step. Not for shaping or rewriting the journey.
+  Implements one planned slice of a spine feature — isolate, code, evidence,
+  draft PR to staging. Tests cite journey step IDs. Use after plan (or a
+  one-slice feature with EARS already on the spine), for implementation, and
+  for bug fixes against a cited step. Not for shaping or rewriting the journey.
 ---
 
 # build
@@ -35,24 +35,50 @@ cloud.
 4. A `ui` slice or a new screen / component / state: run `prototype` first when
    the shape is still open. Do not invent the layout in production.
 
-## Do
+## Factory
 
-1. Branch from `staging` (or the repo's integration branch). One branch per
-   slice or per planned delivery group — not per file.
-2. Implement only this slice. Features live in `apps/*/src/features/<slug>/`.
+Four beats, in order. Source mapping:
+[michaelshimeles/skills](https://github.com/michaelshimeles/skills)
+(isolate → build → prove → ship). Adapted to Bun, `staging`, and feature
+folders. They type `/next`; they do not type `/isolate` or `/greploop`.
+
+### 1. Isolate — [isolate](../isolate/SKILL.md)
+
+Own branch. Worktree only when the harness did not already give you one.
+From `origin/staging`, never `main`. Scope-check open PRs; stop on overlap.
+
+### 2. Implement — this skill + [code-structure](../code-structure/SKILL.md)
+
+1. Implement only this slice. Features live in `apps/*/src/features/<slug>/`.
    Do not import another feature.
+2. Orchestration (why/when) stays in the feature. Repeated mechanics (how)
+   hoist to `shared/` or a package when a second caller appears — not a
+   parallel `services/` tree.
 3. Tests name the step: `it("J1.S3: …")`. After features are cut,
    `bun run check-journeys` must pass.
-4. Merge bar before you offer a PR:
 
-   ```sh
-   bun run check-types && bun run check-boundaries && bun run check-tokens && bun run check-journeys && bun test
-   ```
+### 3. Prove — [evidence](../evidence/SKILL.md) + [next-dev-loop](../next-dev-loop/SKILL.md)
 
-5. If this host can exercise the UI, do it (`next-dev-loop` or the equivalent).
-   If it cannot, say so. Do not fake a screenshot.
-6. Open a draft PR onto `staging`. Say which step IDs landed. Do not merge to
-   `main`.
+Merge bar before you offer a PR:
+
+```sh
+bun run check-types && bun run check-boundaries && bun run check-tokens && bun run check-journeys && bun test
+```
+
+Then prove the served steps at runtime. `next-dev-loop` when `next dev` is
+up. `evidence` keeps the artifacts (screenshots, recording, Playwright
+captures, or measured numbers) and a before/after pair when the surface is
+visible. If this host cannot exercise the UI, say so. Do not fake a
+screenshot.
+
+### 4. Ship
+
+Open a draft PR onto `staging`. Say which step IDs landed. Put the evidence
+in the body. Do not merge to `main`.
+
+If Greptile (or they named it) is on the repo, run
+[review-loop](../review-loop/SKILL.md). If it is not, skip — one line, not a
+setup task.
 
 ## Stop and return
 
@@ -62,6 +88,7 @@ cloud.
 | A product decision the spine did not settle | `/next` (do not invent it) |
 | The component's look is still open | `prototype`, then continue |
 | Checks fail | Fix here. Do not declare done |
+| Open PR overlaps this slice's files | `isolate` — stop; that is their call |
 
 ## Do not
 

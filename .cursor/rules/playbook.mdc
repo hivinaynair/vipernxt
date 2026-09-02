@@ -11,7 +11,7 @@ At the start of a session, read `docs/product/state.yaml` if it exists.
 
 If `next`, `status`, `shape`, or the other playbook skills are missing from your skill list, read `.agents/skills/<name>/SKILL.md` (also linked from `.cursor/skills/`). Tell the user the catalog omitted them.
 
-`status` is the glance. `next` does the work. For a shaping session, pin `/next` as a Custom Mode (Option+Enter / Alt+Enter on the skill) so it stays in context.
+`status` is the glance. `next` does the work. For a shaping session, pin `/next` as a Custom Mode (Option+Enter / Alt+Enter on the skill) so it stays in context. After the spine, `/next` runs the factory (`plan` then `build`: isolate → implement → prove → ship). They do not type those skills.
 
 Playbook subagents (`.cursor/agents/`) run **Cursor Grok 4.6**, not Gemini. Pass
 `.agents/skills/<name>/SKILL.md` in the task prompt; they do not inherit skills.
