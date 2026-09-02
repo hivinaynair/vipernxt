@@ -11,7 +11,8 @@ ViperNxt is two things in one repository:
    map, split that into tickets, and then build them.
 
 You clone it, type `/next`, and answer questions. It does the rest, stopping
-only for the decisions that are genuinely yours.
+only when it needs something it cannot get for itself — a decision that is
+yours, or a fact that exists only out in the world.
 
 **Requires** [Bun](https://bun.sh) `1.4.x`. Anything else fails on install.
 
@@ -49,9 +50,15 @@ only for the decisions that are genuinely yours.
   └────┬────┘
        │
        ▼
-  1. salvage      read what already exists — old code, spreadsheets, photos
-  2. research     read what is documented — rules, specs, competitors
-  3. field work   ← YOU. go talk to real people, bring back photos
+  1. salvage      reads what already exists — old code, spreadsheets, photos
+       │
+       ▼  ✋ you drop your pile in. it will not mine a half-empty folder.
+       │
+  2. research     reads what is documented — rules, specs, competitors
+  3. field work   it writes you homework; you go and fill it in
+       │
+       ▼  ✋ you come back with it. nothing moves until you do.
+       │
   4. shape        the interview. one question at a time → design doc
        │
        ▼  ✋ you approve the design doc. product UI unlocks here.
@@ -75,7 +82,7 @@ only for the decisions that are genuinely yours.
  14. release      staging → main
 ```
 
-Two stops. Everything else runs without you.
+Four stops. Everything between them runs without you.
 
 ---
 
@@ -92,12 +99,44 @@ what happens next, every time. You never need to remember which skill to run.
 
 ---
 
-## The two moments it stops for you
+## When it stops for you
 
-Everything in this repo is designed so an agent decides as much as possible on
-its own. It stops in exactly two places, and both are load-bearing.
+Everything here is designed so the agent decides as much as it possibly can on
+its own. The rule it follows is:
 
-### 1. Approving the design doc
+> Never stop for something it could have found out itself.
+
+So it reads your repo, reads the docs, searches the web, and follows claims to
+the source. What is left over is genuinely yours, and it comes in two kinds:
+
+- **Gather** — facts that exist only in the real world. A photograph, a filled-in
+  form, what the clerk actually does on a Tuesday. No amount of research
+  substitutes for these.
+- **Decide** — a call only you can make.
+
+There are four of these, and every one is a hard stop.
+
+### 1. Your pile — *gather*
+
+Before it invents anything, `salvage` reads what already exists. It asks you for
+it with a checklist and **will not start on a half-empty folder**.
+
+See [Where to put your stuff](#where-to-put-your-stuff) below.
+
+### 2. The homework — *gather*
+
+`field-kit` writes you a form: who to talk to, what to ask, what to photograph,
+what to bring back. It renders as a `.docx` you can type into on site.
+
+This one is a genuine blocker. The agent can research a domain all day and still
+not know that the counter clerk keeps a handwritten code sheet taped to the
+monitor because the software cannot do refunds. Until you go and look, the
+product is being designed from guesses — so it waits.
+
+While you are out, it keeps researching anything that does not depend on you. It
+does not idle.
+
+### 3. Approving the design doc — *decide*
 
 Before this, the agent has interviewed you, read your old code, researched the
 domain, and written a document describing what the product is. You read it and
@@ -108,7 +147,7 @@ denied by a hook.** Not discouraged — denied. This exists because the fastest
 way to build the wrong product is to start building it before anyone has said
 what it is.
 
-### 2. Looking at the first slice
+### 4. Looking at the first slice — *decide*
 
 Before the factory builds forty tickets, it builds **one journey, end to end,
 through real data**. Then it stops and shows you.
@@ -116,6 +155,65 @@ through real data**. Then it stops and shows you.
 Half an hour of your attention here is worth days later. If the domain model is
 wrong — and it usually is wrong in one place — you find out after one ticket
 instead of after forty.
+
+---
+
+## Where to put your stuff
+
+You will be asked for real-world material twice. There is a folder for each, and
+a script that makes what you drop in actually readable by an agent.
+
+### Anything that already exists → `docs/research/salvage-inbox/`
+
+Scribbled notes, a spreadsheet, screenshots of the old software, photographs of a
+register, a wireframe you drew last month, an exported CSV, an email thread.
+
+**Do not rename anything. Any format is fine.** Then normalise it:
+
+```bash
+node scripts/salvage-inbox.mjs ~/Desktop/temple-photos
+```
+
+That copies your originals to `raw/`, writes readable JPEGs to `pages/`, and
+generates an `INVENTORY.md` with a line per page for you to caption. It exists
+because an iPhone photo is HEIC — which an agent cannot open at all — and a 4K
+screenshot is too large to read. If the text comes out sideways, re-run with
+`--rotate 90`; photos of screens and walls usually are.
+
+What is worth digging out:
+
+| Bring | Why |
+|---|---|
+| A **filled-in** form or receipt — not a blank one | Blank gives you field names. Filled gives you which fields everyone leaves empty, and what gets written in the margin |
+| The spreadsheet as **CSV**, not a screenshot of it | A screenshot of a spreadsheet is the worst of both |
+| Screenshots of the old software — including the ugly screens | Vocabulary, dropdown states, error text |
+| Anything **taped to a wall** or clipped to the counter, and anything laminated | This is where the workarounds live. A handwritten code sheet stuck to a monitor is staff telling you exactly where the software fails them |
+| Anything printed that gets handed to a customer | Legal requirements nobody thinks to mention |
+
+Saying "we don't have that" is a real answer — the absence is itself a finding.
+Say it rather than leaving a blank.
+
+> `raw/` is gitignored. Photographs of a register hold real names, and they are
+> not going into version control.
+
+### What comes back from the field → `docs/product/intake/`
+
+`field-kit` writes your homework to `docs/product/homework/` and renders it as a
+Word document you can actually type into on site:
+
+```bash
+node scripts/homework.mjs build docs/product/homework/02-temple-visit.md
+```
+
+Fill it in, drop the filled copy into `docs/product/intake/`, and it gets read
+back:
+
+```bash
+node scripts/homework.mjs read docs/product/intake/02-temple-visit.docx
+```
+
+Formatting is not your job — messy is fine. Photographs you took while you were
+there go through `salvage-inbox.mjs` first, same as everything else.
 
 ---
 
@@ -250,9 +348,8 @@ when it is wrong. The rule is: **mine it for facts, never for structure.** What
 a receipt must legally carry is a fact worth keeping. Which pages the old app
 had is the sprawl you are rebuilding to escape.
 
-You can drop photographs, spreadsheets, and screenshots into
-`docs/research/salvage-inbox/` and a script normalises them into something an
-agent can actually read.
+This is why it asks for your pile before it starts — see
+[Where to put your stuff](#where-to-put-your-stuff).
 
 ### One vocabulary, everywhere
 
