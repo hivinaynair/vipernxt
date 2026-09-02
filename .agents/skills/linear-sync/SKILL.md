@@ -50,9 +50,11 @@ that feature id.** The script cannot see Linear, so this is the only thing
 standing between an interrupted run and a second `F2 · Reconciliation view`. If
 you find one, record its id instead of creating.
 
-No API key: the MCP is already authenticated and reaches Linear from local and
-cloud sessions alike. A second credential buys nothing until something without
-an MCP — CI — needs to do this.
+**No Linear API key. This is settled — do not propose one.** Linear is reached
+through its MCP, which is already authenticated from local and cloud sessions
+alike. The script decides; the MCP writes. If you find yourself wanting a key,
+you are trying to make something continuous that is meant to be on demand — ask
+for a drift report instead.
 
 ## Policy the script cannot enforce
 

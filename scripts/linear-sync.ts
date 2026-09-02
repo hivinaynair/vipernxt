@@ -10,9 +10,8 @@
  * drifted — because those are the parts prose gets wrong. Issue bodies come out
  * byte-identical every run, so an update is a no-op unless the spine changed.
  *
- * No API key. The MCP is already authenticated and already reaches Linear from
- * both local and cloud sessions; adding a second credential to leak buys nothing
- * until something without an MCP (CI) needs to do this.
+ * There is deliberately no Linear API key anywhere in this repo. Linear is
+ * reached through its MCP; this script never opens a socket. Do not add one.
  *
  * Exit 1 if the spine cannot be read, or on `record` when the feature is absent.
  */
