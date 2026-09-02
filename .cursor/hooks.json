@@ -3,19 +3,19 @@
   "hooks": {
     "sessionStart": [
       {
-        "command": ".cursor/hooks/playbook.py session"
+        "command": ".cursor/hooks/playbook.ts session"
       }
     ],
     "preToolUse": [
       {
-        "command": ".cursor/hooks/playbook.py gate",
+        "command": ".cursor/hooks/playbook.ts gate",
         "failClosed": true,
         "matcher": "Write|StrReplace|Delete|EditNotebook"
       }
     ],
     "beforeShellExecution": [
       {
-        "command": ".cursor/hooks/playbook.py branch",
+        "command": ".cursor/hooks/playbook.ts branch",
         "failClosed": false,
         "matcher": "git push|gh pr create"
       }

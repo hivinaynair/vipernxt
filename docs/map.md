@@ -100,7 +100,7 @@ No `docs/product/state.yaml` means no product. Boilerplate may be edited. This r
 
 | Piece | Path | Does |
 |---|---|---|
-| UI gate | [`.cursor/hooks/playbook.py`](../.cursor/hooks/playbook.py) `gate` | Denies Write/StrReplace/Delete under `apps/*/src/app` and `apps/*/src/features` until `shape` is `done` (or `ui_writes: allow`). Fail-closed. Missing state file = boilerplate, allowed. |
+| UI gate | [`.cursor/hooks/playbook.ts`](../.cursor/hooks/playbook.ts) `gate` | Denies Write/StrReplace/Delete under `apps/*/src/app` and `apps/*/src/features` until `shape` is `done` (or `ui_writes: allow`). Fail-closed. Missing state file = boilerplate, allowed. |
 | Branch gate | same file, `branch` | `beforeShellExecution`. Denies `git push` to `main`, `gh pr create --base main`, and `--force` without `--force-with-lease`. Releasing is the user's move. |
 | Session digest | same file, `session` | Runs `scripts/status.ts` and injects it. Cloud chats do not run `sessionStart`; the playbook rule still applies. |
 | `salvage-miner` | [`.cursor/agents/salvage-miner.md`](../.cursor/agents/salvage-miner.md) | One prior-art source. Facts, not structure. |
