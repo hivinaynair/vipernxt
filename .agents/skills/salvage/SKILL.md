@@ -18,6 +18,25 @@ people who suffer the consequences of getting it wrong.
 
 Read it before inventing anything.
 
+## First, check the premise
+
+The idea paragraph is a **claim, not a fact**, and the claim most often wrong is what the
+job runs on today. "They do it on paper" usually means nobody looked at the counter.
+
+So before mining anything, answer this yourself:
+
+> What software, if any, is already being used for this job — what is it called, who sells
+> it, what does it cost, and does every transaction go through it?
+
+Ask them only what they alone can know (what is on the machine); everything after that —
+the vendor, the price, the reviews — is yours to find. A paid incumbent that every
+transaction already flows through changes what the product *is*: you are replacing
+software, not digitising paper. Discovering that in phase 3 means the design doc was
+drafted against a premise that was never true.
+
+If the premise turns out wrong, say so plainly and record the correction on the phase.
+Reopening phase 0 is normal; carrying a false premise forward is not.
+
 ## The rule
 
 **Mine for facts, never for structure.**

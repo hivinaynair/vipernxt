@@ -62,10 +62,28 @@ finding, never as authority to widen the work.
 
 ### How to put a decision to them
 
-Routine choice: one question, options, a recommendation, then stop. A choice that would
-**expand the contract** needs more, and the exact shape is in [holding.md](holding.md) —
-read it rather than improvising, because an improvised one reads as routine and gets
-waved through.
+Routine choice — one question, options, a recommendation, then stop:
+
+```
+**[topic]**
+
+- A) …
+- B) …
+- C) Other (say what)
+
+Recommended: B — [one clause why]
+```
+
+A choice that would **expand the contract** needs all five of these, in one message:
+
+1. What they originally asked for.
+2. What this would commit them to that they have not agreed to.
+3. The smallest thing that satisfies the original ask without the expansion.
+4. **What accepting costs, and what declining costs.**
+5. Your recommendation, and why it serves what they actually wanted.
+
+Point 4 is the one that gets dropped, and dropping it is what turns an override into a
+decision nobody priced. If you cannot state the cost, you are not ready to ask.
 
 One held item per gate, not one per question. A review raising six questions is one item
 pointing at the report.
@@ -102,7 +120,7 @@ Running a six-phase pipeline over "add a column" is a failure, not thoroughness.
 | # | Phase | Skill | Who works |
 |---|---|---|---|
 | 0 | Salvage prior art | `salvage` | you |
-| 1 | Domain research | `/deep-research`, or research yourself | you |
+| 1 | Domain research | `/deep-research`, or research yourself; ends with the digest | you |
 | 2 | Field research | `field-kit` | **them**, in the real world |
 | 3 | Shape | `shape` | interview |
 | 3.5 | Domain model | `ontology` | you draft, they confirm |
@@ -192,6 +210,13 @@ payoff — do **not** start a new skill or a second journey file. Reopen this lo
 5. `linear-sync` after the spine is confirmed again.
 
 They keep typing `/next`. They do not type `/shape` or `/journeys` to revise.
+
+**Phase 1 ends with a digest, not a pile of notes.** Ten cited notes nobody rereads is
+worse than three. Write `docs/research/before-we-build.md`: what still blocks nothing,
+the handful of unknowns that would actually change what gets built (open or closed), what
+is already decided and must not be relitigated, and what *you* decide rather than them.
+Every claim points at the note that sources it. That file is what the next phase reads
+first.
 
 Phase 0 runs on every new product, not only rebuilds — there is almost always something being replaced, even if it is a spreadsheet. It is skipped only when `salvage` reports there is genuinely nothing to read. Phase 1 can run in parallel with 2 — send
 them out to gather, then keep researching while they are gone. **Never idle while a

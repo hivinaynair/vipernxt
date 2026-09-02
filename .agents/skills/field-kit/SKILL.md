@@ -101,6 +101,15 @@ do not improvise a renderer.
 the `.md` and rebuild; never edit the `.docx` to change a question, or `state.yaml` will
 be pointing at a file that no longer says what was asked.
 
+**Never write a second generator.** If `homework.mjs` seems not to work — no pandoc, no
+python-docx, no LibreOffice — it does not need them; it writes the docx zip itself. A
+side script that builds the document from its own list of questions is the drift this
+rule exists to prevent: the `.md` that `state.yaml` points at stops being what anyone was
+asked. Every question lives in the `.md`, or it was not asked.
+
+The check is one command: does `homework.mjs read` on the returned file show the questions
+you think you sent? If not, the artifact and the questionnaire have already separated.
+
 Write the homework so it renders well — the convention is small:
 
 | In the markdown | In the document |

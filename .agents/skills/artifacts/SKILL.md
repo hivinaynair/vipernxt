@@ -58,6 +58,7 @@ it — do not just let it grow.
 |---|---|---|
 | `salvage.md` | 2 pages | Facts table, then vocabulary, then what was abandoned, then open questions |
 | research note | 2 pages | Findings first, each cited; contested claims show both sides |
+| `before-we-build.md` | 2 pages | Unknowns that would change the build (open/closed), then decided-do-not-relitigate, then what we decide rather than them |
 | field findings | 2 pages | Observations, then quotes, then contradictions, then open |
 | `ontology.md` | Entity table + one block each | Table first; blocks only for entities with real states |
 | design doc | **2 pages** | See the template |
