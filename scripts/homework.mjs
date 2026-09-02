@@ -9,11 +9,21 @@
 // is edited in one place and never diverges from the file state.yaml points at.
 //
 // Conventions the renderer relies on — keep homework written this way:
-//   ## Stage 2 — the counter clerk   heading, starts a new page
+//   ## Stage 2 — the counter clerk   section, starts a new page, numbered "Section 2 of 8"
 //   ### What to ask                  sub-heading
-//   - Walk me through yesterday      question, gets an answer box
-//   - [ ] Photograph every screen    thing to capture, gets a tick box and an answer box
+//   - Walk me through yesterday      question, gets a numbered box
+//     Why we ask: ...                indented under a question — a note, not a question
+//   - [ ] Photograph every screen    thing to capture, gets a tick box
 //   Anything else                    instruction; no box, nobody has to fill it
+//
+// Layout follows Dillman's principles for self-administered questionnaires
+// (Internet, Mail and Mixed-Mode Surveys, 2009): questions on a lightly shaded
+// field with the answer space in white beneath (#16, #17 — white answer spaces
+// measurably reduce item non-response), dark print for questions and light for
+// instructions (#12), consecutive numbering (#9), instructions placed exactly
+// where they are needed rather than in a preamble (#2), more space between
+// questions than within one (#11), and 12pt body text, which is his minimum for
+// older respondents.
 
 import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -41,93 +51,159 @@ const plain = (s) =>
 
 const W = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
 
-const para = (text, { size = 22, bold = false, before = 0, pageBreak = false } = {}) =>
-  `<w:p><w:pPr>${pageBreak ? "<w:pageBreakBefore/>" : ""}<w:spacing w:before="${before}" w:after="80"/></w:pPr>` +
-  `<w:r><w:rPr>${bold ? "<w:b/>" : ""}<w:sz w:val="${size}"/></w:rPr><w:t xml:space="preserve">${esc(text)}</w:t></w:r></w:p>`;
+const run = (text, { size = 24, bold = false, italic = false, color = null } = {}) =>
+  `<w:r><w:rPr>${bold ? "<w:b/>" : ""}${italic ? "<w:i/>" : ""}` +
+  `${color ? `<w:color w:val="${color}"/>` : ""}<w:sz w:val="${size}"/></w:rPr>` +
+  `<w:t xml:space="preserve">${esc(text)}</w:t></w:r>`;
 
-// Question on the left, an empty bordered cell on the right. Typing into a table cell is
-// the one Word interaction nobody needs explaining, and it makes read-back unambiguous.
-const row = (question, tick) =>
-  "<w:tr><w:tc>" +
-  '<w:tcPr><w:tcW w:w="4000" w:type="dxa"/></w:tcPr>' +
-  para((tick ? "☐  " : "") + question) +
-  "</w:tc><w:tc>" +
-  '<w:tcPr><w:tcW w:w="5200" w:type="dxa"/><w:shd w:val="clear" w:fill="FBFBFB"/></w:tcPr>' +
-  '<w:p><w:pPr><w:spacing w:after="240"/></w:pPr></w:p>' +
-  "</w:tc></w:tr>";
+const para = (
+  text,
+  {
+    size = 24,
+    bold = false,
+    italic = false,
+    color = null,
+    before = 0,
+    after = 80,
+    pageBreak = false,
+    shade = null,
+  } = {},
+) =>
+  "<w:p><w:pPr>" +
+  (pageBreak ? "<w:pageBreakBefore/>" : "") +
+  (shade ? `<w:shd w:val="clear" w:fill="${shade}"/>` : "") +
+  `<w:spacing w:before="${before}" w:after="${after}"/></w:pPr>` +
+  (text ? run(text, { size, bold, italic, color }) : "") +
+  "</w:p>";
 
-const tableOpen =
-  "<w:tbl><w:tblPr>" +
-  '<w:tblW w:w="9200" w:type="dxa"/>' +
+const borders = (color) =>
   "<w:tblBorders>" +
   ["top", "left", "bottom", "right", "insideH", "insideV"]
-    .map((e) => `<w:${e} w:val="single" w:sz="4" w:space="0" w:color="BBBBBB"/>`)
+    .map((e) => `<w:${e} w:val="single" w:sz="4" w:space="0" w:color="${color}"/>`)
     .join("") +
-  "</w:tblBorders>" +
-  '<w:tblCellMar><w:top w:w="80" w:type="dxa"/><w:left w:w="120" w:type="dxa"/>' +
-  '<w:bottom w:w="80" w:type="dxa"/><w:right w:w="120" w:type="dxa"/></w:tblCellMar>' +
-  "</w:tblPr>";
+  "</w:tblBorders>";
+
+// One question is one table: a shaded cell carrying the number, the question and
+// any note, then a white cell to answer in. Stacked rather than side by side so a
+// long question does not wrap into a column two words wide, and so the answer
+// space is the full width of the page whether it is typed into or written on.
+// The white box is deliberately taller than one line: a larger answer space
+// produces longer answers (Christian & Dillman 2004), and it has to hold
+// handwriting if this gets printed.
+const questionBlock = (n, total, question, note, tick) =>
+  "<w:tbl><w:tblPr>" +
+  '<w:tblW w:w="9350" w:type="dxa"/>' +
+  borders("C4C4C4") +
+  '<w:tblCellMar><w:top w:w="100" w:type="dxa"/><w:left w:w="140" w:type="dxa"/>' +
+  '<w:bottom w:w="100" w:type="dxa"/><w:right w:w="140" w:type="dxa"/></w:tblCellMar>' +
+  "</w:tblPr>" +
+  // Question — dark on a light field.
+  "<w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc>" +
+  '<w:tcPr><w:tcW w:w="9350" w:type="dxa"/><w:shd w:val="clear" w:fill="EFEFEF"/></w:tcPr>' +
+  para(`Question ${n} of ${total}`, { size: 18, color: "767676", after: 40 }) +
+  para((tick ? "\u2610  " : "") + question, { size: 24, bold: true, after: note ? 40 : 0 }) +
+  (note ? para(note, { size: 20, italic: true, color: "5A5A5A", after: 0 }) : "") +
+  "</w:tc></w:tr>" +
+  // Answer — white, and tall enough to invite more than three words.
+  '<w:tr><w:trPr><w:trHeight w:val="850"/></w:trPr><w:tc>' +
+  '<w:tcPr><w:tcW w:w="9350" w:type="dxa"/><w:shd w:val="clear" w:fill="FFFFFF"/></w:tcPr>' +
+  para("Your answer:", { size: 18, color: "9A9A9A", after: 0 }) +
+  para("", { size: 24, after: 0 }) +
+  "</w:tc></w:tr>" +
+  "</w:tbl>" +
+  // More space between questions than inside one.
+  para("", { size: 12, after: 0 });
 
 function build(mdPath) {
   const md = readFileSync(mdPath, "utf8");
-  const body = [];
-  let inTable = false;
-  let seenStage = false;
 
-  const closeTable = () => {
-    if (inTable) {
-      body.push("</w:tbl>");
-      body.push('<w:p><w:pPr><w:spacing w:after="0"/></w:pPr></w:p>');
-      inTable = false;
-    }
-  };
-  const openTable = () => {
-    if (!inTable) {
-      body.push(tableOpen);
-      inTable = true;
-    }
-  };
-
+  // Pass one: parse. A line indented under a question is that question's note,
+  // not a question of its own — instructions belong where they are needed.
+  const items = [];
   for (const raw of md.split("\n")) {
+    if (!raw.trim() || /^---+$/.test(raw.trim())) continue;
     const line = raw.trim();
-    if (!line) continue;
-    if (/^---+$/.test(line)) continue;
 
     const h = line.match(/^(#{1,3})\s+(.*)$/);
     if (h) {
-      closeTable();
-      const level = h[1].length;
-      const pageBreak = level === 2 && seenStage;
-      if (level === 2) seenStage = true;
-      body.push(
-        para(plain(h[2]), {
-          size: level === 1 ? 36 : level === 2 ? 28 : 24,
-          bold: true,
-          before: level === 1 ? 0 : 240,
-          pageBreak,
-        }),
-      );
+      items.push({ type: `h${h[1].length}`, text: plain(h[2]) });
       continue;
     }
 
     const tick = line.match(/^[-*]\s+\[[ xX]?\]\s+(.*)$/);
     if (tick) {
-      openTable();
-      body.push(row(plain(tick[1]), true));
+      items.push({ type: "q", text: plain(tick[1]), tick: true });
       continue;
     }
 
     const bullet = line.match(/^[-*]\s+(.*)$/);
     if (bullet) {
-      openTable();
-      body.push(row(plain(bullet[1]), false));
+      items.push({ type: "q", text: plain(bullet[1]), tick: false });
       continue;
     }
 
-    closeTable();
-    body.push(para(plain(line.replace(/^>\s?/, ""))));
+    const last = items[items.length - 1];
+    if (/^\s\s+\S/.test(raw) && last?.type === "q" && !last.note) {
+      last.note = plain(line);
+      continue;
+    }
+
+    items.push({ type: "prose", text: plain(line.replace(/^>\s?/, "")) });
   }
-  closeTable();
+
+  // Pass two: render, now that the totals are known — progress is only
+  // reassuring if it says what it is progress towards.
+  const totalQuestions = items.filter((i) => i.type === "q").length;
+  const totalSections = items.filter((i) => i.type === "h2").length;
+
+  const body = [];
+  let n = 0;
+  let section = 0;
+  let seenSection = false;
+  let seenFirstQuestion = false;
+
+  for (const item of items) {
+    if (item.type === "h1") {
+      body.push(para(item.text, { size: 40, bold: true, after: 120 }));
+      continue;
+    }
+    if (item.type === "h2") {
+      section += 1;
+      body.push(
+        para(`Section ${section} of ${totalSections}`, {
+          size: 18,
+          color: "767676",
+          before: seenSection ? 0 : 320,
+          after: 40,
+          pageBreak: seenSection,
+        }),
+      );
+      body.push(para(item.text, { size: 30, bold: true, after: 160, shade: "E4E4E4" }));
+      seenSection = true;
+      continue;
+    }
+    if (item.type === "h3") {
+      body.push(para(item.text, { size: 26, bold: true, before: 240, after: 100 }));
+      continue;
+    }
+    if (item.type === "q") {
+      if (!seenFirstQuestion) {
+        body.push(
+          para(
+            "If you do not know an answer, write \u201cdon\u2019t know\u201d and move on \u2014 that is a " +
+              "useful answer too. Nothing here has to be filled in perfectly, and you can " +
+              "answer in any language.",
+            { size: 20, italic: true, color: "5A5A5A", after: 200 },
+          ),
+        );
+        seenFirstQuestion = true;
+      }
+      n += 1;
+      body.push(questionBlock(n, totalQuestions, item.text, item.note, item.tick));
+      continue;
+    }
+    body.push(para(item.text, { size: 22, after: 120 }));
+  }
 
   const doc =
     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
@@ -169,10 +245,17 @@ function read(docxPath) {
     maxBuffer: 64 * 1024 * 1024,
   }).toString();
 
+  // Join runs inside a paragraph, but keep paragraph breaks — a question and its
+  // note are separate paragraphs in one cell, and so are multi-line answers.
   const cellText = (cell) =>
-    (cell.match(/<w:t[^>]*>([\s\S]*?)<\/w:t>/g) ?? [])
-      .map((t) => t.replace(/<[^>]+>/g, ""))
-      .join("")
+    (cell.match(/<w:p\b[\s\S]*?<\/w:p>/g) ?? [cell])
+      .map((p) =>
+        (p.match(/<w:t[^>]*>([\s\S]*?)<\/w:t>/g) ?? [])
+          .map((t) => t.replace(/<[^>]+>/g, ""))
+          .join(""),
+      )
+      .filter(Boolean)
+      .join("\n")
       .replace(/&amp;/g, "&")
       .replace(/&lt;/g, "<")
       .replace(/&gt;/g, ">")
@@ -184,11 +267,11 @@ function read(docxPath) {
   let total = 0;
 
   // Walk paragraphs and table rows in document order so headings keep their place.
-  for (const block of xml.match(/<w:tr\b[\s\S]*?<\/w:tr>|<w:p\b[\s\S]*?<\/w:p>/g) ?? []) {
-    if (block.startsWith("<w:tr")) {
+  for (const block of xml.match(/<w:tbl\b[\s\S]*?<\/w:tbl>|<w:p\b[\s\S]*?<\/w:p>/g) ?? []) {
+    if (block.startsWith("<w:tbl")) {
       const cells = block.match(/<w:tc\b[\s\S]*?<\/w:tc>/g) ?? [];
-      const q = cellText(cells[0] ?? "");
-      const a = cellText(cells[1] ?? "");
+      const q = cellText(cells[0] ?? "").replace(/^Question \d+ of \d+\s*/, "");
+      const a = cellText(cells[1] ?? "").replace(/^Your answer:\s*/, "");
       if (!q) continue;
       total += 1;
       if (a) answered += 1;
