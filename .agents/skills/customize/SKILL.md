@@ -28,7 +28,26 @@ When the last question is applied, set `clone.customized: done` in
 - **Write the name first.** Question 1 writes `PRODUCT` to `.env.playbook` so
   setup cannot provision under `vipernxt`.
 - **Do not start setup.sh from this skill.** Point at it when you stop.
+- **Renames go through the script, not by hand** — see below.
 - After edits: `bun install`, `bun run check-types`, `bun run check-boundaries`.
+
+## Renaming is a script
+
+Questions 1–3 are answered by interview and applied by
+
+```sh
+node scripts/customize.mjs --name <kebab> [--scope @acme] [--app <dir>]   # dry run
+node scripts/customize.mjs --name <kebab> [--scope @acme] [--app <dir>] --apply
+```
+
+A name lives in the root `package.json`, every workspace `package.json`, every
+dependency entry, tsconfig `extends`, turbo filters, the Playwright `webDir` and
+the docs. By hand you miss one and it surfaces later as a confusing resolution
+error. Run the dry run, read the file list, then apply.
+
+Stripping vendors (questions 5, 6, 8) is **not** in the script — it deletes
+source and edits app code, which needs judgement about what else referenced
+them. Do that yourself.
 
 ## Questions
 

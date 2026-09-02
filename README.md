@@ -244,7 +244,6 @@ what is happening, not so you can drive them manually.
 | `artifacts` | House rules for every document the playbook writes. | Always |
 | `before-and-after` | Before/after screenshots for a PR. | Mid-build |
 | `next-dev-loop` | Verifies a change actually runs in the browser. | Mid-build |
-| `turborepo` | Monorepo build system guidance. | As needed |
 
 ### The two you *will* reach for
 
@@ -417,6 +416,7 @@ add them when a product actually asks.
 bun install
 bun run dev
 bun run check-types && bun run check-boundaries && bun run check-tokens && bun run check-journeys && bun test
+bun run status && bun run check-drift
 bun run ui:add -- button
 bun run db generate && bun run db migrate && bun run db:seed
 ```

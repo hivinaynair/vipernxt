@@ -62,30 +62,15 @@ finding, never as authority to widen the work.
 
 ### How to put a decision to them
 
-Routine choice — one question, options, a recommendation, then stop:
+Routine choice: one question, options, a recommendation, then stop. A choice that would
+**expand the contract** needs more, and the exact shape is in [holding.md](holding.md) —
+read it rather than improvising, because an improvised one reads as routine and gets
+waved through.
 
-```
-**[topic]**
+One held item per gate, not one per question. A review raising six questions is one item
+pointing at the report.
 
-- A) …
-- B) …
-- C) Other (say what)
-
-Recommended: B — [one clause why]
-```
-
-A choice that would **expand the contract** needs all five of these, in one message:
-
-1. What they originally asked for.
-2. What this would commit them to that they have not agreed to.
-3. The smallest thing that satisfies the original ask without the expansion.
-4. What accepting costs, and what declining costs.
-5. Your recommendation, and why it serves what they actually wanted.
-
-One held item per gate — not one per question. A review that raises six questions is one
-held item pointing at the report.
-
-Never use the words "held", "state file", or "pipeline" when talking to them. Ask the
+Never use the words "held", "state file" or "pipeline" when talking to them. Ask the
 question; keep the machinery to yourself.
 
 ## Recording an answer
@@ -216,11 +201,8 @@ Phases 0 and 1 are wide and human-free: dispatch independent investigations in p
 one per source or feature area, and reconcile the results yourself. Use whatever
 parallelism this harness offers; do not depend on a specific one.
 
-On Cursor, that fan-out is the project subagents in `.cursor/agents/`
-(`salvage-miner`, `domain-researcher`). They are pinned to **Cursor Grok 4.6**. Do not
-send playbook work to Gemini. Pass the skill path in the task prompt — subagents do not
-inherit the parent's skill catalog. `spine-checker` validates a journey YAML;
-`ui-gate-auditor` checks product-UI writes against `shape`.
+On Cursor that fan-out is `.cursor/agents/` — see `docs/map.md` for what each one does.
+Subagents do not inherit the parent's skills, so pass the skill path in the task prompt.
 
 ## Every run
 
@@ -238,9 +220,8 @@ inherit the parent's skill catalog. `spine-checker` validates a journey YAML;
 A Cursor hook denies writes under `apps/*/src/app` and `apps/*/src/features` until
 `shape` is `done`. Do not bypass it. `ui_writes` in the state file is the override.
 
-Before advancing from any phase into building, check the artifacts still agree with each
-other: does every feature trace to journey steps, does every screen in the spine exist in
-the design doc, does the code still match the spine. Report drift; do not silently fix it.
+Before advancing from any phase into building, run `bun scripts/check-drift.ts`. Report
+what it finds; do not silently fix it.
 
 ## Starting fresh
 

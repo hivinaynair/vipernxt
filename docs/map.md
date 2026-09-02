@@ -69,23 +69,22 @@ Type `/next`. It reads `docs/product/state.yaml` and does every step that is not
 | Skill | Job |
 |---|---|
 | `next` | Router. Runs the current phase. One held item at a time. |
-| `status` | Read-only glance. Also injected on local `sessionStart`. |
+| `status` | Read-only glance. Runs `scripts/status.ts` + `check-drift.ts`. |
 | `artifacts` | House rules for anything under `docs/product`, `docs/plans`, `docs/research`, `docs/journeys`. |
 | `salvage` | Mine prior art for domain facts. |
 | `field-kit` | Homework only they can fill; then absorb what comes back. |
 | `shape` | Interview → design doc. Canvas is a view of that doc. |
 | `ontology` | Domain entities before schema or spine. |
 | `journeys` | Expand the design-doc journey table into an ID’d YAML spine. |
-| `linear-sync` | Spine → Linear issues. IDs come back; nothing else. |
+| `linear-sync` | Spine → Linear issues via `scripts/linear-sync.ts plan`, executed through the MCP. IDs come back; nothing else. |
 | `design-system` | Layout primitives and semantic tokens before pages. |
 | `plan` | One spine feature → short spec + slices. `/next` runs it after the spine. |
 | `build` | Implements one slice. Tests cite step IDs. PR to `staging`. Host-agnostic. |
 | `prototype` | Three variants of one component, mid-build. |
-| `customize` | Names the clone and applies keep/strip. `/next` runs it after shape; before setup. |
+| `customize` | Names the clone (`scripts/customize.mjs`) and applies keep/strip. `/next` runs it after shape; before setup. |
 | `setup` | Runs `setup.sh`. One Neon project, two databases. |
 | `next-dev-loop` | Runtime verify after app edits (`/_next/mcp` + browser). |
 | `before-and-after` | Vendor skill. Before/after screenshot pair for a PR. |
-| `turborepo` | Vendor skill for the monorepo. |
 
 Phases, from [`next/SKILL.md`](../.agents/skills/next/SKILL.md): salvage → research → field → shape → ontology → journeys → structure / visual → Linear → build. Ship one walking skeleton after the spine exists. `prototype` is not a phase. A wrong product story reopens `shape` on the journeys table, then `journeys` — still `/next`, no new skill.
 
@@ -115,6 +114,11 @@ Rules: [`.cursor/rules/playbook.mdc`](../.cursor/rules/playbook.mdc) (always), `
 ## Checks
 
 Local, on commit ([`lefthook.yml`](../lefthook.yml)): Biome, boundaries, affected typechecks.
+
+Deterministic where it can be: `scripts/status.ts` renders the digest, `check-drift.ts`
+reports contradictions across artifacts, `linear-sync.ts` decides what Linear should say,
+`customize.mjs` renames the clone, `journey.ts` validates and renders the spine. Skills
+carry judgement; scripts carry anything that should come out the same every time.
 
 Declared merge bar ([`AGENTS.md`](../AGENTS.md)):
 
