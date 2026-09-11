@@ -473,8 +473,13 @@ for (const name of Object.keys(facets)) {
   const src = join(overlayRoot, name);
   const destRel = catalog[facets[name].on]?.path;
   if (!destRel || !existsSync(src)) continue;
-  cpSync(src, join(cwd, destRel), { recursive: true });
-  process.stdout.write(`overlay ${name} → ${destRel}\n`);
+  const { written, kept } = copyOverlay(src, join(cwd, destRel), force);
+  process.stdout.write(
+    `overlay ${name} → ${destRel}${written ? ` (${written} file${written === 1 ? "" : "s"})` : ""}\n`,
+  );
+  for (const rel of kept) {
+    process.stdout.write(`  kept ${join(destRel, rel)} — edited since compose; --force overwrites\n`);
+  }
 }
 
 if (selected.includes("web")) {
