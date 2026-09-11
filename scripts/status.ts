@@ -29,7 +29,7 @@ type State = {
   product?: string;
   size?: string;
   engagement?: { site?: string };
-  outcome?: { kind?: string; why?: string };
+  outcome?: { kind?: string; why?: string; date?: string };
   phase?: string | number;
   phases?: Record<string, Phase>;
   clone?: { customized?: string; setup?: string; tickets?: string; composed?: string };
@@ -78,6 +78,21 @@ const age = (iso?: string) => {
 const held = state.held ?? [];
 const out: string[] = [];
 
+// A stopped engagement is terminal. Reporting what it is still "waiting on",
+// or what comes "next", contradicts the stop and invites someone to carry on.
+if (state.outcome?.kind) {
+  const why = (state.outcome.why ?? "").trim();
+  console.log(
+    [
+      "**Stopped**",
+      `${state.outcome.kind}${state.outcome.date ? ` (${state.outcome.date})` : ""} — ${why || "no reason recorded"}`,
+      "",
+      "Reopen by clearing `outcome:` in docs/product/state.yaml.",
+    ].join("\n"),
+  );
+  process.exit(0);
+}
+
 // Waiting on you — gather before decide, then oldest first.
 const open = held
   .filter((h) => h.status === "open")
@@ -111,13 +126,6 @@ const phaseOf = (name: string) => phases.find(([, p]) => p.name === name)?.[1];
 const done = phases.filter(([, p]) => p.status === "done").map(([, p]) => p.name ?? "");
 const now = phases.find(([, p]) => p.status === "in-progress" || p.status === "blocked");
 const upcoming = phases.find(([, p]) => p.status === "pending" && !p.optional);
-
-// A finished engagement must not read like one waiting on a slow customer.
-if (state.outcome?.kind) {
-  out.push("**Stopped**");
-  out.push(`${state.outcome.kind} — ${state.outcome.why ?? "no reason recorded"}`);
-  out.push("");
-}
 
 if (phases.length > 0) {
   out.push("**Where we are**");
