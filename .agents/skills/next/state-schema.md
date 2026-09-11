@@ -25,7 +25,7 @@ idea_outdated: false
 
 reframe: >-
   Confirmed U5 paragraph: outcome, who has the pain, real problem,
-  why the obvious build is wrong.
+  why the obvious build is wrong, and the safe fallback.
 
 eval_set: docs/research/eval-set.md  # last 10 real cases; wave 0 seeds this
 
