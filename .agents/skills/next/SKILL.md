@@ -143,7 +143,7 @@ Running a six-phase pipeline over "add a column" is a failure, not thoroughness.
 | # | Phase | Skill | Who works |
 |---|---|---|---|
 | 0 | Salvage prior art | `salvage` | you |
-| 1 | Domain research | `/deep-research`, or research yourself; ends with the digest | you |
+| 1 | Domain research | `/deep-research`, or research yourself; after U1, scan named competitors; ends with the digest | you |
 | 2 | Field research | `field-kit` | the **site** (on-site, pile, or trip) |
 | 3 | Shape | `shape` | you draft from the pile; they confirm |
 | 3.5 | Domain model | `ontology` | you draft, they confirm a surprise |
@@ -245,6 +245,12 @@ or explicit "none"), and what the **current paid version already does**. Hold on
 "paper" claim. Do not plan to reimplement a vendor feature. If they are about to
 upgrade or migrate the SoR, hold a **time-sensitive** `who: site` gather for baseline
 numbers *this week* — after the change you cannot unmix the vendor from the clip.
+
+**Market scan.** Once U1 has a name (or the job category if "none"): the other apps
+selling that job. Same turn as salvage. Pricing, changelog, 2–3 star reviews. Dispatch
+`salvage-miner` per named competitor. Facts, not a feature matrix. Do not wait for the
+field visit. Do not skip this because of the competitor trap — the trap is copying
+their structure, not reading the market.
 
 **Prior-art miners.** If `prior_art:` lists paths, dispatch `salvage-miner` per path in
 that same turn — do not wait for `/salvage`.

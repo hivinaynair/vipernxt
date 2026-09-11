@@ -72,7 +72,7 @@ Type `/next`. It reads `docs/product/state.yaml` and does every step that is not
 | `next` | Router. Runs the current phase. One held item at a time. |
 | `status` | Read-only glance. Runs `scripts/status.ts` + `check-drift.ts`. |
 | `artifacts` | House rules for anything under `docs/product`, `docs/plans`, `docs/research`, `docs/journeys`. |
-| `salvage` | Mine prior art for domain facts. Incumbent gate first; facts ≠ menu parity. |
+| `salvage` | Mine prior art. Incumbent first, then the market; facts ≠ menu parity. |
 | `field-kit` | Homework only they can fill; photo-first; prune Closed; gap-pass before shape. |
 | `shape` | Interview → design doc. Canvas is a view of that doc. |
 | `ontology` | Domain entities before schema or spine. |

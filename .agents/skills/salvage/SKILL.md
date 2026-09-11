@@ -79,16 +79,22 @@ photographs; ask what the columns mean and which ones are always left empty.
 handed to a customer. These carry hard requirements, often legal ones, that nobody
 thinks to mention out loud.
 
+**The market (required once U1 has a name).** Other apps selling the same job — not
+this site's incumbent, the category. Pricing page, changelog, onboarding, 2–3 star
+reviews. Dispatch one `salvage-miner` per named competitor in the same turn as the
+incumbent. If U1 is "none", scan the category anyway; that is how you find the
+incumbent they did not name.
+
+Mine: shared vocabulary, the pricing band, what the category's current paid version
+already does, the jobs they all fail at. Do not mine a feature matrix. The competitor
+trap is copying structure, not reading the market.
+
 **Public complaints about the incumbent and its competitors.** One-star reviews,
 support forums, subreddits, feature-request threads. This is the highest-yield source
 for a genuinely new product and the one people skip. Nobody writes a paragraph about
 software that works; a furious review names the exact workflow that broke and why it
 mattered. Read the two- and three-star reviews most closely — one-stars are often
 about billing or support, threes about the product.
-
-**Competitors, read as products.** Onboarding flow, pricing page, docs, changelog. The
-pricing page tells you who they think the customer is; the changelog tells you what they
-got wrong and had to fix.
 
 **Adjacent domains.** Someone has solved this shape in another vertical. A booking
 system for clinics knows things a booking system for warehouses needs.

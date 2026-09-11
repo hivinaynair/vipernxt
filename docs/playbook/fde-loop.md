@@ -35,7 +35,7 @@ Input: a **site**, what they use today, the pile. Not an idea.
 
 | # | Do | Done when |
 |---|---|---|
-| U1 | Incumbent gate — name + photos, or explicit "none". What the **current paid version** already does. If they are about to upgrade/migrate, capture baseline numbers **before** the SoR changes | You are not researching against an unchecked "paper" claim, and you are not about to reimplement a vendor feature |
+| U1 | Incumbent gate — name + photos, or explicit "none". What the **current paid version** already does. Then **2–3 other vendors** selling this job (pricing, changelog, 2–3★ reviews). If they are about to upgrade/migrate, capture baseline numbers **before** the SoR changes | You are not researching against an unchecked "paper" claim; you are not about to reimplement a vendor feature; the market is cited, not copied |
 | U2 | Climb **request → outcome** — "If this works, what number moves in 90 days?" | One baseline metric, current value if known |
 | U3 | Watch the work (buyer is not the worker). Capture operational context separately from entities. Where the data may live (this machine / this network) | A dependency graph of the job + exceptions; laminated-card / workaround list; residency constraint if any |
 | U4 | Last **10 real cases** (or a week of the job). If the SoR already stores expert-labelled history, that *is* the eval set — anonymize it | Anonymized, frozen, cited to photos/exports/SoR |
@@ -49,7 +49,7 @@ Bucket every step while mapping:
 | **judgment** | Messy interpretation; agent proposes, human gates | Auto-post to the SoR |
 | **human-only** | Stays with the person. Three reasons, keep them separate: **judgement** (needs the client), **responsibility** (their name is on it), **relationship** (the conversation *is* the service) | "AI assist" chrome on a conversation that should stay human |
 
-Do not plan a screen for a script step. Do not plan an agent for a human-only step. Recommending they **buy or upgrade the incumbent** is a valid U1 outcome — record it and shrink the clip to what the vendor will never cover (usually the layer across many entities, before the SoR starts).
+Do not plan a screen for a script step. Do not plan an agent for a human-only step. Recommending they **buy or upgrade the incumbent** is a valid U1 outcome — record it and shrink the clip to what the vendor will never cover (usually the layer across many entities, before the SoR starts). The market scan is how you know that without waiting for the field visit.
 
 `who: site` on gathers only the counter can answer. Keep researching while those are open. Mode: **on-site** (live checklist) / **pile** (absorb inbox) / **trip** (`.docx`). Trip is not the default.
 
