@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 import { afterEach, describe, expect, test } from "bun:test";
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -82,9 +82,14 @@ describe("compose", () => {
     mkdirSync(join(dir, "docs/kit"), { recursive: true });
     writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "acme" }));
     writeFileSync(join(dir, "docs/kit/recipe.yaml"), readFileSync(recipe, "utf8"));
+    const overlaySrc = join(root, "docs/kit/overlays/web/src/env.ts");
+    mkdirSync(join(dir, "docs/kit/overlays/web/src"), { recursive: true });
+    writeFileSync(join(dir, "docs/kit/overlays/web/src/env.ts"), readFileSync(overlaySrc, "utf8"));
     const r = run(["--cwd", dir, "--add", "web", "--add", "db", "--apply"]);
     expect(r.code).toBe(0);
     expect(r.out).toContain("wrote");
+    expect(r.out).toContain("overlay web → apps/web");
+    expect(existsSync(join(dir, "apps/web/src/env.ts"))).toBe(true);
     const composed = readFileSync(join(dir, "docs/kit/composed.yaml"), "utf8");
     expect(composed).toContain("web");
     expect(composed).toContain("db");

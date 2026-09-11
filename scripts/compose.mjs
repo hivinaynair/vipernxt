@@ -7,12 +7,13 @@
  *   bun scripts/compose.mjs --add web --without jobs
  *   bun scripts/compose.mjs --add web --apply
  *
- * `--apply` writes docs/kit/composed.yaml on a named site clone. It refuses
- * while the root package is still vipernxt. It does not run the CLIs yet —
- * the printed commands are what the agent runs, in that order, then overlays.
+ * `--apply` writes docs/kit/composed.yaml on a named site clone and copies
+ * overlay files from docs/kit/overlays/. It refuses while the root package is
+ * still vipernxt. It does not run the CLIs yet — the printed commands are
+ * what the agent runs, in that order, then the copied overlays.
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 const OVERLAYS = {
@@ -179,5 +180,15 @@ const composed = {
   majors: recipe.majors ?? {},
 };
 writeFileSync(outPath, `${Bun.YAML.stringify(composed)}\n`);
+
+const overlayRoot = join(dirname(recipePath), "overlays");
+for (const name of selected) {
+  const src = join(overlayRoot, name);
+  const destRel = catalog[name]?.path;
+  if (!destRel || !existsSync(src)) continue;
+  cpSync(src, join(cwd, destRel), { recursive: true });
+  process.stdout.write(`overlay ${name} → ${destRel}\n`);
+}
+
 process.stdout.write(text);
 process.stdout.write(`wrote ${outPath}\n`);

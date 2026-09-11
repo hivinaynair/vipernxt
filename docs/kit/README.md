@@ -12,8 +12,9 @@ bun scripts/compose.mjs --add web --add db          # plan
 bun scripts/compose.mjs --add web --add db --apply  # site clone only
 ```
 
-`--apply` refuses while this repo is still named `vipernxt`. The lockfile
-belongs on the site, not here.
+`--apply` refuses while this repo is still named `vipernxt`. On a named clone it
+copies `overlays/` and writes `composed.yaml`. The lockfile belongs on the site,
+not here. This kit does not ship a Next app.
 
 | Want | Do |
 |---|---|
