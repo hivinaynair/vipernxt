@@ -15,7 +15,14 @@
  * clone.composed: done when state.yaml exists.
  */
 
-import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, join } from "node:path";
 
 const OVERLAYS = {
@@ -44,17 +51,152 @@ function objectBlock(lines) {
   return `{\n${lines.join("\n")}\n  }`;
 }
 
-function generateWebEnv({ auth, db, analytics, email, files }) {
+/**
+ * create-next-app writes dev/build/start/lint but no `check-types`, so
+ * `turbo run check-types` reports green having never typechecked the app the
+ * product is written in. Add the script (and the deps turbo needs to order it)
+ * without disturbing anything the CLI wrote.
+ *
+ * Exported for the test; returns the keys it added.
+ */
+export function withAppScripts(pkg, { scope = "@repo", surfaces = [], dbMajor = "^1.0.0-beta.22" } = {}) {
+  const added = [];
+  const scripts = { ...(pkg.scripts ?? {}) };
+  if (!scripts["check-types"]) {
+    scripts["check-types"] = "tsc --noEmit";
+    added.push("check-types");
+  }
+
+  // create-next-app has no idea the composed workspace packages exist, so
+  // nothing in the app could import them.
+  const deps = { ...(pkg.dependencies ?? {}) };
+  const want = {};
+  if (surfaces.includes("ui")) want[`${scope}/ui`] = "workspace:*";
+  if (surfaces.includes("db")) {
+    want[`${scope}/db`] = "workspace:*";
+    want["server-only"] = "^0.0.1";
+    // Any query in the app needs the operators (eq, asc, sql) alongside the
+    // tables it imports from the db package.
+    want["drizzle-orm"] = dbMajor;
+  }
+  for (const [name, range] of Object.entries(want)) {
+    if (!deps[name]) {
+      deps[name] = range;
+      added.push(name);
+    }
+  }
+
+  return { pkg: { ...pkg, scripts, dependencies: deps }, added };
+}
+
+/**
+ * PGlite ships a wasm binary it reads off disk. Bundled by Turbopack, its
+ * loader hands Node's fs a URL where a path is wanted and every query fails at
+ * runtime -- after the build succeeds, which is the worst place to find it.
+ *
+ * Exported for the test.
+ */
+export function withServerExternals(source) {
+  if (source.includes("@electric-sql/pglite")) return source;
+  const marker = "const nextConfig: NextConfig = {";
+  if (!source.includes(marker)) return source;
+  return source.replace(
+    marker,
+    `${marker}\n  /** PGlite reads its wasm off disk; bundling it breaks every query. */\n  serverExternalPackages: ["@electric-sql/pglite"],`,
+  );
+}
+
+/**
+ * Overlays are starting points, not managed files. `packages/db/src/schema.ts`
+ * and `seed.ts` in particular are stubs the product fills in at wave 0 — and a
+ * plain recursive copy silently reverted them to empty on any later
+ * `--apply`, taking the schema and the seed with them.
+ *
+ * So: write files that are missing or unchanged, and keep anything the product
+ * has edited. Exported for the test; returns what it did.
+ */
+export function copyOverlay(src, dest, force = false, rel = "") {
+  let written = 0;
+  const kept = [];
+  for (const entry of readdirSync(join(src, rel), { withFileTypes: true })) {
+    const next = rel ? join(rel, entry.name) : entry.name;
+    if (entry.isDirectory()) {
+      const sub = copyOverlay(src, dest, force, next);
+      written += sub.written;
+      kept.push(...sub.kept);
+      continue;
+    }
+    const from = join(src, next);
+    const to = join(dest, next);
+    if (!force && existsSync(to) && readFileSync(to, "utf8") !== readFileSync(from, "utf8")) {
+      kept.push(next);
+      continue;
+    }
+    mkdirSync(dirname(to), { recursive: true });
+    copyFileSync(from, to);
+    written += 1;
+  }
+  return { written, kept };
+}
+
+/** The scope the clone was renamed to, read off a composed package. */
+function workspaceScope(root) {
+  for (const rel of ["packages/db/package.json", "packages/ui/package.json"]) {
+    const p = join(root, rel);
+    if (!existsSync(p)) continue;
+    const name = JSON.parse(readFileSync(p, "utf8")).name ?? "";
+    if (name.startsWith("@")) return name.split("/")[0];
+  }
+  return "@repo";
+}
+
+function ensureAppScripts(appDir, opts) {
+  const pkgPath = join(appDir, "package.json");
+  if (!existsSync(pkgPath)) {
+    process.stderr.write(`warn: ${pkgPath} not found — run the empty-path CLI before --apply.\n`);
+    return;
+  }
+  const before = JSON.parse(readFileSync(pkgPath, "utf8"));
+  const { pkg: patched, added } = withAppScripts(before, opts);
+  if (added.length) {
+    writeFileSync(pkgPath, `${JSON.stringify(patched, null, 2)}\n`);
+    process.stdout.write(`package ${pkgPath.replace(`${cwd}/`, "")} + ${added.join(", ")}\n`);
+  }
+
+  if (opts?.surfaces?.includes("db")) {
+    const cfgPath = join(appDir, "next.config.ts");
+    if (existsSync(cfgPath)) {
+      const src = readFileSync(cfgPath, "utf8");
+      const out = withServerExternals(src);
+      if (out !== src) {
+        writeFileSync(cfgPath, out);
+        process.stdout.write(`config ${cfgPath.replace(`${cwd}/`, "")} + serverExternalPackages\n`);
+      }
+    }
+  }
+}
+
+export function generateWebEnv({ auth, db, analytics, email, files }) {
   const server = [];
   const client = [];
   const runtime = [];
   if (db) {
-    server.push("    DATABASE_URL: z.url(),");
+    // Optional so the first slice runs before anyone has provisioned Neon.
+    // packages/db falls back to PGlite when it is unset, and refuses to do so
+    // when NODE_ENV=production — so a deploy missing this still fails loudly.
+    server.push("    /** Unset in development: packages/db falls back to local PGlite. */");
+    server.push("    DATABASE_URL: z.url().optional(),");
     server.push("    DATABASE_URL_UNPOOLED: z.url().optional(),");
   }
   if (auth) {
-    server.push("    CLERK_SECRET_KEY: z.string().min(1),");
-    client.push("    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().min(1),");
+    // Optional for the same reason DATABASE_URL is: Clerk runs keyless in
+    // `next dev`, and /next defers keys until they accept the clip. Required
+    // here, the first page that obeys the env-module rule ("import env from
+    // @/env, never process.env") 500s on a product with no auth in it yet.
+    // Both keys, not just the secret — keyless means neither is set.
+    server.push("    /** Unset in development: `next dev` runs Clerk keyless. */");
+    server.push("    CLERK_SECRET_KEY: z.string().min(1).optional(),");
+    client.push("    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().min(1).optional(),");
     runtime.push(
       "    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,",
     );
@@ -135,6 +277,8 @@ if (unknown.length) {
 const cwd = flag("cwd") ?? process.cwd();
 const recipePath = flag("recipe") ?? join(cwd, "docs/kit/recipe.yaml");
 const apply = has("apply");
+/** Overwrite overlay files the product has edited. Never the default. */
+const force = has("force");
 const requested = collect("add");
 const without = new Set(collect("without"));
 
@@ -184,11 +328,18 @@ function cmd(bin, argv = [], when = "before") {
 
 for (const name of selected) {
   const s = catalog[name];
-  if (!s?.command) continue;
-  const after = s.command === "bun add" || String(s.command).startsWith("bun add");
-  const argv = [...(s.args ?? [])];
-  if (after && s.path) cmd(s.command, ["--cwd", s.path, ...argv], "after");
-  else cmd(s.command, argv, after ? "after" : "before");
+  if (!s) continue;
+  if (s.command) {
+    const after = s.command === "bun add" || String(s.command).startsWith("bun add");
+    const argv = [...(s.args ?? [])];
+    if (after && s.path) cmd(s.command, ["--cwd", s.path, ...argv], "after");
+    else cmd(s.command, argv, after ? "after" : "before");
+  }
+  // Dependencies the overlay's own files import. Not facets — dropping one
+  // leaves a file compose wrote that does not compile.
+  if (s.deps?.length && s.path) {
+    cmd("bun add", ["--cwd", s.path, ...s.deps], "after");
+  }
 }
 
 const facets = recipe.facets ?? {};
@@ -252,8 +403,16 @@ if (without.has("analytics")) lines.push("setup: skip PostHog — --without anal
 if (without.has("email")) lines.push("setup: skip Resend — --without email");
 if (without.has("files")) lines.push("setup: skip Blob — --without files");
 
+const uiAdd = catalog.ui?.add;
+if (uiAdd && selected.includes("ui")) {
+  lines.push("", "components (any time after --apply):");
+  lines.push(`  ${uiAdd} <component>`);
+  lines.push("  packages/ui is supplied by the overlay. Do not run `shadcn init` there —");
+  lines.push("  it prompts for a framework template and scaffolds a second project.");
+}
+
 lines.push("", "order: empty-path CLIs, then --apply, then `commands (after --apply)`.");
-lines.push("      create-next-app / eve init / shadcn init refuse a non-empty folder.");
+lines.push("      create-next-app / eve init refuse a non-empty folder.");
 
 const text = `${lines.join("\n")}\n`;
 
@@ -302,8 +461,11 @@ for (const name of selected) {
       `warn: ${destRel} has overlay files but no package.json — the CLI will refuse this directory. Scaffold into an empty path, then --apply.\n`,
     );
   }
-  cpSync(src, dest, { recursive: true });
-  process.stdout.write(`overlay ${name} → ${destRel}\n`);
+  const { written, kept } = copyOverlay(src, dest, force);
+  process.stdout.write(`overlay ${name} → ${destRel}${written ? ` (${written} file${written === 1 ? "" : "s"})` : ""}\n`);
+  for (const rel of kept) {
+    process.stdout.write(`  kept ${join(destRel, rel)} — edited since compose; --force overwrites\n`);
+  }
 }
 
 for (const name of Object.keys(facets)) {
@@ -330,6 +492,13 @@ if (selected.includes("web")) {
   process.stdout.write(
     `env ${envPath.replace(`${cwd}/`, "")} · auth=${envOpts.auth ? "on" : "off"} db=${envOpts.db ? "on" : "off"} analytics=${envOpts.analytics ? "on" : "off"} email=${envOpts.email ? "on" : "off"} files=${envOpts.files ? "on" : "off"}\n`,
   );
+}
+
+if (selected.includes("web")) {
+  ensureAppScripts(join(cwd, catalog.web?.path ?? "apps/web"), {
+    scope: workspaceScope(cwd),
+    surfaces: selected,
+  });
 }
 
 setCloneFlag(cwd, "composed", "done");

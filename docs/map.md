@@ -67,7 +67,7 @@ within pinned majors) and the overlays. `--apply` refuses on this kit. On a name
 | Agents | Eve → `apps/agent` | until U5 names judgment steps |
 | Lint / format | Biome | ESLint, Prettier |
 | Unit test | `bun test` + Testing Library | Vitest, Jest |
-| E2E | Playwright | Cypress |
+| E2E | Playwright — intended, not composed yet | Cypress |
 | Region | `NEON_REGION` at setup (US / EU / Asia) | a per-region template |
 | Branches | PRs → `staging`; `main` is production | Trunk-only until you change it on purpose |
 

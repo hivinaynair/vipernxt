@@ -15,7 +15,7 @@
     "check-drift": "bun scripts/check-drift.ts",
     "compose": "bun scripts/compose.mjs",
     "status": "bun scripts/status.ts",
-    "ui:add": "turbo run add --filter=@repo/ui",
+    "ui:add": "turbo run add --filter=@repo/ui --",
     "db": "bun scripts/db.mjs",
     "db:generate": "turbo run db:generate --filter=@repo/db",
     "db:migrate": "turbo run db:migrate --filter=@repo/db",

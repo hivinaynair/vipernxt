@@ -27,7 +27,9 @@ type Phase = { name?: string; status?: string; artifact?: string; optional?: boo
 
 type State = {
   product?: string;
+  size?: string;
   engagement?: { site?: string };
+  outcome?: { kind?: string; why?: string; date?: string };
   phase?: string | number;
   phases?: Record<string, Phase>;
   clone?: { customized?: string; setup?: string; tickets?: string; composed?: string };
@@ -76,6 +78,21 @@ const age = (iso?: string) => {
 const held = state.held ?? [];
 const out: string[] = [];
 
+// A stopped engagement is terminal. Reporting what it is still "waiting on",
+// or what comes "next", contradicts the stop and invites someone to carry on.
+if (state.outcome?.kind) {
+  const why = (state.outcome.why ?? "").trim();
+  console.log(
+    [
+      "**Stopped**",
+      `${state.outcome.kind}${state.outcome.date ? ` (${state.outcome.date})` : ""} — ${why || "no reason recorded"}`,
+      "",
+      "Reopen by clearing `outcome:` in docs/product/state.yaml.",
+    ].join("\n"),
+  );
+  process.exit(0);
+}
+
 // Waiting on you — gather before decide, then oldest first.
 const open = held
   .filter((h) => h.status === "open")
@@ -113,12 +130,22 @@ const upcoming = phases.find(([, p]) => p.status === "pending" && !p.optional);
 if (phases.length > 0) {
   out.push("**Where we are**");
   const bits: string[] = [];
+  if (state.size === "idea") {
+    bits.push("idea — no site named, so this is not an engagement yet");
+  }
   if (state.engagement?.site) bits.push(`site: ${state.engagement.site}`);
   if (state.clip?.kind) bits.push(`clip: ${state.clip.kind}`);
   if (state.surfaces?.length) bits.push(`surfaces: ${state.surfaces.join(", ")}`);
   if (done.length > 0) bits.push(`done: ${done.join(", ")}`);
   if (now) bits.push(`now: ${now[1].name}${now[1].status === "blocked" ? " (blocked)" : ""}`);
-  if (upcoming) bits.push(`next: ${upcoming[1].name}`);
+  // On the idea route phases 2+ are shut, so naming one as "next" tells the
+  // agent to run the very step the route forbids. The next move is the exit.
+  const SITE_PHASES = new Set(["field", "shape", "journeys", "build"]);
+  if (state.size === "idea" && SITE_PHASES.has(upcoming?.[1].name ?? "")) {
+    bits.push("next: name a site, or record `outcome:` and stop");
+  } else if (upcoming) {
+    bits.push(`next: ${upcoming[1].name}`);
+  }
   out.push(bits.join(" · "));
   if (state.clone?.customized === "pending" && phaseOf("shape")?.status === "done") {
     out.push("`/next` names the clone next.");

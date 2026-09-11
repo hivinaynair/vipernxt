@@ -73,3 +73,54 @@ describe("status", () => {
     expect(out).toContain("composes the stack next");
   });
 });
+
+describe("a stopped engagement", () => {
+  function state(yaml: string) {
+    dir = mkdtempSync(join(tmpdir(), "status-"));
+    const path = join(dir, "state.yaml");
+    writeFileSync(path, yaml);
+    return run(["--state", path]);
+  }
+
+  test("reports the stop and nothing else", () => {
+    // It used to print Stopped and then carry on with "Waiting on you" and
+    // "next: research", which contradicts the stop.
+    const out = state(
+      `size: idea\noutcome:\n  kind: buy-instead\n  why: seven vendors already ship this\n  date: 2026-09-11\nheld:\n  - id: H1\n    kind: gather\n    who: fde\n    what: Who is the customer?\n    status: open\nphases:\n  0: { name: salvage, status: blocked }\n  1: { name: research, status: pending }\n`,
+    );
+    expect(out).toContain("**Stopped**");
+    expect(out).toContain("buy-instead (2026-09-11)");
+    expect(out).toContain("seven vendors already ship this");
+    expect(out).not.toContain("Waiting on you");
+    expect(out).not.toContain("next:");
+    expect(out).toContain("Reopen by clearing");
+  });
+
+  test("says so when a stop has no recorded reason", () => {
+    const out = state(`size: idea\noutcome:\n  kind: parked\nphases: {}\n`);
+    expect(out).toContain("no reason recorded");
+  });
+
+  test("does not advertise a phase the idea route keeps shut", () => {
+    const out = state(
+      `size: idea\nphases:\n  0: { name: salvage, status: blocked }\n  1: { name: research, status: done }\n  2: { name: field, status: pending }\n`,
+    );
+    expect(out).not.toContain("next: field");
+    expect(out).toContain("next: name a site");
+  });
+
+  test("an engagement still gets its real next phase", () => {
+    const out = state(
+      `size: engagement\nengagement:\n  site: North depot\nphases:\n  1: { name: research, status: done }\n  2: { name: field, status: pending }\n`,
+    );
+    expect(out).toContain("next: field");
+  });
+
+  test("an idea that has not stopped still reports normally", () => {
+    const out = state(
+      `size: idea\nphases:\n  0: { name: salvage, status: blocked }\n  1: { name: research, status: pending }\n`,
+    );
+    expect(out).not.toContain("**Stopped**");
+    expect(out).toContain("not an engagement yet");
+  });
+});

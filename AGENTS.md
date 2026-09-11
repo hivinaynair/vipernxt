@@ -22,7 +22,7 @@ version agents need before touching anything.
 
 Auth: Clerk · Database: Drizzle ORM + Neon · Background work: Vercel Workflows ·
 Analytics: PostHog · Email: Resend · Files: Vercel Blob · UI: shadcn/ui ·
-Lint/format: Biome · E2E: Playwright.
+Lint/format: Biome · E2E: Playwright (intended; not composed yet).
 
 A new product shape decides which surfaces to compose from
 [docs/kit/recipe.yaml](docs/kit/recipe.yaml) — record the decision, do not

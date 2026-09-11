@@ -64,6 +64,12 @@ is *your* process; regenerate a conflicted lockfile rather than hand-merging.
    bun run check-types && bun run check-boundaries && bun run check-tokens && bun run check-journeys && bun test
    ```
 
+4. Then score it: `bun scripts/eval.ts`. The bar above says the code does what
+   the spine specified; the score says whether the product would have caught
+   what actually went wrong. A slice can be green and score 2/10 — that is a
+   finding for the checkpoint, not a merge blocker, so the score never gates
+   the PR. Put it in the PR body.
+
    `check-journeys` accepts real IDs. Do not pass `--complete` on a slice that
    left later served steps unbuilt. The last slice of the clip does:
 
@@ -105,8 +111,10 @@ Evidence, not prose. "It works" is not a claim you make unbacked.
 Fixing a bug: **capture the "before" while reproducing it, before you fix it.**
 Cheap then, impossible afterwards.
 
-`before-and-after` reaches authenticated screens through `/api/preview-login`,
-and both sides need identical seeded data or every pair reads as a change. State
+`before-and-after` needs identical seeded data on both sides or every pair reads
+as a change. Authenticated screens are meant to be reachable through
+`/api/preview-login` — **that route is not in the kit yet**, so until it is,
+capture before/after on screens the first slice leaves unauthenticated. State
 what you could not verify. Do not fake a screenshot.
 
 ## Ship
