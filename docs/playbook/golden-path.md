@@ -4,7 +4,7 @@ Token-cheap sequence. Procedure: [fde-loop.md](fde-loop.md). Research: [fde-work
 
 Dry-run on a **throwaway clone**. Do not commit a live site, pile, or `docs/product/state.yaml` into the kit.
 
-1. `/next` → site, what they use today, drop the pile (`docs/research/salvage-inbox/`, or attach in cloud). Record `engagement.site`. An idea is a **claim**, optional.
+1. `/next` → site, what they use today, pile (`docs/research/salvage-inbox/`; cloud: transcripts or one zip). Record `engagement.site`. An idea is a **claim**, optional.
 2. Same turn: incumbent gate (name + photos + what the paid version already does, or "none"); miners; salvage the pile. If they are about to change the SoR, baseline numbers **this week**.
 3. Outcome number (U2). Watch the work or absorb the pile (U3). Last 10 cases → eval set (U4). Bucket steps script / judgment / human.
 4. **U5 reframe** — they confirm. Why the obvious build is wrong, in one sentence.

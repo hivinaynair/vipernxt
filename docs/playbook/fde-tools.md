@@ -7,7 +7,7 @@ Do not add a vendor because a 2026 stack blog named it. Add one when a dry-run p
 | When | Open this | Not this |
 |---|---|---|
 | New engagement | `/next` → pile at `docs/research/salvage-inbox/` (or attach in cloud) | A kickoff deck, a Typeform, a Notion PRD as source of truth |
-| What they use today | Photos in `docs/research/salvage-inbox/` + incumbent name | Their idea paragraph |
+| What they use today | Folder on disk, or cloud: transcripts / one zip | Forty files in chat, a Drive link, their idea paragraph |
 | Last 10 cases | `docs/research/eval-set.md` (anonymized) | Invented seed people |
 | Semantic model | `docs/product/ontology.md` | Table names you find convenient |
 | Operational model | `docs/journeys/*.yaml` + laminated-card / workaround notes | Ontology entities pretending to be the clerk's judgment |
