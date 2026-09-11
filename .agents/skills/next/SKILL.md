@@ -168,7 +168,8 @@ on the first slice. Do not wait for them to type those skills or to say go.
 still `vipernxt` or `.env.playbook` has no `PRODUCT`: run [customize](../customize/SKILL.md)
 from the design doc. Honour surfaces already recorded; ask only what the doc left
 open. Compose from [docs/kit/recipe.yaml](../../../docs/kit/recipe.yaml) —
-`bun scripts/compose.mjs --add …` — do not free-hand a Next tree. They do not
+`bun scripts/compose.mjs --add …`. Run the printed CLIs into empty paths, then
+`--apply`. Do not free-hand a Next tree. They do not
 type `/customize`. Do not run `setup.sh` under the boilerplate name.
 
 **Setup is not on the path to the clip.** Use `.env.local` if keys already exist. If

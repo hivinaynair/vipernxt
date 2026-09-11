@@ -83,6 +83,53 @@ describe("validateSpine", () => {
     expect(errors).toEqual([]);
   });
 
+  it("accepts script/judgment steps with no screen, rejects a bad bucket", () => {
+    const { errors, warnings } = validateSpine({
+      ...base,
+      journeys: [
+        {
+          id: "J1",
+          title: "Gate",
+          steps: [
+            { id: "J1.S1", title: "Ingest", bucket: "script", next: "J1.S2" },
+            { id: "J1.S2", title: "Propose", bucket: "judgment", next: "J1.S3" },
+            { id: "J1.S3", title: "Sign off", bucket: "human", screen: "dash", state: "loaded" },
+          ],
+        },
+      ],
+    });
+    expect(errors).toEqual([]);
+    expect(warnings.some((w) => w.includes("no screen"))).toBe(false);
+    expect(warnings.some((w) => w.includes("no bucket"))).toBe(false);
+
+    const bad = validateSpine({
+      ...base,
+      journeys: [
+        {
+          id: "J1",
+          title: "Bad",
+          steps: [{ id: "J1.S1", title: "X", bucket: "agent" }],
+        },
+      ],
+    });
+    expect(bad.errors.some((e) => e.includes("bucket must be"))).toBe(true);
+  });
+
+  it("warns when bucket and screen are both missing", () => {
+    const { warnings } = validateSpine({
+      ...base,
+      journeys: [
+        {
+          id: "J1",
+          title: "Untagged",
+          steps: [{ id: "J1.S1", title: "Does a thing" }],
+        },
+      ],
+    });
+    expect(warnings.some((w) => w.includes("no bucket"))).toBe(true);
+    expect(warnings.some((w) => w.includes("no screen"))).toBe(true);
+  });
+
   it("rejects exit plus next, unknown uses, and unmapped child exits", () => {
     const { errors } = validateSpine({
       ...base,
@@ -162,5 +209,20 @@ describe("render", () => {
     expect(md).toContain('|"supported file"|');
     expect(md).toContain("| `matched` |");
     expect(md).toContain("exit `matched`");
+  });
+
+  it("renders bucket in the step table", () => {
+    const md = render({
+      product: "clip",
+      journeys: [
+        {
+          id: "J1",
+          title: "Gate",
+          steps: [{ id: "J1.S1", title: "Propose", bucket: "judgment" }],
+        },
+      ],
+    });
+    expect(md).toContain("| Step | Bucket |");
+    expect(md).toContain("| `J1.S1` Propose | judgment |");
   });
 });

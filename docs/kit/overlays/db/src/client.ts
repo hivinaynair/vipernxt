@@ -24,4 +24,4 @@ function getPool() {
   return globalForDb.pool;
 }
 
-export const db = drizzle({ client: getPool(), schema });
+export const db = drizzle(getPool(), { schema });

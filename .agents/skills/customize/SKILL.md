@@ -17,8 +17,9 @@ what they answered. Do not invent a product or a UI kit.
 what the doc left open.
 
 When the last question is applied, set `clone.customized: done` in
-`docs/product/state.yaml` if that file exists. Do not run `setup.sh` from here
-while `clone.setup` is `deferred` — `/next` builds the first local clip next.
+`docs/product/state.yaml` if that file exists (`customize.mjs --apply` does
+this). Do not run `setup.sh` from here while `clone.setup` is `deferred` —
+`/next` builds the first local clip next.
 
 ## Hard rules
 
@@ -57,10 +58,12 @@ bun scripts/compose.mjs --add web --without auth --without jobs
 ```
 
 `--apply` writes `docs/kit/composed.yaml` and copies `docs/kit/overlays/` onto
-the clone. It refuses while the root package is still `vipernxt`. It does not
-run the CLIs yet — you run the printed commands; the overlay files are already
-on disk. This kit does not ship Next, shadcn, or Neon — do not copy a fat tree
-in to strip it.
+the clone. It refuses while the root package is still `vipernxt`. **Run the
+printed CLIs into empty paths first** (`create-next-app` / `shadcn init` /
+`eve init` refuse a non-empty folder), then `--apply`. `--without auth`
+rewrites `apps/web/src/env.ts` so Clerk is not required. It sets
+`clone.composed: done`. This kit does not ship Next, shadcn, or Neon — do not
+copy a fat tree in to strip it.
 
 ## Questions
 

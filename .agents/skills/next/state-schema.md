@@ -112,8 +112,12 @@ If it does not, that is a contradiction to report, not to fix silently.
 **`decisions:` is append-only.**
 
 **`clone.customized`.** `pending` until `/next` finishes `customize` (`PRODUCT` in
-`.env.playbook`). If the flag says `done` but the package is still `vipernxt`, that
-is drift — report it, do not silently flip the flag.
+`.env.playbook`). `customize.mjs --apply` flips it to `done`. If the flag says
+`done` but the package is still `vipernxt`, that is drift — report it, do not
+silently flip the flag.
+
+**`clone.composed`.** `pending` until `compose.mjs --apply` on the named clone.
+That script flips it to `done`.
 
 **`clip.kind` / `surfaces`.** Set at U5. `replace` or `wrap`. Surfaces are keys in
 `docs/kit/recipe.yaml` (`web`, `agent`, `db`, `ui`). `clone.composed: done` with

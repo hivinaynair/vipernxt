@@ -33,6 +33,7 @@ journeys:
     steps:
       - id: J0.S1
         title: Opens a shared ledger
+        bucket: human
         screen: ledger
         state: reconciled
         sees: The same ledger the owner sees, with no destructive controls
@@ -54,6 +55,7 @@ journeys:
     steps:
       - id: J1.S1
         title: Lands on an empty dashboard
+        bucket: human
         screen: dashboard
         state: empty
         sees: No ledgers, one primary action, no settings to configure first
@@ -64,6 +66,7 @@ journeys:
           - WHEN an owner with no ledgers opens the dashboard THE SYSTEM SHALL show the empty state with a single primary action
       - id: J1.S2
         title: Uploads a statement
+        bucket: script
         screen: ledger
         state: importing
         sees: Row count climbing, no blocking modal
@@ -77,6 +80,7 @@ journeys:
           - IF the file is not a supported format THE SYSTEM SHALL reject it and name the formats it accepts
       - id: J1.S2b
         title: File is refused
+        bucket: script
         screen: ledger
         state: rejected
         sees: The formats the product accepts
@@ -87,6 +91,7 @@ journeys:
           - WHEN the file is not a supported format THE SYSTEM SHALL stay on the ledger and name the formats it accepts
       - id: J1.S3
         title: Sees the balance match
+        bucket: human
         screen: ledger
         state: reconciled
         sees: Matched total, and the rows that did not match
@@ -104,6 +109,7 @@ journeys:
     steps:
       - id: J2.S1
         title: Opens via the shared ledger journey
+        bucket: human
         uses: J0
         next:
           - { to: J2.S2, when: opened }
@@ -111,6 +117,7 @@ journeys:
           - WHEN the shared ledger journey exits opened THE SYSTEM SHALL show the reconciled rows to the reviewer
       - id: J2.S2
         title: Flags it
+        bucket: human
         screen: ledger
         state: flagged
         sees: Their flag attached to the row, visible to the owner

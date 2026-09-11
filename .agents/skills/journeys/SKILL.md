@@ -46,7 +46,10 @@ Do not invent a seat, a beat, or a click the doc did not confirm.
    with both voices.
 2. **A step is a turning point they can see.** Clip beat 1 → `J1.S1`, beat 2 → `J1.S2`.
    Two clicks that leave the picture unchanged stay one step. `sees` and `does` come
-   from the row plus that beat. `screen` + `state` come from the Screens table.
+   from the row plus that beat. Tag `bucket: script | judgment | human` on every
+   step. `screen` + `state` come from the Screens table when there is one — script
+   and judgment often have none; out-of-band human (a WhatsApp, a paper book) also
+   has none. Do not invent a screen to silence the validator.
 3. **`next` is the next beat.** Linear clip: `next: J1.S2`. The doc names two
    outcomes (supported vs refused file): label the edges. Do not fork because you
    can imagine a failure.

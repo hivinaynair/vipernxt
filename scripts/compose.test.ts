@@ -56,6 +56,9 @@ describe("compose", () => {
     expect(r.code).toBe(0);
     expect(r.out).toContain("eve@latest");
     expect(r.out).not.toContain("create-next-app@latest");
+    expect(r.out).toContain("judgment-gate");
+    expect(r.out).toContain("skip Neon");
+    expect(r.out).not.toContain("neonctl");
   });
 
   test("--without auth drops Clerk", () => {
@@ -63,6 +66,7 @@ describe("compose", () => {
     expect(r.code).toBe(0);
     expect(r.out).not.toContain("@clerk/nextjs");
     expect(r.out).toContain("workflow");
+    expect(r.out).toContain("skip Clerk");
   });
 
   test("unknown surface fails", () => {
@@ -94,5 +98,42 @@ describe("compose", () => {
     expect(composed).toContain("web");
     expect(composed).toContain("db");
     expect(composed).toContain("create-next-app@latest");
+  });
+
+  test("--apply without auth does not require Clerk in env.ts", () => {
+    dir = mkdtempSync(join(tmpdir(), "compose-"));
+    mkdirSync(join(dir, "docs/kit"), { recursive: true });
+    mkdirSync(join(dir, "docs/product"), { recursive: true });
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "acme" }));
+    writeFileSync(join(dir, "docs/kit/recipe.yaml"), readFileSync(recipe, "utf8"));
+    writeFileSync(
+      join(dir, "docs/product/state.yaml"),
+      "clone:\n  customized: done\n  composed: pending\n",
+    );
+    mkdirSync(join(dir, "docs/kit/overlays/web/src"), { recursive: true });
+    writeFileSync(join(dir, "docs/kit/overlays/web/src/env.ts"), "PLACEHOLDER\n");
+    mkdirSync(join(dir, "docs/kit/overlays/agent"), { recursive: true });
+    writeFileSync(join(dir, "docs/kit/overlays/agent/AGENTS.md"), "# agent\n");
+    const r = run([
+      "--cwd",
+      dir,
+      "--add",
+      "web",
+      "--add",
+      "agent",
+      "--without",
+      "auth",
+      "--without",
+      "jobs",
+      "--apply",
+    ]);
+    expect(r.code).toBe(0);
+    expect(r.out).toContain("overlay agent → apps/agent");
+    expect(existsSync(join(dir, "apps/agent/AGENTS.md"))).toBe(true);
+    const env = readFileSync(join(dir, "apps/web/src/env.ts"), "utf8");
+    expect(env).not.toContain("CLERK");
+    expect(env).not.toContain("DATABASE_URL");
+    const state = readFileSync(join(dir, "docs/product/state.yaml"), "utf8");
+    expect(state).toContain("composed: done");
   });
 });

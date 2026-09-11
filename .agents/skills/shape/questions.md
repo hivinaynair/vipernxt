@@ -142,7 +142,7 @@ Read [docs/kit/recipe.yaml](../../../docs/kit/recipe.yaml). The recipe is the st
 - C) both
 - D) neither (human-only clip; buy/upgrade the incumbent)
 
-Recommended: match the buckets. Do not add Eve because it is fashionable.
+Recommended: match the buckets. Tag every spine step `bucket: script | judgment | human`. Do not add Eve because it is fashionable.
 
 **F2. Auth** — recipe default is Clerk. For this claim? Skip if no `web`.
 
