@@ -70,13 +70,18 @@ Forbidden click: <actor> never gets <control>.
 
 ## Stack
 
+Surfaces come from [docs/kit/recipe.yaml](../../../docs/kit/recipe.yaml). Record which this clip needs; `/next` composes them after this doc is approved.
+
 | Choice | Decision | Why |
 |---|---|---|
-| Auth | keep / strip / orgs | |
-| Database | keep / strip | |
-| Background work | keep / strip | |
+| Clip kind | replace / wrap | |
+| Surfaces | web / agent / db | |
+| Auth | Clerk / skip / orgs | |
+| Database | Neon+Drizzle / skip | |
+| Background work | Workflows / skip | |
+| Region | aws-us-east-1 / eu / asia | |
 
-Decisions recorded, not applied. Cite first-party docs where a choice turned on a fact.
+Decisions recorded, not composed. Cite first-party docs where a choice turned on a fact.
 
 ## Honest limits
 

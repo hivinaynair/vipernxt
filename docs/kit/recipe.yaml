@@ -1,0 +1,105 @@
+# Stack recipe. Edit this file when the default stack changes.
+# Compose resolves package versions at scaffold time (`@latest` within
+# `majors`). The lockfile lives in the site repo, not here.
+#
+# This is not a second GitHub template. There is no fat tree to clone and
+# strip. After U5, `bun scripts/compose.mjs --add web --add db` prints the
+# commands; overlays under this folder are the opinions the CLIs do not
+# encode (feature folders, `@/env`, shadcn in `packages/ui`).
+
+packageManager: bun
+monorepo: turborepo
+
+# Pin the major so "latest" cannot jump a breaking line until you bump this.
+majors:
+  bun: "1.4"
+  next: 16
+  react: 19
+
+surfaces:
+  web:
+    implies: [ui]
+    path: apps/web
+    command: bunx create-next-app@latest
+    args:
+      - apps/web
+      - --yes
+      - --ts
+      - --tailwind
+      - --app
+      - --src-dir
+      - --import-alias
+      - "@/*"
+      - --use-bun
+      - --turbopack
+    folders: [app, features, shared]
+    env: "@/env"
+    auth: clerk
+    jobs: vercel-workflows
+    lint: biome
+    e2e: playwright
+  ui:
+    path: packages/ui
+    command: bunx shadcn@latest
+    args:
+      - init
+      - --cwd
+      - packages/ui
+    add: bun run ui:add --
+  db:
+    path: packages/db
+    host: neon
+    orm: drizzle
+    serverOnly: true
+    # No official monorepo CLI. Overlay copies the kit's packages/db skeleton
+    # and `bun add`s drizzle-orm / pg / server-only at latest within majors.
+    command: bun add
+    args:
+      - drizzle-orm
+      - pg
+      - server-only
+  agent:
+    path: apps/agent
+    command: bunx eve@latest
+    args:
+      - init
+      - apps/agent
+    when: "U5 surfaces includes agent — judgment steps, not script steps"
+
+# Facets of `web`. `--without auth` / `--without jobs` drop them from the plan.
+facets:
+  auth:
+    on: web
+    command: bun add
+    args:
+      - "@clerk/nextjs"
+  jobs:
+    on: web
+    command: bun add
+    args:
+      - workflow
+
+# Filled at setup, not compose. EU / Asia is a region flag, not a template.
+setup:
+  neon:
+    cli: neonctl projects create
+    regionFlag: --region
+    default: aws-us-east-1
+    regions:
+      - aws-us-east-1
+      - aws-eu-central-1
+      - aws-eu-west-1
+      - aws-ap-southeast-1
+      - aws-ap-northeast-1
+  vercel:
+    note: Record VERCEL_REGION in .env.playbook. Project region is a Vercel setting, not a second template.
+  env: ".env.playbook + apps/web/.env.local via setup.sh. Never invent keys; env.ts is the schema."
+
+overlays:
+  - bun-only
+  - feature-folders
+  - ui-in-packages
+  - env-module
+  - check-boundaries
+  - ui-gate
+  - server-only-db

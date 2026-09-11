@@ -4,11 +4,13 @@
 
 ViperNxt is two things in one repository:
 
-1. **A SaaS starter kit** — Bun, Next.js 16, Clerk, Drizzle + Neon, shadcn/ui,
-   Biome, Playwright. Wired together, opinions already argued out.
-2. **An FDE playbook** — agent skills that run an engagement: salvage the pile,
+1. **An FDE playbook** — agent skills that run an engagement: salvage the pile,
    watch the work, reframe the request, seed an eval set, ship one slice, then
    (only then) the factory.
+2. **A stack recipe** — [docs/kit/recipe.yaml](docs/kit/recipe.yaml). After U5,
+   compose downloads the latest Next.js / Clerk / Neon / shadcn / Eve within
+   pinned majors and applies kit overlays (feature folders, `@/env`, shadcn in
+   `packages/ui`). There is no second template repo to clone and strip.
 
 You clone it, type `/next`, and name a **site** plus what they use today. It
 does the rest, stopping only when it needs something it cannot get for itself —
@@ -35,8 +37,8 @@ reframe exists. Procedure: [docs/playbook/fde-loop.md](docs/playbook/fde-loop.md
 
 - You want a demo app to restyle. `apps/web` is leftover starter copy on
   purpose — there is no product here until you make one.
-- You want to pick your own stack. The stack is decided. You may *remove*
-  things; you cannot swap them in.
+- You want to pick a new stack per site. Change [docs/kit/recipe.yaml](docs/kit/recipe.yaml)
+  in this kit; clones compose from it. A site does not invent Prisma or NextAuth.
 - You want to start coding immediately. Until the design doc is approved **and**
   the U5 reframe exists, a hook physically blocks writes to product UI. This is
   the point, not a bug.
@@ -64,8 +66,8 @@ reframe exists. Procedure: [docs/playbook/fde-loop.md](docs/playbook/fde-loop.md
   R  reframe      the design-doc claim *is* that paragraph
   P  probe        optional: replay the eval set, count the baseline
                   (not product UI)
-  C  clip         customize → ontology + spine → wave 0 seeds the eval set
-                  → one journey, working
+  C  clip         compose from the recipe → ontology + spine → wave 0
+                  seeds the eval set → one journey, working
        │
        ▼  ✋ YOU LOOK AT IT. the only mandatory stop in the build.
        │
@@ -249,7 +251,7 @@ what is happening, not so you can drive them manually.
 | `journeys` | Turns the design doc's journey table into the ID'd spine. | Phase 4 |
 | `design-system` | Layout primitives and semantic tokens, before any page exists. | Phase 5 |
 | `linear-sync` | Publishes the spine to Linear as tickets carrying step IDs. | Phase 4.5 |
-| `customize` | Names your clone, applies keep/strip. | After shape |
+| `customize` | Names your clone, composes surfaces from the recipe. | After shape |
 | `setup` | Runs `setup.sh` — GitHub, Neon, Vercel, Clerk, Linear. | After they accept the clip |
 | `plan` | One feature → a short spec and the smallest buildable slices. | Phase 6 |
 | `build` | Implements one slice: isolate, build, prove, ship. | Phase 6 |
@@ -393,22 +395,30 @@ For screens behind login, `agent-browser` only accepts a URL — so there is a
 preview-only route that makes the signed-in state reachable by URL. It 404s in
 production, requires a secret, and signs in seeded users only.
 
-### The stack is closed
+### The stack is a recipe
 
-| Layer | Use | Skip |
+Edit [docs/kit/recipe.yaml](docs/kit/recipe.yaml) when the default should change.
+`bun scripts/compose.mjs --add web --add db` prints the commands. Overlays keep
+every clone on feature folders, `@/env`, and shadcn in `packages/ui` even when
+package patch versions differ. `--apply` refuses on this kit.
+
+| Layer | Recipe default | Skip |
 |---|---|---|
-| Install | Bun `1.4.x` | npm, pnpm, yarn |
-| App | Next.js 16, one `apps/web` | Extra apps until you ask |
-| Auth | Clerk | NextAuth, hand-rolled JWT |
-| Database | Drizzle + Neon, import `env` from `@/env` | Prisma, `process.env` in app code |
-| Jobs | Vercel Workflows | A second queue on day one |
+| Install | Bun (`majors.bun`) | npm, pnpm, yarn |
+| App | Next.js App Router, `apps/web` | Extra apps until you ask |
+| Auth | Clerk | `--without auth` |
+| Database | Drizzle + Neon, import `env` from `@/env` | omit `--add db` |
+| Jobs | Vercel Workflows | `--without jobs` |
 | UI | shadcn in `packages/ui` | Components installed into `apps/web` |
+| Agents | Eve, `apps/agent` | until U5 names judgment steps |
 | Lint | Biome | ESLint, Prettier |
 | Test | `bun test`, Playwright | Vitest, Jest, Cypress |
+| Region | `NEON_REGION` at setup | a per-region template |
 
-`customize` may **remove** something after the design doc says so. Nothing adds
-a second option "just in case". Billing and Clerk org UI are not in the tree —
-add them when a product actually asks.
+`customize` composes what the design doc named. Nothing adds a second option
+"just in case". Billing and Clerk org UI wait until a product asks. This repo
+still ships a reference `apps/web` until compose runs the CLIs — do not strip
+that tree on every clone as the long-term motion.
 
 ---
 
@@ -420,6 +430,7 @@ add them when a product actually asks.
 | `packages/ui` | shadcn (`@repo/ui`). `bun run ui:add -- <component>` |
 | `packages/db` | Drizzle + Neon. Server-only. Schema empty until a product needs tables |
 | `e2e/web` | Playwright |
+| `docs/kit/` | Stack recipe. Compose reads this. |
 | `docs/` | Design doc, journeys, research — after `/next` |
 | `.agents/skills/` | The playbook (phases and child jobs). `.cursor/skills/` and `.claude/skills/` symlink here. Cursor Task adapters in `.cursor/agents/` pin Grok |
 
@@ -430,6 +441,7 @@ bun install
 bun run dev
 bun run check-types && bun run check-boundaries && bun run check-tokens && bun run check-journeys && bun test
 bun run status && bun run check-drift
+bun scripts/compose.mjs --add web
 bun run ui:add -- button
 bun run db generate && bun run db migrate && bun run db:seed
 ```

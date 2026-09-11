@@ -17,7 +17,8 @@ Do not add a vendor because a 2026 stack blog named it. Add one when a dry-run p
 | Judgment step | Probe replay on the eval set; human-in-the-loop before the SoR write | Untraced prompt in a route |
 | Human-only step | Leave it with the person; log that it happened | "AI assist" chrome |
 | Clip UI | One journey, seeded with the eval set | The incumbent's full menu |
-| Hosted preview | `setup.sh` after they accept the clip | Provisioning before U5 |
+| Compose the stack | `bun scripts/compose.mjs --add web` (recipe + overlays) | A second GitHub template; free-hand `create-next-app` |
+| Hosted preview | `setup.sh` after they accept the clip (`NEON_REGION` for EU/Asia) | Provisioning before U5; a per-region template repo |
 | Kit improvement | A playbook/script change with no site name | Copying a customer's ontology into this repo |
 
 **Durable execution.** If a step must pause for a human (approve a posting, confirm a receipt), that is Vercel Workflows, not a long Server Action.

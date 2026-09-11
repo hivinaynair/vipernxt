@@ -166,8 +166,10 @@ on the first slice. Do not wait for them to type those skills or to say go.
 
 `customize` is not a phase either. After `shape` is `done`, if the root package is
 still `vipernxt` or `.env.playbook` has no `PRODUCT`: run [customize](../customize/SKILL.md)
-from the design doc. Honour keep/strip already recorded; ask only what the doc left
-open. They do not type `/customize`. Do not run `setup.sh` under the boilerplate name.
+from the design doc. Honour surfaces already recorded; ask only what the doc left
+open. Compose from [docs/kit/recipe.yaml](../../../docs/kit/recipe.yaml) —
+`bun scripts/compose.mjs --add …` — do not free-hand a Next tree. They do not
+type `/customize`. Do not run `setup.sh` under the boilerplate name.
 
 **Setup is not on the path to the clip.** Use `.env.local` if keys already exist. If
 database or auth keys are missing, that is one `who: fde` gather — not the nine-step
@@ -298,7 +300,8 @@ Factory slices: same table. The skill is `build` plus the slice — no named chi
    before advancing build.
 5. If `shape` is `done` and the clone is still named `vipernxt` (or has no `PRODUCT`),
    run `customize` from the design doc, then continue — spine, then the first local
-   slice. Do not stop for "go". Do not run `setup.sh` while `clone.setup` is `deferred`.
+   slice. Compose from the recipe; do not invent a tree. Do not stop for "go".
+   Do not run `setup.sh` while `clone.setup` is `deferred`.
 6. If they just accepted the first slice, set `clone.setup` and `clone.tickets` to
    `pending` and run setup + `linear-sync` + 5a.
 7. Otherwise: run the current phase's skill until it completes or raises an item.
@@ -316,8 +319,12 @@ No `docs/product/state.yaml`? This is a new engagement. Create it:
 
 ```yaml
 size: engagement
+clip:
+  kind:          # replace | wrap — set at U5
+surfaces: []     # web and/or agent; compose reads this
 clone:
   customized: pending
+  composed: pending
   setup: deferred
   tickets: deferred
 ```

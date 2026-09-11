@@ -11,7 +11,7 @@ description: >-
 
 # Shape the SaaS
 
-Interview → research → claim → actors → journeys → low-fi screens → stack. The design doc is written as you go, not at the end; the canvas is an optional Cursor view of it.
+Interview → research → claim → actors → journeys → low-fi screens → surfaces. The design doc is written as you go, not at the end; the canvas is an optional Cursor view of it.
 Then **stop**. This is not implementation, and not whatever setup or rename checklist the project ships.
 
 Copy this checklist and keep it updated:
@@ -25,7 +25,7 @@ Shaping:
 - [ ] 5. Actors — confirmed → append
 - [ ] 6. Journeys — confirmed → append
 - [ ] 7. Low-fi screens — confirmed → append
-- [ ] 8. Stack keep/strip — recorded in the doc, not applied
+- [ ] 8. Surfaces from the recipe — recorded in the doc, not composed
 - [ ] 9. Canvas (view of the doc) — or skipped: host has none
 - [ ] 10. Doc read end to end; user said it is right; STOP
 ```
@@ -46,7 +46,7 @@ Violate none of these:
   Cursor denies writes under `apps/*/src/app` and `apps/*/src/features` until `shape` is
   `done` on the state file. Do not bypass the hook with the shell.
 - **Do not invent a second app/login per persona unless the user asks.** Default: one URL, seats/roles, shared state.
-- **Respect the project's constraints** as written in its `AGENTS.md` / `CLAUDE.md` / README — package manager, module boundaries, existing vendors. Stack choices are recorded, never applied (step 8).
+- **Respect the project's constraints** as written in its `AGENTS.md` / `CLAUDE.md` / README — package manager, module boundaries, recipe overlays. Surfaces are recorded, never composed (step 8).
 - **Do not commit the design doc unless the user asks.**
 - **After the doc is approved, STOP.** Do not start implementing. Mention writing-plans / implementation only as a next step if they say go.
 
@@ -71,11 +71,11 @@ Lock these with the user on first use; they go in the doc glossary.
 
 | They want | Do instead |
 |---|---|
-| Rename packages, change scopes, strip vendors in the tree | `/next` runs `customize`, then the local clip. `setup.sh` after they accept |
+| Rename packages, change scopes, compose surfaces | `/next` runs `customize`, then the local clip. `setup.sh` after they accept |
 | Product UI, routes, features | Wait for design-doc approval, then a later plan |
 | A Figma file or production screens | Stay on low-fi bands (plus the canvas, if the host has one) |
 
-If they want both shape and setup: **shape first**. Record stack choices in the design doc; do not run the project's setup checklist in this session.
+If they want both shape and setup: **shape first**. Record surfaces in the design doc; do not run compose or the project's setup checklist in this session.
 
 If `superpowers:brainstorming` fires too, **this skill wins** for a new product in this repo — it is the same interview with gates, a doc, and a stop. Run one, not both.
 
@@ -246,15 +246,15 @@ For each screen the clip needs:
 - **Bands** (header, stage, list, actions, evidence, …) and what sits in each.
 - **Copy per seat/role** for the same event.
 
-No pixel mock, no component API, no app files. Confirm, append bands and per-seat copy to the doc, tick the gate. Then stack if not already recorded.
+No pixel mock, no component API, no app files. Confirm, append bands and per-seat copy to the doc, tick the gate. Then surfaces if not already recorded.
 
-## 8. Stack (record, do not apply)
+## 8. Surfaces (record, do not compose)
 
 Ask what is still unknown, one at a time. Bank section F has the options — do not restate them from memory.
 
-Do not silently add an app, auth vendor, ORM, or package manager. Honour the package manager and module boundaries the project already declares.
+Read [docs/kit/recipe.yaml](../../../docs/kit/recipe.yaml). Do not silently add a surface, auth vendor, ORM, or package manager. Honour bun-only and the overlays.
 
-Append the answers to the doc and tick the gate. Change no dependency and no vendor code in this skill.
+Append `clip.kind` (`replace` | `wrap`) and `surfaces:` (`web` / `agent` / `db`) to the doc and tick the gate. Change no dependency and run no CLI in this skill.
 
 ## 9. Canvas (skip if the host has none)
 

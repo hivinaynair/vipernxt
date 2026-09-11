@@ -30,9 +30,11 @@ type State = {
   engagement?: { site?: string };
   phase?: string | number;
   phases?: Record<string, Phase>;
-  clone?: { customized?: string; setup?: string; tickets?: string };
+  clone?: { customized?: string; setup?: string; tickets?: string; composed?: string };
   held?: Held[];
   ui_writes?: "allow" | "deny";
+  clip?: { kind?: string };
+  surfaces?: string[];
 };
 
 const arg = (name: string, fallback: string) => {
@@ -111,6 +113,8 @@ if (phases.length > 0) {
   out.push("**Where we are**");
   const bits: string[] = [];
   if (state.engagement?.site) bits.push(`site: ${state.engagement.site}`);
+  if (state.clip?.kind) bits.push(`clip: ${state.clip.kind}`);
+  if (state.surfaces?.length) bits.push(`surfaces: ${state.surfaces.join(", ")}`);
   if (done.length > 0) bits.push(`done: ${done.join(", ")}`);
   if (now) bits.push(`now: ${now[1].name}${now[1].status === "blocked" ? " (blocked)" : ""}`);
   if (upcoming) bits.push(`next: ${upcoming[1].name}`);
