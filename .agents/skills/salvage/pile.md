@@ -43,7 +43,8 @@ That request is one held item, `kind: gather`, done when every row of the invent
 caption. Do not start mining a half-empty inbox.
 
 **Normalise before reading.** Run `scripts/salvage-inbox.mjs <files...>`. It copies
-originals to `raw/`, writes readable JPEGs to `pages/`, and emits `INVENTORY.md`. This is
+originals to `raw/`, writes readable JPEGs to `pages/`, and emits `INVENTORY.md`.
+Re-running it **keeps captions and the Not-here list** already written. This is
 not tidiness: an iPhone photo is HEIC, which cannot be read at all, and a 4K screenshot
 exceeds the size limit — and an unreadable image can break the whole session rather than
 failing on that one file. Look at one page afterwards; if the text runs sideways, re-run

@@ -21,7 +21,8 @@ docs/journeys/<name>.yaml   source of truth — hand-written
 docs/journeys/<name>.md     generated — never hand-edited
 ```
 
-Schema: [spine-schema.md](spine-schema.md). Worked example: [example.yaml](example.yaml).
+Schema: [spine-schema.md](spine-schema.md). Worked examples: [example.yaml](example.yaml)
+(replace / screens), [example-wrap.yaml](example-wrap.yaml) (judgment, no screen on ingest).
 
 You do not need W3C UJG words. You need the design doc's tables and this expansion.
 Write our YAML keys (`step`, `next`, `sees`, `does`). Do not invent a second format.
@@ -35,8 +36,8 @@ YAML. If a section is missing, stop — run `shape`, or ask one question.
 |---|---|
 | **Actors** | `actors[]`. One id per seat. |
 | **The clip** | Numbered beats. These become steps for the seat the clip is about. |
-| **Journeys** | One row per seat: wants / can click / sees after beat 1 / sees at the end. Each row is one journey (`J1`, `J2`). |
-| **Screens** | `screens[]` — `bands` and every `state`. A step lands on one screen + one state. |
+| **Journeys** | One row per seat: bucket / wants / does / sees after beat 1 / sees at the end. Each row is one journey (`J1`, `J2`). |
+| **Screens** | `screens[]` — omit if the doc has no Screens section. A step with a screen lands on one screen + one state. |
 
 Do not invent a seat, a beat, or a click the doc did not confirm.
 

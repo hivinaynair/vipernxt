@@ -151,22 +151,33 @@ function addSurface(name) {
 }
 for (const s of requested.length ? requested : known) addSurface(s);
 
-const commands = [];
-function cmd(bin, argv = []) {
-  commands.push([bin, ...argv].join(" "));
+const commandsBefore = [];
+const commandsAfter = [];
+function cmd(bin, argv = [], when = "before") {
+  const line = [bin, ...argv].join(" ");
+  (when === "after" ? commandsAfter : commandsBefore).push(line);
 }
 
 for (const name of selected) {
   const s = catalog[name];
-  if (s?.command) cmd(s.command, s.args ?? []);
+  if (!s?.command) continue;
+  const after = s.command === "bun add" || String(s.command).startsWith("bun add");
+  const argv = [...(s.args ?? [])];
+  if (after && s.path) cmd(s.command, ["--cwd", s.path, ...argv], "after");
+  else cmd(s.command, argv, after ? "after" : "before");
 }
 
 const facets = recipe.facets ?? {};
 for (const [name, facet] of Object.entries(facets)) {
   if (without.has(name)) continue;
   if (!selected.includes(facet.on)) continue;
-  if (facet.command) cmd(facet.command, facet.args ?? []);
+  if (!facet.command) continue;
+  const dest = catalog[facet.on]?.path;
+  const argv = dest ? ["--cwd", dest, ...(facet.args ?? [])] : [...(facet.args ?? [])];
+  cmd(facet.command, argv, "after");
 }
+
+const commands = [...commandsBefore, ...commandsAfter];
 
 const overlayIds = [];
 const overlaySeen = new Set();
@@ -179,8 +190,18 @@ for (const name of selected) {
 }
 
 const mode = requested.length ? "plan" : "catalog";
-const lines = [`compose ${mode}`, `surfaces: ${selected.join(", ")}`, "", "commands:"];
-for (const c of commands) lines.push(`  ${c}`);
+const lines = [`compose ${mode}`, `surfaces: ${selected.join(", ")}`];
+if (commandsBefore.length) {
+  lines.push("", "commands (empty paths):");
+  for (const c of commandsBefore) lines.push(`  ${c}`);
+}
+if (commandsAfter.length) {
+  lines.push("", "commands (after --apply):");
+  for (const c of commandsAfter) lines.push(`  ${c}`);
+}
+if (!commandsBefore.length && !commandsAfter.length) {
+  lines.push("", "commands:", "  (none)");
+}
 lines.push("", "overlays:");
 for (const id of overlayIds) lines.push(`  ${id}: ${OVERLAYS[id]}`);
 
@@ -198,7 +219,7 @@ if (setup.neon && selected.includes("db")) {
 }
 if (without.has("auth")) lines.push("setup: skip Clerk — --without auth");
 
-lines.push("", "order: run the commands into empty paths, then --apply to copy overlays.");
+lines.push("", "order: empty-path CLIs, then --apply, then `commands (after --apply)`.");
 lines.push("      create-next-app / eve init / shadcn init refuse a non-empty folder.");
 
 const text = `${lines.join("\n")}\n`;
