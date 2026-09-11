@@ -15,7 +15,14 @@
  * clone.composed: done when state.yaml exists.
  */
 
-import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, join } from "node:path";
 
 const OVERLAYS = {
@@ -97,6 +104,39 @@ export function withServerExternals(source) {
     marker,
     `${marker}\n  /** PGlite reads its wasm off disk; bundling it breaks every query. */\n  serverExternalPackages: ["@electric-sql/pglite"],`,
   );
+}
+
+/**
+ * Overlays are starting points, not managed files. `packages/db/src/schema.ts`
+ * and `seed.ts` in particular are stubs the product fills in at wave 0 — and a
+ * plain recursive copy silently reverted them to empty on any later
+ * `--apply`, taking the schema and the seed with them.
+ *
+ * So: write files that are missing or unchanged, and keep anything the product
+ * has edited. Exported for the test; returns what it did.
+ */
+export function copyOverlay(src, dest, force = false, rel = "") {
+  let written = 0;
+  const kept = [];
+  for (const entry of readdirSync(join(src, rel), { withFileTypes: true })) {
+    const next = rel ? join(rel, entry.name) : entry.name;
+    if (entry.isDirectory()) {
+      const sub = copyOverlay(src, dest, force, next);
+      written += sub.written;
+      kept.push(...sub.kept);
+      continue;
+    }
+    const from = join(src, next);
+    const to = join(dest, next);
+    if (!force && existsSync(to) && readFileSync(to, "utf8") !== readFileSync(from, "utf8")) {
+      kept.push(next);
+      continue;
+    }
+    mkdirSync(dirname(to), { recursive: true });
+    copyFileSync(from, to);
+    written += 1;
+  }
+  return { written, kept };
 }
 
 /** The scope the clone was renamed to, read off a composed package. */
@@ -237,6 +277,8 @@ if (unknown.length) {
 const cwd = flag("cwd") ?? process.cwd();
 const recipePath = flag("recipe") ?? join(cwd, "docs/kit/recipe.yaml");
 const apply = has("apply");
+/** Overwrite overlay files the product has edited. Never the default. */
+const force = has("force");
 const requested = collect("add");
 const without = new Set(collect("without"));
 
@@ -419,8 +461,11 @@ for (const name of selected) {
       `warn: ${destRel} has overlay files but no package.json — the CLI will refuse this directory. Scaffold into an empty path, then --apply.\n`,
     );
   }
-  cpSync(src, dest, { recursive: true });
-  process.stdout.write(`overlay ${name} → ${destRel}\n`);
+  const { written, kept } = copyOverlay(src, dest, force);
+  process.stdout.write(`overlay ${name} → ${destRel}${written ? ` (${written} file${written === 1 ? "" : "s"})` : ""}\n`);
+  for (const rel of kept) {
+    process.stdout.write(`  kept ${join(destRel, rel)} — edited since compose; --force overwrites\n`);
+  }
 }
 
 for (const name of Object.keys(facets)) {

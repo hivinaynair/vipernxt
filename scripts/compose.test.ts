@@ -109,7 +109,13 @@ describe("compose", () => {
   });
 
   test("--apply refuses on the kit", () => {
-    const r = run(["--add", "web", "--apply"]);
+    // In a temp dir, not the repo root. Run against the repo this passed on the
+    // kit (blocked by the name guard) and silently rewrote docs/kit/composed.yaml
+    // on any renamed clone — so `bun test` inside a product clobbered its own
+    // compose record, and check-drift then reported surfaces that had gone missing.
+    dir = mkdtempSync(join(tmpdir(), "compose-"));
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "vipernxt" }));
+    const r = run(["--cwd", dir, "--add", "web", "--apply"]);
     expect(r.code).toBe(1);
     expect(r.out).toContain("vipernxt");
   });
@@ -371,5 +377,71 @@ describe("withServerExternals", () => {
     const { withServerExternals } = await import("./compose.mjs");
     const odd = "export default { reactCompiler: true };";
     expect(withServerExternals(odd)).toBe(odd);
+  });
+});
+
+describe("copyOverlay", () => {
+  function tree(files: Record<string, string>) {
+    const base = mkdtempSync(join(tmpdir(), "overlay-"));
+    for (const [rel, body] of Object.entries(files)) {
+      const p = join(base, rel);
+      mkdirSync(join(p, ".."), { recursive: true });
+      writeFileSync(p, body);
+    }
+    return base;
+  }
+
+  test("writes files that are missing", async () => {
+    const { copyOverlay } = await import("./compose.mjs");
+    const src = tree({ "src/schema.ts": "export {};\n" });
+    const dest = mkdtempSync(join(tmpdir(), "dest-"));
+    const r = copyOverlay(src, dest);
+    expect(r.written).toBe(1);
+    expect(r.kept).toEqual([]);
+    expect(readFileSync(join(dest, "src/schema.ts"), "utf8")).toBe("export {};\n");
+    rmSync(src, { recursive: true, force: true });
+    rmSync(dest, { recursive: true, force: true });
+  });
+
+  test("keeps a file the product has edited — this used to eat wave 0", async () => {
+    const { copyOverlay } = await import("./compose.mjs");
+    const src = tree({ "src/schema.ts": "export {};\n" });
+    const dest = tree({ "src/schema.ts": "export const students = pgTable(...);\n" });
+    const r = copyOverlay(src, dest);
+    expect(r.kept).toEqual(["src/schema.ts"]);
+    expect(r.written).toBe(0);
+    // The schema and the seed survive a second --apply.
+    expect(readFileSync(join(dest, "src/schema.ts"), "utf8")).toContain("pgTable");
+    rmSync(src, { recursive: true, force: true });
+    rmSync(dest, { recursive: true, force: true });
+  });
+
+  test("rewrites an untouched file, so --apply stays idempotent", async () => {
+    const { copyOverlay } = await import("./compose.mjs");
+    const src = tree({ "a.ts": "same\n" });
+    const dest = tree({ "a.ts": "same\n" });
+    expect(copyOverlay(src, dest).kept).toEqual([]);
+    rmSync(src, { recursive: true, force: true });
+    rmSync(dest, { recursive: true, force: true });
+  });
+
+  test("--force overwrites an edited file", async () => {
+    const { copyOverlay } = await import("./compose.mjs");
+    const src = tree({ "a.ts": "fresh\n" });
+    const dest = tree({ "a.ts": "edited\n" });
+    const r = copyOverlay(src, dest, true);
+    expect(r.kept).toEqual([]);
+    expect(readFileSync(join(dest, "a.ts"), "utf8")).toBe("fresh\n");
+    rmSync(src, { recursive: true, force: true });
+    rmSync(dest, { recursive: true, force: true });
+  });
+
+  test("recurses into nested directories", async () => {
+    const { copyOverlay } = await import("./compose.mjs");
+    const src = tree({ "src/styles/globals.css": "a\n", "src/lib/utils.ts": "b\n" });
+    const dest = mkdtempSync(join(tmpdir(), "dest-"));
+    expect(copyOverlay(src, dest).written).toBe(2);
+    rmSync(src, { recursive: true, force: true });
+    rmSync(dest, { recursive: true, force: true });
   });
 });

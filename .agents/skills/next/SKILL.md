@@ -214,7 +214,9 @@ bun run db generate && bun run db migrate && bun --cwd packages/db run db:seed
 ```
 
 Clerk runs keyless in `next dev`. So build wave 0 and the first slice on the fallback
-and let them look at it. Only a key they alone hold — a third-party API the clip
+and let them look at it. PGlite holds one connection: run the dev server **or** a db
+script, never both, and if a hard kill wedges the directory (`RuntimeError: Aborted()`)
+run `bun run db reset` rather than debugging the wasm. Only a key they alone hold — a third-party API the clip
 genuinely calls — is a `who: fde` gather, and even then it is one gather, not the
 nine-step provision. GitHub, Vercel, Neon and Linear wait until they accept the slice
 (`clone.setup` / `clone.tickets` leave `deferred`).

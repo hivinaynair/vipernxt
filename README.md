@@ -539,6 +539,7 @@ bun scripts/eval.ts                       # score the slice against the last 10 
 bun scripts/compose.mjs --add web
 bun run ui:add -- button
 bun run db generate && bun run db seed    # seed depends on migrate
+bun run db reset                          # local PGlite wedged? throw it away and reseed
 ```
 
 Lefthook runs Biome, boundaries, and affected typechecks on every commit.
@@ -552,8 +553,18 @@ no daemon and no account. It refuses that fallback under `NODE_ENV=production`,
 so a deploy missing the variable fails loudly instead of serving an empty one.
 Clerk runs keyless in `next dev` the same way.
 
+PGlite is single-connection, so only one process may hold it — the dev server
+*or* a script, not both. If `next dev` is killed uncleanly the data directory can
+be left unopenable, and the failure reads as `RuntimeError: Aborted()` from the
+wasm build with no hint about the cause. It is seed data, so throw it away:
+
+```bash
+bun run db reset
+```
+
 Point it at Neon when you are ready: `DATABASE_URL` (pooled, for the app) and
-`DATABASE_URL_UNPOOLED` (direct, for `db push` / `db studio`).
+`DATABASE_URL_UNPOOLED` (direct, for `db push` / `db studio`). `reset` refuses to
+run when `DATABASE_URL` is set.
 
 ## Branches
 
