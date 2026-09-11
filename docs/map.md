@@ -30,13 +30,12 @@ is a view of this file — not a second spec.
 
 | Path | Role |
 |---|---|
-| `apps/web` | Next.js 16 App Router. Routes in `src/app`, domains in `src/features/*`, app-local code in `src/shared`. Composition also in `src/proxy.ts`. |
-| `packages/ui` | shadcn/ui (`@repo/ui`). Add with `bun run ui:add -- <component>`. Never install components into an app. |
-| `packages/db` | Drizzle ORM 1 (beta) + Neon (`@repo/db`). Server-only. Schema is empty until a product needs tables. |
+| `apps/` | Empty until compose. Next lands at `apps/web` with `src/app` / `src/features` / `src/shared`. |
+| `packages/` | Empty until compose. Then `ui` (shadcn) and `db` (Drizzle + Neon). |
+| `e2e/` | Empty until compose. |
 | `tooling/typescript-config` | Shared `tsconfig`s. |
 | `tooling/mocks` | Shared MSW handlers (`@repo/mocks`). Started from `test/setup.ts`. |
 | `tooling/dependency-cruiser` | Feature-folder import rules. `bun run check-boundaries`. |
-| `e2e/web` | Playwright. Import `test`/`expect` from that app’s `playwright.setup`. |
 | `test/` | `bun test` preload only. Suites are colocated `*.test.ts(x)`. |
 | `docs/kit/` | Stack recipe + overlays. Compose reads this. Not a second GitHub template. |
 | `docs/` | Product artifacts after `/next`. This map. Research notes. |
@@ -52,7 +51,7 @@ Features must not import each other ([`tooling/dependency-cruiser/nextjs.mjs`](.
 
 Edit [docs/kit/recipe.yaml](kit/recipe.yaml) when the default should change.
 `bun scripts/compose.mjs --add web --add db` prints the commands (`@latest`
-within pinned majors) and the overlays. `--apply` refuses on this kit.
+within pinned majors) and the overlays. `--apply` refuses on this kit. On a named clone it copies overlays and writes `composed.yaml`.
 
 | Layer | Recipe default | Skip |
 |---|---|---|
@@ -70,9 +69,7 @@ within pinned majors) and the overlays. `--apply` refuses on this kit.
 | Branches | PRs → `staging`; `main` is production | Trunk-only until you change it on purpose |
 
 A new product shape records surfaces on `state.yaml`. `customize` composes them.
-Nothing else adds a vendor "just in case". This repo still ships a reference
-`apps/web` until compose runs the CLIs itself — do not treat that tree as the
-thing every site must strip.
+Nothing else adds a vendor "just in case". This kit is empty of Next until compose.
 
 ## Playbook
 
@@ -154,7 +151,7 @@ CI: [`.github/workflows/check.yml`](../.github/workflows/check.yml) on PRs and o
 |---|---|
 | Starter leftovers | “Create Next App” copy. `customize` question 1 and 7 delete it on the first real clone. |
 | Billing | Not in the tree. Extend the recipe when a product asks. |
-| Compose `--apply` runs CLIs | Plan + `composed.yaml` land first. Emptying `apps/web` from the kit is the next wave. |
+| Compose `--apply` copies overlays | CLIs (`create-next-app`, `eve init`) still run by the agent from the printed plan. |
 | `check-evidence` | PR bodies name step IDs by convention; no script enforces it yet. Add one if a false "done" ever lands. |
 | Clerk orgs | Setup can flip the flag. No org UI until a product is B2B. |
 | Build-skill names | Closed. `plan` and `build` — not `game-plan` / `lets-cook`. No verbose ticket writer. |

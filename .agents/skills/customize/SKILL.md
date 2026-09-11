@@ -56,14 +56,11 @@ bun scripts/compose.mjs --add agent
 bun scripts/compose.mjs --add web --without auth --without jobs
 ```
 
-`--apply` writes `docs/kit/composed.yaml` on a named clone. It refuses while
-the root package is still `vipernxt`. It does not run the CLIs yet — you run
-the printed commands, then the overlays in [docs/kit/overlays.md](../../../docs/kit/overlays.md).
-
-While this kit still ships `apps/web`, a throwaway clone that kept the fat tree
-must also **strip** unused vendors (same judgement as before). Do not add a
-second option "just in case". The next wave empties the kit; compose then
-installs only what `--add` named.
+`--apply` writes `docs/kit/composed.yaml` and copies `docs/kit/overlays/` onto
+the clone. It refuses while the root package is still `vipernxt`. It does not
+run the CLIs yet — you run the printed commands; the overlay files are already
+on disk. This kit does not ship Next, shadcn, or Neon — do not copy a fat tree
+in to strip it.
 
 ## Questions
 

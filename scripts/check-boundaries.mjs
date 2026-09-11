@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { readdir, stat } from "node:fs/promises";
 import { join } from "node:path";
 import { formatReport, summarizeViolations } from "./lib/boundary-report.mjs";
@@ -6,6 +7,11 @@ const repoRoot = join(import.meta.dir, "..");
 const config = join(repoRoot, "tooling/dependency-cruiser/nextjs.mjs");
 const appsDir = join(repoRoot, "apps");
 const strict = process.argv.includes("--strict");
+
+if (!existsSync(appsDir)) {
+  console.log("ok: no apps/ yet — compose a web surface first.");
+  process.exit(0);
+}
 
 const entries = await readdir(appsDir);
 let failed = false;
@@ -67,8 +73,8 @@ for (const name of entries) {
 }
 
 if (cruised === 0) {
-  console.error("No Next.js apps with src/ found under apps/.");
-  process.exit(1);
+  console.log("ok: no Next.js apps under apps/ yet — compose a web surface first.");
+  process.exit(0);
 }
 
 if (failed) {

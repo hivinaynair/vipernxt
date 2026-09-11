@@ -14,8 +14,10 @@ applies these. A clone that skipped them is not this kit.
 | `ui-gate` | web | Hook denies `apps/*/src/app` and `src/features` until `shape` is `done`. |
 | `server-only-db` | db | `@repo/db` is server-only. Schema is empty until wave 0. |
 
-Copy these from this repo after the CLI returns. Do not let the agent invent a
-tree that "looks like" them.
+Copy the files under `overlays/web`, `overlays/ui`, `overlays/db` after the CLI
+returns (`compose --apply` does that copy). Do not let the agent invent a tree
+that "looks like" them. No shadcn components live here — `bun run ui:add` after
+compose.
 
 Regions (EU / Asia) are **setup flags**, not overlays. See `setup.neon.regions`
 in [recipe.yaml](recipe.yaml).
