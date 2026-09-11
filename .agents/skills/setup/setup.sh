@@ -98,23 +98,11 @@ fi
 say "One project named ${PRODUCT} in ${NEON_REGION}. Two databases on the default branch: staging, production."
 
 neon_project_id() {
-  neonctl projects list --output json 2>/dev/null | python3 -c "
-import sys, json
-name = sys.argv[1]
-ps = json.load(sys.stdin)
-ps = ps.get('projects', ps) if isinstance(ps, dict) else ps
-print(next((p['id'] for p in ps if p.get('name') == name), ''))
-" "$1"
+  neonctl projects list --output json 2>/dev/null | bun scripts/lib/json-pick.mjs project-id "$1"
 }
 
 neon_has_db() {
-  neonctl databases list --project-id "$1" --output json 2>/dev/null | python3 -c "
-import sys, json
-want = sys.argv[1]
-data = json.load(sys.stdin)
-dbs = data.get('databases', data) if isinstance(data, dict) else data
-print('yes' if any(d.get('name') == want for d in dbs) else 'no')
-" "$2"
+  neonctl databases list --project-id "$1" --output json 2>/dev/null | bun scripts/lib/json-pick.mjs has-db "$2"
 }
 
 pid="$(neon_project_id "$PRODUCT")"
@@ -184,7 +172,7 @@ elif ! clerk whoami >/dev/null 2>&1; then
   say "Run: clerk auth login   then re-run this script"
 else
   good "clerk authenticated"
-  linked=$(clerk whoami 2>/dev/null | python3 -c "import sys,json;print('yes' if json.load(sys.stdin).get('linked') else 'no')" 2>/dev/null || echo no)
+  linked=$(clerk whoami 2>/dev/null | bun scripts/lib/json-pick.mjs clerk-linked 2>/dev/null || echo no)
   if [ "$linked" = yes ]; then
     good "project already linked to a Clerk application"
   else

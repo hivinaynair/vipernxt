@@ -105,4 +105,20 @@ describe("check-drift", () => {
     expect(r.code).toBe(1);
     expect(r.out).toContain("surfaces is empty");
   });
+
+  test("flags a surface missing from composed.yaml", () => {
+    dir = mkdtempSync(join(tmpdir(), "drift-"));
+    mkdirSync(join(dir, "docs/product"), { recursive: true });
+    mkdirSync(join(dir, "docs/kit"), { recursive: true });
+    writeFileSync(
+      join(dir, "docs/product/state.yaml"),
+      `product: demo\nclip:\n  kind: wrap\nsurfaces: [web, agent]\nclone:\n  composed: done\nphases: {}\n`,
+    );
+    writeFileSync(join(dir, "docs/kit/composed.yaml"), "surfaces: [web, ui]\n");
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "demo" }));
+    const r = run(dir);
+    expect(r.code).toBe(1);
+    expect(r.out).toContain("agent");
+    expect(r.out).toContain("composed.yaml");
+  });
 });

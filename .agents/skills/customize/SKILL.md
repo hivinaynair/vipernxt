@@ -40,8 +40,8 @@ this). Do not run `setup.sh` from here while `clone.setup` is `deferred` —
 Questions 1–3 are answered by interview and applied by
 
 ```sh
-node scripts/customize.mjs --name <kebab> [--scope @acme] [--app <dir>]   # dry run
-node scripts/customize.mjs --name <kebab> [--scope @acme] [--app <dir>] --apply
+bun scripts/customize.mjs --name <kebab> [--scope @acme] [--app <dir>]   # dry run
+bun scripts/customize.mjs --name <kebab> [--scope @acme] [--app <dir>] --apply
 ```
 
 A name lives in the root `package.json`, every workspace `package.json`, every
@@ -59,8 +59,9 @@ bun scripts/compose.mjs --add web --without auth --without jobs
 
 `--apply` writes `docs/kit/composed.yaml` and copies `docs/kit/overlays/` onto
 the clone. It refuses while the root package is still `vipernxt`. **Run the
-printed CLIs into empty paths first** (`create-next-app` / `shadcn init` /
-`eve init` refuse a non-empty folder), then `--apply`. `--without auth`
+printed empty-path CLIs first** (`create-next-app` / `shadcn init` /
+`eve init` refuse a non-empty folder), then `--apply`, then `commands (after
+--apply)` (`bun add --cwd packages/db` / `apps/web`). `--without auth`
 rewrites `apps/web/src/env.ts` so Clerk is not required. It sets
 `clone.composed: done`. This kit does not ship Next, shadcn, or Neon — do not
 copy a fat tree in to strip it.

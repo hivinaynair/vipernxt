@@ -52,12 +52,15 @@ Evidence it leaves behind: <rows, receipts, hashes — not an animation>
 Same clip, one row per seat. The `journeys` skill expands this table — do not
 change the columns.
 
-| Seat | Wants | Can click | Sees after beat 1 | Sees at the end |
-| | | | | |
+| Seat | Bucket | Wants | Does | Sees after beat 1 | Sees at the end |
+| | script / judgment / human | | click, or out of band | | |
 
-Forbidden click: <actor> never gets <control>.
+Forbidden: <actor> never <posts / pings everyone / logs in>.
 
 ## Screens
+
+Omit this section if the clip has no screen (script-only, judgment-only, or
+out-of-band human). Do not invent a screen to fill the table.
 
 | Screen | Bands | States |
 | | | |

@@ -1,8 +1,8 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 // Applies the mechanical half of `customize`: renaming the clone.
 //
-//   node scripts/customize.mjs --name acme [--scope @acme] [--app dashboard]
-//   node scripts/customize.mjs --name acme --apply
+//   bun scripts/customize.mjs --name acme [--scope @acme] [--app dashboard]
+//   bun scripts/customize.mjs --name acme --apply
 //
 // Dry run unless --apply is passed; it prints every file it would touch.
 //

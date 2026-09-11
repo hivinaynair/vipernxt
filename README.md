@@ -178,7 +178,7 @@ register, a wireframe you drew last month, an exported CSV, an email thread.
 **This machine:** drop the files in `docs/research/salvage-inbox/`, then:
 
 ```bash
-node scripts/salvage-inbox.mjs docs/research/salvage-inbox
+bun scripts/salvage-inbox.mjs docs/research/salvage-inbox
 ```
 
 **Cloud:** a Cloud Agent cannot see that folder. Prefer they run the command above
@@ -216,14 +216,14 @@ Say it rather than leaving a blank.
 Word document you can actually type into on site:
 
 ```bash
-node scripts/homework.mjs build docs/product/homework/02-site-visit.md
+bun scripts/homework.mjs build docs/product/homework/02-site-visit.md
 ```
 
 Fill it in, drop the filled copy into `docs/product/intake/`, and it gets read
 back:
 
 ```bash
-node scripts/homework.mjs read docs/product/intake/02-site-visit.docx
+bun scripts/homework.mjs read docs/product/intake/02-site-visit.docx
 ```
 
 Formatting is not your job — messy is fine. Photographs you took while you were

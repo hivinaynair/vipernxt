@@ -345,7 +345,7 @@ Say this, almost verbatim:
 
 A Cloud Agent cannot see their Finder. Do not ask them to scp, open the VM desktop, attach forty files, or commit photos. Drive/Dropbox/Notion links are not the pile — auth and PII in a second cloud. Understand with originals belongs on a laptop; cloud mines transcripts.
 
-Then run `node scripts/salvage-inbox.mjs` on whatever landed (zips included). `raw/` and page JPEGs stay gitignored.
+Then run `bun scripts/salvage-inbox.mjs` on whatever landed (zips included). `raw/` and page JPEGs stay gitignored.
 
 Checklist: [salvage/pile.md](../salvage/pile.md).
 
