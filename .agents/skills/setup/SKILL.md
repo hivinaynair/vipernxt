@@ -31,8 +31,10 @@ question 9) is passed to `neonctl projects create --region`. Default
 — do not invent keys; `apps/web/src/env.ts` is the schema.
 
 `docs/kit/composed.yaml` decides which stages run. No `db` surface → skip Neon.
-`--without auth` (or no `web`) → skip Clerk. No composed file → every stage,
-same as before.
+`--without auth` (or no `web`) → skip Clerk. `--without analytics` / `email` /
+`files` skip PostHog, Resend, and Blob. Those three **paste** a token; they do
+not create the cloud store. Blank is fine — the local clip runs without them.
+No composed file → every stage, same as before.
 
 `/next` should already have run `customize`, so `PRODUCT` is in `.env.playbook`.
 If it has not, the script asks once and records it. Confirm this is the right

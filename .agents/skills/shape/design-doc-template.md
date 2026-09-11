@@ -82,6 +82,9 @@ Surfaces come from [docs/kit/recipe.yaml](../../../docs/kit/recipe.yaml). Record
 | Auth | Clerk / skip / orgs | |
 | Database | Neon+Drizzle / skip | |
 | Background work | Workflows / skip | |
+| Analytics | PostHog / skip | |
+| Email | Resend / skip | |
+| Files | Vercel Blob / skip | |
 | Region | aws-us-east-1 / eu / asia | |
 
 Decisions recorded, not composed. Cite first-party docs where a choice turned on a fact.

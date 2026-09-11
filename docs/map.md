@@ -60,6 +60,9 @@ within pinned majors) and the overlays. `--apply` refuses on this kit. On a name
 | Auth | Clerk (`src/proxy.ts`, `ClerkProvider`) | `--without auth` |
 | Database | Drizzle + Neon, validated via `@/env` | omit `--add db` |
 | Jobs | Vercel Workflows (`withWorkflow`) | `--without jobs` |
+| Analytics | PostHog (errors + product) | `--without analytics` |
+| Email | Resend | `--without email` |
+| Files | Vercel Blob | `--without files` |
 | UI | shadcn in `packages/ui`, Tailwind 4 | Components in `apps/web` |
 | Agents | Eve → `apps/agent` | until U5 names judgment steps |
 | Lint / format | Biome | ESLint, Prettier |
