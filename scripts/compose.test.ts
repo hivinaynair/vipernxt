@@ -445,3 +445,52 @@ describe("copyOverlay", () => {
     rmSync(dest, { recursive: true, force: true });
   });
 });
+
+describe("--apply on a full clone", () => {
+  test("copies every overlay including the facets, and exits clean", () => {
+    // The facet loop had its own copy call. Replacing only the surface loop
+    // left `cpSync is not defined` there, so --apply crashed after the db
+    // overlay and silently skipped analytics, email and files. It went
+    // unnoticed because the output was being suppressed.
+    dir = mkdtempSync(join(tmpdir(), "compose-"));
+    mkdirSync(join(dir, "docs/kit"), { recursive: true });
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "acme" }));
+    cpSync(join(root, "docs/kit/recipe.yaml"), join(dir, "docs/kit/recipe.yaml"));
+    for (const name of ["web", "ui", "db", "analytics", "email", "files"]) {
+      cpSync(join(root, "docs/kit/overlays", name), join(dir, "docs/kit/overlays", name), {
+        recursive: true,
+      });
+    }
+    mkdirSync(join(dir, "apps/web"), { recursive: true });
+    writeFileSync(join(dir, "apps/web/package.json"), JSON.stringify({ name: "web" }));
+
+    const r = run(["--cwd", dir, "--add", "web", "--add", "db", "--apply"]);
+    expect(r.code).toBe(0);
+    expect(r.out).not.toContain("is not defined");
+    for (const name of ["web", "ui", "db", "analytics", "email", "files"]) {
+      expect(r.out).toContain(`overlay ${name} →`);
+    }
+    // The facet overlays actually landed, not just announced.
+    expect(existsSync(join(dir, "apps/web/src/shared/blob.ts"))).toBe(true);
+  });
+
+  test("a facet file the product edited is kept too", () => {
+    dir = mkdtempSync(join(tmpdir(), "compose-"));
+    mkdirSync(join(dir, "docs/kit"), { recursive: true });
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "acme" }));
+    cpSync(join(root, "docs/kit/recipe.yaml"), join(dir, "docs/kit/recipe.yaml"));
+    for (const name of ["web", "ui", "db", "analytics", "email", "files"]) {
+      cpSync(join(root, "docs/kit/overlays", name), join(dir, "docs/kit/overlays", name), {
+        recursive: true,
+      });
+    }
+    mkdirSync(join(dir, "apps/web/src/shared"), { recursive: true });
+    writeFileSync(join(dir, "apps/web/package.json"), JSON.stringify({ name: "web" }));
+    run(["--cwd", dir, "--add", "web", "--apply"]);
+    writeFileSync(join(dir, "apps/web/src/shared/blob.ts"), "// my version\n");
+
+    const again = run(["--cwd", dir, "--add", "web", "--apply"]);
+    expect(again.out).toContain("kept apps/web/src/shared/blob.ts");
+    expect(readFileSync(join(dir, "apps/web/src/shared/blob.ts"), "utf8")).toBe("// my version\n");
+  });
+});
