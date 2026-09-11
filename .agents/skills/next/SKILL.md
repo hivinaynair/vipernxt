@@ -1,18 +1,17 @@
 ---
 name: next
 description: >-
-  The single entry point for taking a product idea to something buildable. Reads
-  the pipeline state, does every step that does not need the human, and stops
-  only to hold an item for them. Use when the user says "next", "what's next",
-  has a new product idea, wants to resume shaping or planning a product,
-  answers a held question, says the journey or clip is the wrong story, or
-  names a feature to plan and build.
+  The single entry point for an FDE engagement — site, pile, clip, then the
+  factory. Reads pipeline state, does every step that does not need a human, and
+  stops only to hold an item. Use when they say "next", name a site, drop a pile,
+  resume shaping, answer a held question, say the journey is the wrong story, or
+  name a feature to plan and build.
 ---
 
 # next
 
-The only command the user should have to remember. They type `/next`; you work out
-where the product is and what happens now.
+The only command the FDE should have to remember. They type `/next`; you work out
+where the engagement is and what happens now.
 
 **State lives in `docs/product/state.yaml`.** Read it first, every time. Never
 reconstruct where things stand by reading prose — not the design doc, not chat
@@ -26,6 +25,12 @@ A document nobody reads cost more than it was worth.
 `status` is the read-only glance: where things stand, what is waiting on them. It changes
 nothing and runs no phase.
 
+The engagement order is [docs/playbook/fde-loop.md](../../../docs/playbook/fde-loop.md)
+(understand → reframe → probe → clip → factory). Why: [docs/research/fde-workflow.md](../../../docs/research/fde-workflow.md).
+**Do not mark `shape` done, and do not write product UI, until U5 exists** — a reframe
+they confirmed: outcome number, who has the pain, the real problem, and one sentence
+why the obvious build is wrong.
+
 ## The one primitive
 
 There are not "decisions" and "homework". There is **an item held for the user**,
@@ -35,6 +40,15 @@ and a `kind` that says what would release it:
 - `kind: gather` — you need facts that exist only in the real world.
 
 Everything else — you do yourself.
+
+Set `who:` on every item. An engagement has two humans; they are not one "them".
+
+| Who | Is | Waits on |
+|---|---|---|
+| `fde` (default) | The person running this repo | Product calls, the design-doc yes, looking at the first slice |
+| `site` | The customer, the clerk, the operator | Photos, filled forms, "walk me through yesterday" |
+
+The digest says **Waiting on you** vs **Waiting on the site**. A `who: site` gather is not your cue to ask yourself another question — keep researching anything that does not need the counter.
 
 ## The rule that decides everything
 
@@ -83,20 +97,20 @@ A choice that would **expand the contract** needs all five of these, in one mess
 4. **What accepting costs, and what declining costs.**
 5. Your recommendation, and why it serves what they actually wanted.
 
-If you cannot state the cost, you are not ready to ask or record.
+Point 4 is the one that gets dropped, and dropping it is what turns an override into a
+decision nobody priced. If you cannot state the cost, you are not ready to ask.
 
-One held item per gate — not one per question. A review that raises six questions is one
-held item pointing at the report.
+One held item per gate, not one per question. A review raising six questions is one item
+pointing at the report.
+
+Never use the words "held", "state file" or "pipeline" when talking to them. Ask the
+question; keep the machinery to yourself.
 
 ### Interview mode (keep tokens low)
 
 When something waits on them: **one question or one A/B/C set per message**. A few
-sentences max. No research dumps or digests in the same turn (`status` is the glance).
-Prefer tables in artifacts. Prefer `state.yaml` over re-reading design docs. Fold a
-checklist into an existing skill — do not add a new skill for ten lines of guidance.
-
-Never use the words "held", "state file", or "pipeline" when talking to them. Ask the
-question; keep the machinery to yourself.
+sentences max. No research dumps in the same turn (`status` is the glance). Prefer
+tables in artifacts. Prefer `state.yaml` over re-reading design docs.
 
 ## Recording an answer
 
@@ -113,11 +127,12 @@ which is worse than the noise of reporting a contradiction.
 
 ## Sizing, before anything else
 
-Not every idea needs the whole pipeline. Ask one question if it is unclear:
+Not every ask needs the whole pipeline. Ask one question if it is unclear. A named
+site, a pile, or "what they use today" is an **engagement** — do not ask.
 
 | Size | Route |
 |---|---|
-| **New product** | The full pipeline below |
+| **engagement** | Site + pile. Week-one clip. The default. `new-product` is an alias. |
 | **New feature** in a product that already has a spine | `journeys` to add the steps, then build citing those step IDs |
 | **Small change** | Nothing here. Say so and get on with it |
 
@@ -128,37 +143,73 @@ Running a six-phase pipeline over "add a column" is a failure, not thoroughness.
 | # | Phase | Skill | Who works |
 |---|---|---|---|
 | 0 | Salvage prior art | `salvage` | you |
-| 1 | Domain research | `/deep-research`, or research yourself | you |
-| 2 | Field research | `field-kit` | **them**, in the real world |
-| 3 | Shape | `shape` | interview |
-| 3.5 | Domain model | `ontology` | you draft, they confirm |
-| 4 | Journey spine | `journeys` — expand the design-doc table into ID'd YAML | you draft, they confirm |
-| 5a | Structure | `design-system` | you |
+| 1 | Domain research | `/deep-research`, or research yourself; after U1, scan named competitors; ends with the digest | you |
+| 2 | Field research | `field-kit` | the **site** (on-site, pile, or trip) |
+| 3 | Shape | `shape` | you draft from the pile; they confirm |
+| 3.5 | Domain model | `ontology` | you draft, they confirm a surprise |
+| 4 | Journey spine | `journeys` — expand the design-doc table into ID'd YAML | you draft, they confirm if you invented a beat |
+| 5a | Structure | `design-system` | you — **after** the first slice |
 | 5b | Visual direction | `design-system` | them, optional, any time |
-| 4.5 | Publish to Linear | `linear-sync` | you |
-| 6 | Build | `plan` then `build`; cite journey IDs; `prototype` when a component is open | you |
+| 4.5 | Publish to Linear | `linear-sync` | you — **after** they accept the first slice |
+| 6 | Build | `plan` then `build` in waves; cite journey IDs; `prototype` when a component is open | you |
 
-**Ship something before the planning is finished.** Once the spine exists, build one
-journey end to end — a thin slice through real data — before the full component inventory.
-Forward-deployed teams ship working code in week one for a reason: a slice tests the domain
-model in a way no further planning can, and it is the cheapest way to discover the model is
-wrong. Then return to 5a.
+The week-one path is [fde-loop.md](../../../docs/playbook/fde-loop.md). Understand
+(U1–U5) before shape. Seed data **is** the eval set (last 10 real cases). The first
+slice is the one mandatory stop. Setup, Linear, and structure (5a) wait until they
+accept the clip.
 
-`linear-sync` runs after the spine is confirmed and again whenever features change.
 `prototype` is not a phase — reach for it mid-build whenever a component's shape is
 genuinely open and describing it is not settling it.
 
-After the spine is confirmed and they name a feature (or it is time to ship the
-walking skeleton), run [plan](../plan/SKILL.md) then [build](../build/SKILL.md)
-on the first slice. Do not wait for them to type those skills. Do not refuse
-because of which host or model this session is. A missing browser or preview
-URL is a verification gap, not a reason to stop planning or implementing.
+After the spine exists, run [plan](../plan/SKILL.md) then [build](../build/SKILL.md)
+on the first slice. Do not wait for them to type those skills or to say go.
 
-`customize` is not a phase either. After `shape` is `done`, before `setup`, if the
-root `package.json` `name` is still `vipernxt` or `.env.playbook` has no `PRODUCT`:
-read [customize](../customize/SKILL.md) and run it now. One question at a time.
-Honour keep/strip the design doc already recorded. They do not type `/customize`.
-Do not run `setup.sh` under the boilerplate name.
+`customize` is not a phase either. After `shape` is `done`, if the root package is
+still `vipernxt` or `.env.playbook` has no `PRODUCT`: run [customize](../customize/SKILL.md)
+from the design doc. Honour keep/strip already recorded; ask only what the doc left
+open. They do not type `/customize`. Do not run `setup.sh` under the boilerplate name.
+
+**Setup is not on the path to the clip.** Use `.env.local` if keys already exist. If
+database or auth keys are missing, that is one `who: fde` gather — not the nine-step
+provision. GitHub, Vercel, Linear wait until they accept the slice (`clone.setup` /
+`clone.tickets` leave `deferred`).
+
+## The factory
+
+After the checkpoint, build runs in **waves**. A wave is a set of slices that share no
+surface, launched together and merged before the next one starts.
+
+| Wave | Contains |
+|---|---|
+| 0 | Schema and seed data. Every table the ontology names, landed before any feature slice |
+| 1..n | Feature slices, at most **five agents at once**, one per feature folder |
+
+Wave 0 is what makes the rest safe. If all migrations land first, feature slices never
+write one, and parallel merges cannot collide on the database. Seed data ships with it —
+deterministic, fixed ids, frozen dates. Empty tables make both the review and
+`before-and-after` worthless.
+
+Feature folders may not import each other, so agents in different folders cannot collide.
+Everything else is shared surface — `src/app`, `src/shared`, `packages/*`, the schema, any
+`package.json`. **A slice touching shared surface runs alone.** Spawn those agents per
+**Start a child** below (factory slices). Serial if this harness cannot start a sibling;
+do not skip the wave.
+
+Group the waves when `linear-sync` publishes the spine, so the order is visible to them
+rather than living in this session.
+
+### Stop conditions
+
+An unattended agent stops for the right reasons instead of improvising. Hold an item and
+wait when any of these fire:
+
+- The merge bar fails twice on the same slice.
+- A product decision the spine does not settle.
+- A slice needs a column wave 0 did not create.
+- The third fix on the same theme — the abstraction is wrong, not the code.
+- Two rounds of review feedback have not closed the PR. The slice was wrong; re-plan it.
+
+Autonomy is not "never stops". It is "stops without corrupting anything, and says why".
 
 ## The journey is wrong
 
@@ -176,36 +227,66 @@ payoff — do **not** start a new skill or a second journey file. Reopen this lo
 4. Same moments keep their IDs. A new beat gets a new ID (`J1.S2b`, or a new
    `J3`). Never reuse `J1.S2` for a different moment. Dropped steps leave
    `features.serves` (and Linear) until those citations are removed.
-5. `linear-sync` after the spine is confirmed again.
+5. `linear-sync` after the spine is confirmed again, if tickets are no longer deferred.
 
 They keep typing `/next`. They do not type `/shape` or `/journeys` to revise.
 
-Phase 0 runs on every new product, not only rebuilds — there is almost always something being replaced, even if it is a spreadsheet. It is skipped only when `salvage` reports there is genuinely nothing to read.
+**Phase 1 ends with a digest, not a pile of notes.** Ten cited notes nobody rereads is
+worse than three. Write `docs/research/before-we-build.md`: what still blocks nothing,
+the handful of unknowns that would actually change what gets built (open or closed), what
+is already decided and must not be relitigated, and what *you* decide rather than them.
+Every claim points at the note that sources it. That file is what the next phase reads
+first.
 
-**Incumbent gate.** Before phase-1 fan-out: know what runs the job today (name + photos, or
-explicit "none"). Hold one `gather` if needed; do not deep-research against an unchecked
-"paper" claim.
+Phase 0 runs on every engagement. It is skipped only when `salvage` reports there is
+genuinely nothing to read.
 
-**Prior-art miners.** If `prior_art:` lists paths (or they name a legacy repo in the idea
-turn), dispatch `salvage-miner` per path in that same turn — do not wait for `/salvage`.
+**Incumbent gate.** Before phase-1 fan-out: know what runs the job today (name + photos,
+or explicit "none"), and what the **current paid version already does**. Hold one `gather`
+(`who: site` if they have to photograph it). Do not deep-research against an unchecked
+"paper" claim. Do not plan to reimplement a vendor feature. If they are about to
+upgrade or migrate the SoR, hold a **time-sensitive** `who: site` gather for baseline
+numbers *this week* — after the change you cannot unmix the vendor from the clip.
 
-**Gap-pass before shape.** Before marking field `done` / opening shape: skim open homework,
-incumbent screens, and hard problems; add or drop asks; rebuild the `.docx`. Ten lines of
-checklist — not a new skill.
+**Market scan.** Once U1 has a name (or the job category if "none"): the other apps
+selling that job. Same turn as salvage. Pricing, changelog, 2–3 star reviews. Dispatch
+`salvage-miner` per named competitor. Facts, not a feature matrix. Do not wait for the
+field visit. Do not skip this because of the competitor trap — the trap is copying
+their structure, not reading the market.
 
-Phase 1 can run in parallel with 2 — send
-them out to gather, then keep researching while they are gone. **Never idle while a
-`gather` item is open.**
+**Prior-art miners.** If `prior_art:` lists paths, dispatch `salvage-miner` per path in
+that same turn — do not wait for `/salvage`.
+
+**Field mode.** `field-kit` picks `on-site` | `pile` | `trip` before writing homework.
+Trip is not the default. Write `mode:` on the field phase.
+
+**Gap-pass before shape.** Before marking field `done`: skim open homework, incumbent
+screens, and hard problems; add or drop asks. Rebuild the `.docx` only on `trip`.
+On-site and pile: gap-pass then draft the claim in the same session. Shape may draft
+from salvage while a `who: site` gap is still open; do not mark shape `done` on a guess
+the site has not confirmed, unless they accepted the gap as an assumption.
+
+Phase 1 can run in parallel with 2. **Never idle while a `gather` item is open.**
 
 Phases 0 and 1 are wide and human-free: dispatch independent investigations in parallel,
-one per source or feature area, and reconcile the results yourself. Use whatever
-parallelism this harness offers; do not depend on a specific one.
+one per source or feature area, and reconcile. Child jobs are skills (`salvage-miner`,
+`pile-reader`, `domain-researcher`, `spine-checker`, `ui-gate-auditor`) — Pi, Claude Code,
+and Cursor all scan `.agents/skills/<name>/SKILL.md`. Cursor Task adapters in
+`.cursor/agents/` pin Grok 4.6 and point at those skills; they are not a second copy
+of the job.
 
-On Cursor, that fan-out is the project subagents in `.cursor/agents/`
-(`salvage-miner`, `domain-researcher`). They are pinned to **Cursor Grok 4.6**. Do not
-send playbook work to Gemini. Pass the skill path in the task prompt — subagents do not
-inherit the parent's skill catalog. `spine-checker` validates a journey YAML;
-`ui-gate-auditor` checks product-UI writes against `shape`.
+### Start a child
+
+| This harness | Do this |
+|---|---|
+| **Cursor** | Task tool. `subagent_type` matches `.cursor/agents/<name>.md` (Grok 4.6, not Gemini). |
+| **Pi** | New process (a Herdr pane if you have one). The job is already in the catalog — `/skill:salvage-miner` (or whichever). Name the one source. |
+| **Claude Code** | Subagent or second session. Same `/skill:<name>`. |
+| **Anything else** | Sibling process, or **serially in this session**. |
+
+Skipping the jobs because you are not on Cursor is a defect. Serial is allowed.
+
+Factory slices: same table. The skill is `build` plus the slice — no named child job per feature. At most five, one `src/features/<slug>/` each. Shared surface runs alone. Wave 0 is never parallel with feature slices.
 
 ## Every run
 
@@ -216,9 +297,12 @@ inherit the parent's skill catalog. `spine-checker` validates a journey YAML;
 4. If they said the journey or clip is wrong, follow **The journey is wrong**
    before advancing build.
 5. If `shape` is `done` and the clone is still named `vipernxt` (or has no `PRODUCT`),
-   run `customize` before any later phase and before setup. Stop after each question.
-6. Otherwise: run the current phase's skill until it completes or raises an item.
-7. Write state back. Commit it if the repo is already committing these artifacts.
+   run `customize` from the design doc, then continue — spine, then the first local
+   slice. Do not stop for "go". Do not run `setup.sh` while `clone.setup` is `deferred`.
+6. If they just accepted the first slice, set `clone.setup` and `clone.tickets` to
+   `pending` and run setup + `linear-sync` + 5a.
+7. Otherwise: run the current phase's skill until it completes or raises an item.
+8. Write state back. Commit it if the repo is already committing these artifacts.
 
 A Cursor hook denies writes under `apps/*/src/app` and `apps/*/src/features` until
 `shape` is `done`. Do not bypass it. `ui_writes` in the state file is the override.
@@ -228,10 +312,37 @@ what it finds; do not silently fix it.
 
 ## Starting fresh
 
-No `docs/product/state.yaml`? This is a new product. Create it, set phase 0, ask for the
-idea in a paragraph **and any prior-art paths** (legacy repo, Drive folder, screenshots).
-Record paths under `prior_art:`. Dispatch miners immediately. Do not interview yet;
-`shape` owns that, and it comes after research. Worked example: [docs/playbook/golden-path.md](../../../docs/playbook/golden-path.md).
+No `docs/product/state.yaml`? This is a new engagement. Create it:
 
-On create, set `clone.customized: pending`. `/next` will invoke `customize` after
-the design doc is approved — do not ask them to type that skill.
+```yaml
+size: engagement
+clone:
+  customized: pending
+  setup: deferred
+  tickets: deferred
+```
+
+Ask **one** message, not an interview:
+
+1. **Which site**, and **what they use today** (incumbent name, or paper / spreadsheet / WhatsApp).
+2. **Drop the pile.** Name the folder. Cloud cannot write there from Finder.
+
+Say this, almost verbatim:
+
+> Drop whatever you already have — photos, screenshots, a filled form, a CSV, last ten cases. Don't rename. "Nothing" on a line is a finding.
+>
+> 1. **This machine:** `docs/research/salvage-inbox/`
+> 2. **Cloud, already processed:** send `INVENTORY.md` and the `.transcript.md` files — not the photos.
+> 3. **Cloud, originals:** attach **one zip** of the folder. I will unpack it.
+
+A Cloud Agent cannot see their Finder. Do not ask them to scp, open the VM desktop, attach forty files, or commit photos. Drive/Dropbox/Notion links are not the pile — auth and PII in a second cloud. Understand with originals belongs on a laptop; cloud mines transcripts.
+
+Then run `node scripts/salvage-inbox.mjs` on whatever landed (zips included). `raw/` and page JPEGs stay gitignored.
+
+Checklist: [salvage/pile.md](../salvage/pile.md).
+
+An idea paragraph is optional and is a **claim**, recorded under `idea:`. Do not start
+shaping. `shape` owns that, after salvage has read the pile.
+
+Record `engagement.site` and `engagement.replacing`. Record prior-art paths; dispatch
+miners the same turn. Worked example: [docs/playbook/golden-path.md](../../../docs/playbook/golden-path.md).

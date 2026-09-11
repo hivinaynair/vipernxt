@@ -27,7 +27,7 @@ operates in, and it survives changing your database.
 
 Four parts:
 
-- **Entities** — the things that exist. `Booking`, `Devotee`, `Receipt`, `Seva`.
+- **Entities** — the things that exist. `PickTicket`, `Sku`, `Receipt`, `Depot`.
 - **Properties** — what each one carries, including the ones that turn out to be required
   only after real use.
 - **Links** — how they relate, and the cardinality that is actually true. Not the one that
@@ -40,7 +40,7 @@ Four parts:
 
 The names come from the people who do the work, from the salvage notes, and from the
 printed artifacts — never from convenience or from a framework's conventions. If the
-temple says *seva* and you write `ServiceBooking`, every conversation from now on needs a
+site says *pick ticket* and you write `OrderItem`, every conversation from now on needs a
 translation step, and the translation will eventually be done wrong by someone.
 
 Where the domain uses one word for two things, or two words for one, that ambiguity is a
@@ -89,3 +89,11 @@ Confirm it with the user before the spine is drafted. One question: which entity
 Once confirmed, this vocabulary is used everywhere — journey steps, acceptance criteria,
 Linear issues, table names, component names. A domain model that survives only in one
 document is a glossary. One that reaches the schema is an ontology.
+
+`plan` and `build` read this file before writing anything, and the canonical terms are the
+**only names allowed** — tables, columns, types, components, routes, seed data, UI copy. A
+rejected synonym appearing in the code is a defect, not a style preference.
+
+This matters most when several agents build at once. Left alone, each one invents its own
+reasonable translation, and one thing ends up with three names that nobody can grep for.
+The list exists so that cannot happen.

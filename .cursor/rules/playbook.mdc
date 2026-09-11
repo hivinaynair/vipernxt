@@ -5,13 +5,18 @@ alwaysApply: true
 
 At the start of a session, read `docs/product/state.yaml` if it exists.
 
-- **No file** — there is no product being shaped. The boilerplate may be edited. Offer to start a product if they want one.
-- **File exists, `shape` is not `done`** — do not add or edit product UI, routes, or features under `apps/*/src/app` or `apps/*/src/features`. The design doc is not approved. A project hook denies those writes; do not bypass it with the shell. Work in `docs/` instead.
-- **`shape` is `done`** — the design doc is approved. A thin slice through real data may be built; `next` owns that.
+- **No file** — there is no engagement running here. The boilerplate may be edited. Offer to start one if they want it (`/next`).
+- **File exists, `shape` is not `done`** — do not add or edit product UI, routes, or features under `apps/*/src/app` or `apps/*/src/features`. The reframe is not confirmed. A project hook denies those writes; do not bypass it with the shell. Work in `docs/` instead. A probe (eval replay, baseline count) is not product UI.
+- **`shape` is `done`** — the design doc is approved. A thin slice through the eval set may be built; `next` owns that.
 
 If `next`, `status`, `shape`, or the other playbook skills are missing from your skill list, read `.agents/skills/<name>/SKILL.md` (also linked from `.cursor/skills/`). Tell the user the catalog omitted them.
 
-`status` is the glance. `next` does the work. For a shaping session, pin `/next` as a Custom Mode (Option+Enter / Alt+Enter on the skill) so it stays in context.
+Branches: cut from `staging`, land on `staging`. **You may not push to `main` or open a
+PR against it** — a hook denies both. Releasing is the user's move; ask them to run it.
 
-Playbook subagents (`.cursor/agents/`) run **Cursor Grok 4.6**, not Gemini. Pass
-`.agents/skills/<name>/SKILL.md` in the task prompt; they do not inherit skills.
+`status` is the glance (`bun scripts/status.ts`), `check-drift` the contradictions.
+`next` does the work. For a shaping session, pin `/next` as a Custom Mode (Option+Enter / Alt+Enter on the skill) so it stays in context.
+
+Parallel child jobs are skills in `.agents/skills/<name>/SKILL.md` (Pi, Claude, Cursor
+all scan that path). Cursor Task adapters in `.cursor/agents/` pin **Cursor Grok 4.6**
+— not Gemini.

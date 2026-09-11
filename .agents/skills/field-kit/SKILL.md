@@ -12,7 +12,31 @@ description: >-
 The one phase no agent can do. Your job is to make the trip worth taking, and to make what
 comes back usable.
 
-Two modes: **prepare** the homework, and **absorb** what returns.
+Two jobs: **prepare** the homework, and **absorb** what returns.
+
+## Pick the field mode first
+
+Trip is not the default. Write `mode:` on the field phase.
+
+| Mode | When | Do |
+|---|---|---|
+| **on-site** | They are at the counter this session | Homework md is a live checklist. Fill as they talk. Absorb the same day. Skip the `.docx` round-trip. |
+| **pile** | salvage-inbox already holds the photos/forms | Absorb. Hold `who: site` only for gaps salvage listed. |
+| **trip** | They will go later, and the pile cannot answer | Prepare the `.docx`, they leave, absorb when they return. |
+
+Always capture the **last 10 real cases** (or a week of the job) into the eval set —
+anonymized, cited. If the SoR already stores expert-labelled history, that *is* the set.
+That set is what wave 0 seeds and what the first slice is scored against. Watch the
+person who does the job, not only the buyer. Operational context (judgment, workarounds,
+the laminated card) is a separate finding from entity names.
+
+**If they are about to change the SoR** (upgrade, migrate, new vendor): the homework's
+first page is baseline numbers, this week. Hours per job, re-keys, chase rounds, days of
+delay. After the change those numbers mix forever. This outranks every other ask.
+
+Also capture, when it would change the build: where the data may live (this machine /
+this network / may leave); which banks or channels the vendor's paid feature actually
+covers. "The upgrade does bank feeds" is not a fact until you know *their* banks.
 
 ---
 
@@ -97,20 +121,45 @@ there are, so progress is visible on site.
 
 Finish with the **open questions from earlier phases** this trip should settle.
 
-### Hand over a form, not markdown
+### Hand over something they can fill in
+
+A markdown file in a repo is not a form. Run:
 
 ```
-node scripts/homework.mjs build docs/product/homework/02-temple-visit.md
-node scripts/homework.mjs read docs/product/intake/02-temple-visit.docx
+node scripts/homework.mjs build docs/product/homework/02-site-visit.md
 ```
 
-Markdown is source of truth; `.docx` is the render. Rebuild after pruning Closed.
-Never invent a second generator.
+It renders a `.docx` with every question and capture as a row with an empty box beside
+it, one stage per page. They type into it; nobody has to touch the repo, and nobody has
+to be taught anything about markdown. Do this every time — do not hand over the `.md` and
+do not improvise a renderer.
 
-### Gap-pass before closing field
+**The markdown stays the source of truth.** The `.docx` is a render. Edit the homework in
+the `.md` and rebuild; never edit the `.docx` to change a question, or `state.yaml` will
+be pointing at a file that no longer says what was asked.
 
-Before field → shape: open asks × incumbent photos × hard problems. Add/drop; rebuild
-docx. Then stop for their trip — do not idle on research that depends on answers.
+**Never write a second generator.** If `homework.mjs` seems not to work — no pandoc, no
+python-docx, no LibreOffice — it does not need them; it writes the docx zip itself. A
+side script that builds the document from its own list of questions is the drift this
+rule exists to prevent: the `.md` that `state.yaml` points at stops being what anyone was
+asked. Every question lives in the `.md`, or it was not asked.
+
+The check is one command: does `homework.mjs read` on the returned file show the questions
+you think you sent? If not, the artifact and the questionnaire have already separated.
+
+Write the homework so it renders well — the convention is small:
+
+| In the markdown | In the document |
+|---|---|
+| `## Stage 2 — the counter clerk` | Heading, starts a new page |
+| `### What to ask` | Sub-heading |
+| `- Walk me through yesterday.` | Question, with an answer box |
+| `- [ ] Photograph every screen` | Capture, with a tick box and an answer box |
+| Anything else | Instruction — no box, nothing to fill |
+
+So: anything you want an answer to is a bullet. Anything that is context is a paragraph.
+If a question has no box next to it in the document, it was written as prose and they will
+skip it.
 
 ---
 
@@ -118,6 +167,17 @@ docx. Then stop for their trip — do not idle on research that depends on answe
 
 They come back with photos, scribbled notes, voice memos, a PDF of a receipt, dumped into
 `docs/product/intake/`. Raw is fine — formatting is not their job.
+
+Read the filled document back with:
+
+```
+node scripts/homework.mjs read docs/product/intake/02-site-visit.docx
+```
+
+It prints each question with the answer underneath and a count — `14/22 answered`. That
+count is what the item's `done_when` is checking, so read it before deciding the trip is
+finished. Photographs and anything else in the pile go through
+`scripts/salvage-inbox.mjs` first, so they are readable and captioned.
 
 Turn it into `docs/research/field-<topic>.md`:
 

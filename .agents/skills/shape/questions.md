@@ -112,6 +112,18 @@ Recommended: A for a demo/clip.
 
 ---
 
+**Language**
+
+Which languages does the interface carry at v1?
+
+- A) One language only — name it
+- B) Two, with one canonical and the other a translation
+- C) More than two (say which, and which is canonical)
+
+Ask this before any screen copy. Changing it later is a rewrite, not a change. A domain
+whose vocabulary is not English usually still wants the domain terms untranslated — see
+`ontology`.
+
 ## F. Stack (record in the doc; do not edit the tree)
 
 Canonical list for skill step 8. Ask only what is still unknown. One at a time.

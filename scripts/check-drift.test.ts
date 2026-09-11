@@ -46,4 +46,37 @@ describe("check-drift", () => {
     expect(r.code).toBe(1);
     expect(r.out).toContain("idea_outdated");
   });
+
+  test("flags shape done without reframe", () => {
+    dir = mkdtempSync(join(tmpdir(), "drift-"));
+    mkdirSync(join(dir, "docs/product"), { recursive: true });
+    writeFileSync(
+      join(dir, "docs/product/state.yaml"),
+      `product: demo\nphases:\n  3: { name: shape, status: done }\n`,
+    );
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "demo" }));
+    const r = run(dir);
+    expect(r.code).toBe(1);
+    expect(r.out).toContain("reframe");
+  });
+
+  test("tickets deferred does not require Linear ids", () => {
+    dir = mkdtempSync(join(tmpdir(), "drift-"));
+    mkdirSync(join(dir, "docs/product"), { recursive: true });
+    mkdirSync(join(dir, "docs/journeys"), { recursive: true });
+    mkdirSync(join(dir, "docs/plans"), { recursive: true });
+    writeFileSync(
+      join(dir, "docs/product/state.yaml"),
+      `product: demo\nclone:\n  tickets: deferred\nphases:\n  6: { name: build, status: in-progress }\n`,
+    );
+    writeFileSync(
+      join(dir, "docs/journeys/demo.yaml"),
+      `source: docs/plans/demo-design.md\nfeatures:\n  - id: F1\n    title: Clip\n    serves: [J1.S1]\n`,
+    );
+    writeFileSync(join(dir, "docs/plans/demo-design.md"), "# demo\n");
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "demo" }));
+    const r = run(dir);
+    expect(r.code).toBe(0);
+    expect(r.out).toContain("no drift");
+  });
 });

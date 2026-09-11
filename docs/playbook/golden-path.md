@@ -1,15 +1,15 @@
-# Golden path: idea + legacy repo
+# Golden path: one site, week one
 
-Token-cheap sequence for a clone that already has prior art. Full skills stay the source
-of truth; this is the shape of a good first day.
+Token-cheap sequence. Procedure: [fde-loop.md](fde-loop.md). Research: [fde-workflow.md](../research/fde-workflow.md). Tools: [fde-tools.md](fde-tools.md).
 
-1. `/next` → create `state.yaml`, paste idea, list `prior_art:` paths.
-2. Same turn: `salvage-miner` per path; **incumbent gate** (name + photos, or "none").
-3. Parallel research → one `before-we-build.md` digest (not a note pile).
-4. `field-kit`: photos first, ≤15 open questions, top five ranked; build `.docx`.
-5. Answers → move bullets to `## Closed`, rebuild docx; record decisions verbatim.
-6. **Gap-pass** once (open asks × incumbent × hard problems); then shape.
-7. If a decision voids `idea:`, rewrite it (or leave `idea_outdated: true`).
+Dry-run on a **throwaway clone**. Do not commit a live site, pile, or `docs/product/state.yaml` into the kit.
 
-Do not: deep-research before the incumbent check; ship Cubix-menu parity; dump eight
-questions in one bubble; invent a second homework generator.
+1. `/next` → site, what they use today, pile (`docs/research/salvage-inbox/`; cloud: transcripts or one zip). Record `engagement.site`. An idea is a **claim**, optional.
+2. Same turn: incumbent gate (name + photos + what the paid version already does, or "none"); **market scan** (other apps selling that job); miners; salvage the pile. If they are about to change the SoR, baseline numbers **this week**.
+3. Outcome number (U2). Watch the work or absorb the pile (U3). Last 10 cases → eval set (U4). Bucket steps script / judgment / human.
+4. **U5 reframe** — they confirm. Why the obvious build is wrong, in one sentence. Name the fallback (usually the incumbent stays).
+5. Shape: that reframe *is* the claim. Clip = smallest path that moves the number.
+6. Customize from the doc. Ontology (semantic) + spine (operational). Wave 0 seeds the eval set. First slice. **They look at it.**
+7. Only then: setup, Linear, factory. If a decision voids `idea:`, rewrite it (or `idea_outdated: true`).
+
+Do not: deep-research before the incumbent check; skip the market after U1; start from an idea paragraph; copy the incumbent's or a competitor's menu; dump eight questions; invent a second homework generator; run `setup.sh` before they accept the clip; mark shape done without U5; write the dry-run into this repo.

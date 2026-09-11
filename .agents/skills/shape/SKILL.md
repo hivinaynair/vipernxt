@@ -71,7 +71,7 @@ Lock these with the user on first use; they go in the doc glossary.
 
 | They want | Do instead |
 |---|---|
-| Rename packages, change scopes, strip vendors in the tree | `/next` runs `customize`, then `setup.sh` |
+| Rename packages, change scopes, strip vendors in the tree | `/next` runs `customize`, then the local clip. `setup.sh` after they accept |
 | Product UI, routes, features | Wait for design-doc approval, then a later plan |
 | A Figma file or production screens | Stay on low-fi bands (plus the canvas, if the host has one) |
 
@@ -122,6 +122,14 @@ Someone arriving with a written brief, or answering three gates in one reply, sh
 Extract every answer the brief settles. Lock the terms. Then run the gates that are still genuinely open — usually claim and journeys — and skip the rest by **recording each skipped gate in the doc as an assumption**, worded so a wrong one is obvious on a read-through.
 
 The express lane collapses the interview. It does not skip the doc, and it does not skip the stop.
+
+## When salvage or field already exists (the FDE default)
+
+Do not open the question bank at A1. Draft the **U5 reframe** from the pile ([fde-loop.md](../../../docs/playbook/fde-loop.md)): the outcome number, who actually has the pain (watched, not the buyer), the real problem, and **one sentence why the obvious build is wrong**. Show that paragraph. The first question is: is this the claim?
+
+The design-doc claim *is* that reframe. The clip is the smallest path that would move the number. v1 is that clip — earn the right to do more. A request that is this site's habit, not the domain: say so; do not encode it. If salvage found the vendor already ships the asked-for feature, the claim must say so; the clip is what remains above or beside the SoR, not a rebuild of it.
+
+A human stays on a step for one of three reasons — **judgement**, **responsibility** (their name is on it), **relationship** (the conversation is the service). Do not collapse those into "needs a human." Nothing posts to the books, and nothing goes to a client, without the person who is accountable.
 
 ---
 
@@ -227,6 +235,12 @@ Re-ask actors or the claim only if they said those are wrong too.
 
 Only after journeys are confirmed.
 
+**Ask the language question first**, before any copy is written: which languages does the
+interface carry at v1, and which is canonical? It reads like a detail and is not — it
+touches every string and possibly every route, so decided after the screens exist it is a
+rewrite rather than a change. "English only, for now" is a fine answer; an unasked question
+is not.
+
 For each screen the clip needs:
 
 - **Bands** (header, stage, list, actions, evidence, …) and what sits in each.
@@ -268,9 +282,10 @@ Ask one question: is this document right?
 You may name what comes next — **only** as a next step, and only if they say go:
 
 1. **`/next`** — it names the clone (`customize`) if the package is still
-   `vipernxt`, then [journeys](../journeys/SKILL.md). Do not tell them to type
-   `/customize`.
-2. `setup.sh` after `PRODUCT` exists — `/next` points at it; do not run it from here.
+   `vipernxt`, then ontology + [journeys](../journeys/SKILL.md) + the first
+   local slice. Do not tell them to type `/customize`.
+2. `setup.sh` **after they accept the clip** — `/next` points at it; do not run
+   it from here.
 3. Per-feature work: `/next` runs `plan` then `build`. Tests name the step IDs.
 
 Do not commit unless they ask.

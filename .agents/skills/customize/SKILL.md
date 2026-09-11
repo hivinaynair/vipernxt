@@ -3,8 +3,8 @@ name: customize
 description: >-
   Names this clone and applies the keep/strip answers — product name, package
   scope, apps, Clerk, Workflows, metadata, database. Invoked by /next after the
-  design doc is approved and before setup, or when the user asks to customize,
-  or the root package is still vipernxt.
+  design doc is approved, or when the user asks to customize, or the root
+  package is still vipernxt. Setup waits until they accept the clip.
 ---
 
 # customize
@@ -13,12 +13,12 @@ Rename and strip this clone. One question at a time. Apply only what they
 answered. Do not invent a product or a UI kit.
 
 `/next` runs this after `shape` is done. They should not have to type
-`/customize`. `setup.sh` provisions under the name you write here — always
-before setup. Shape may have already recorded keep/strip in the design doc —
-honour those answers; do not re-ask them.
+`/customize`. Honour keep/strip already recorded in the design doc; ask only
+what the doc left open.
 
 When the last question is applied, set `clone.customized: done` in
-`docs/product/state.yaml` if that file exists.
+`docs/product/state.yaml` if that file exists. Do not run `setup.sh` from here
+while `clone.setup` is `deferred` — `/next` builds the first local clip next.
 
 ## Hard rules
 
@@ -27,8 +27,27 @@ When the last question is applied, set `clone.customized: done` in
 - **One question per message.** Wait. Then apply that answer. Then the next.
 - **Write the name first.** Question 1 writes `PRODUCT` to `.env.playbook` so
   setup cannot provision under `vipernxt`.
-- **Do not start setup.sh from this skill.** Point at it when you stop.
+- **Do not start setup.sh from this skill.** `/next` runs the local clip next.
+- **Renames go through the script, not by hand** — see below.
 - After edits: `bun install`, `bun run check-types`, `bun run check-boundaries`.
+
+## Renaming is a script
+
+Questions 1–3 are answered by interview and applied by
+
+```sh
+node scripts/customize.mjs --name <kebab> [--scope @acme] [--app <dir>]   # dry run
+node scripts/customize.mjs --name <kebab> [--scope @acme] [--app <dir>] --apply
+```
+
+A name lives in the root `package.json`, every workspace `package.json`, every
+dependency entry, tsconfig `extends`, turbo filters, the Playwright `webDir` and
+the docs. By hand you miss one and it surfaces later as a confusing resolution
+error. Run the dry run, read the file list, then apply.
+
+Stripping vendors (questions 5, 6, 8) is **not** in the script — it deletes
+source and edits app code, which needs judgement about what else referenced
+them. Do that yourself.
 
 ## Questions
 
@@ -81,11 +100,20 @@ Title, description, `lang` on `<html>`.
 
 Keep Drizzle + Neon (`@repo/db` or the new scope), or strip it?
 
+**9. Bug board**
+
+Which reviewer looks at the PRs the factory opens — Cursor Bugbot, Codex, Greptile, or
+none? Write it to `.env.playbook` as `REVIEW_PROVIDER=<name|none>`.
+
+`build` does not care which one. It needs to know only whether a reviewer may push
+commits to a branch, because auto-merge must then require green **after** that push.
+
 Billing is not in the tree. Do not add it.
 
 ## After the last answer
 
 Read the summary back: name, scope, what was kept, what was stripped.
 
-Then stop. Next is [setup](../setup/SKILL.md) — `./.agents/skills/setup/setup.sh`
-— which reads `PRODUCT` from `.env.playbook`.
+Then stop. `/next` continues the clip on `.env.local` (ontology, spine, wave 0,
+first slice). Run [setup](../setup/SKILL.md) only after they accept that slice
+(`clone.setup` flips to `pending`), or if they ask for a hosted preview.
