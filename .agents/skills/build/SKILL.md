@@ -111,8 +111,10 @@ Evidence, not prose. "It works" is not a claim you make unbacked.
 Fixing a bug: **capture the "before" while reproducing it, before you fix it.**
 Cheap then, impossible afterwards.
 
-`before-and-after` reaches authenticated screens through `/api/preview-login`,
-and both sides need identical seeded data or every pair reads as a change. State
+`before-and-after` needs identical seeded data on both sides or every pair reads
+as a change. Authenticated screens are meant to be reachable through
+`/api/preview-login` — **that route is not in the kit yet**, so until it is,
+capture before/after on screens the first slice leaves unauthenticated. State
 what you could not verify. Do not fake a screenshot.
 
 ## Ship

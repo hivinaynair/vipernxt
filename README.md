@@ -455,8 +455,13 @@ never a reason to weaken the rule.
 ### Evidence, not claims
 
 An agent saying "implemented, tests pass" is the failure that compounds across
-forty tickets. So Playwright captures traces and screenshots on success, not
-only on failure, and every PR carries proof.
+forty tickets, so every PR carries proof instead: merge-bar output, a test per
+cited journey step, and screenshots of the running app.
+
+> **Playwright is not composed yet.** The recipe names it as the intended e2e
+> layer and nothing scaffolds it, so there are no traces today. Evidence for the
+> first slice is the merge bar, `bun test`, and screenshots you take from
+> `next dev`.
 
 Tests and the score answer different questions, and the slice needs both. Tests
 say the code does what the spine specified. `bun scripts/eval.ts` replays the
@@ -503,7 +508,7 @@ package patch versions differ. `--apply` refuses on this kit.
 | UI | shadcn in `packages/ui` | Components installed into `apps/web` |
 | Agents | Eve, `apps/agent` | until U5 names judgment steps |
 | Lint | Biome | ESLint, Prettier |
-| Test | `bun test`, Playwright | Vitest, Jest, Cypress |
+| Test | `bun test` (Playwright intended, not composed yet) | Vitest, Jest, Cypress |
 | Region | `NEON_REGION` at setup | a per-region template |
 
 `customize` composes what the design doc named. Nothing adds a second option

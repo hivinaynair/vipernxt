@@ -45,7 +45,11 @@ surfaces:
     email: resend
     files: vercel-blob
     lint: biome
-    e2e: playwright
+    # Intended e2e layer. Nothing scaffolds it yet, so a composed clone has no
+    # Playwright and no traces — evidence for the first slice is the merge bar,
+    # bun test, and screenshots from `next dev`. Recorded so the choice is made
+    # when someone does add it, not so compose pretends it is there.
+    e2e: playwright (not composed)
   ui:
     path: packages/ui
     # No scaffold command. `shadcn init` is a create-a-project flow: it prompts

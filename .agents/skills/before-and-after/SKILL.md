@@ -25,9 +25,12 @@ override the defaults below:
 1. **Never upload to the default host.** `0x0.st` is a public paste server, and these
    captures carry whatever the seed data shows — names, amounts, phone numbers. Use
    `IMAGE_ADAPTER=gist`, or attach the PNGs to the PR with `gh`.
-2. **Authenticated screens go through `/api/preview-login`.** `agent-browser` only takes a
-   URL, so the signed-in state has to be addressable:
-   `?key=$K&as=<seat>&next=/screen`. Behind Vercel Deployment Protection add
+2. **Authenticated screens go through `/api/preview-login`** — which **is not in the kit
+   yet**. `PREVIEW_LOGIN_SECRET` and `SEED_USERS` are the hooks waiting for it. Until it
+   exists, capture screens that do not require a session; the first slice runs before auth
+   lands, so this is usually all of them. When it does exist: `agent-browser` only takes a
+   URL, so the signed-in state has to be addressable as
+   `?key=$K&as=<seat>&next=/screen`, and behind Vercel Deployment Protection add
    `&x-vercel-protection-bypass=$V&x-vercel-set-bypass-cookie=true` — the cookie param is
    what keeps the redirect authorised.
 3. **Both sides need identical seeded data.** Before is the `staging` deployment, after is
