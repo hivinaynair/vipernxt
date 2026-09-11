@@ -6,8 +6,9 @@ committed, because cloud agents get a fresh clone and nothing else.
 ```yaml
 product: acme
 started: 2026-09-11
-size: engagement           # engagement (default) | new-feature | small-change
+size: engagement           # engagement (default) | idea | new-feature | small-change
                            # new-product is an alias of engagement
+                           # idea = a claim with no site; phases 2+ stay shut
 
 engagement:
   site: North depot
@@ -28,6 +29,11 @@ reframe: >-
   why the obvious build is wrong, and the safe fallback.
 
 eval_set: docs/research/eval-set.md  # last 10 real cases; wave 0 seeds this
+
+outcome:                   # optional; set only when the engagement stops for good
+  kind: parked             # parked | buy-instead
+  why: "Seven vendors already ship this; no customer named."
+  date: 2026-09-11
 
 clip:
   kind: replace              # replace | wrap — set at U5
@@ -129,7 +135,19 @@ the clip (or ask for a hosted preview). Missing Linear IDs are not drift while
 `tickets` is `deferred`.
 
 **`who` on held items.** `fde` (default) or `site`. The digest splits **Waiting on you**
-vs **Waiting on the site**.
+vs **Waiting on the site**. "Go and find a customer" is `kind: gather`, `who: fde` —
+it is a fact about the real world and finding it is the FDE's job. There is no third
+persona.
+
+**`size: idea`.** A claim with no site. Phase 0 may run as a category scan; phases 2
+and later stay `pending` and `shape` may not be `done`. `check-drift` fails on an idea
+that has been shaped, because a design doc written against nobody is the failure the
+whole loop exists to prevent. Leaving `size:` blank is not the same thing — set it.
+
+**`outcome:`.** Set only when the engagement stops for good: `parked` (no customer, or
+not now) or `buy-instead` (the category already sells it). Always with a `why`. An
+engagement that is finished must not be indistinguishable from one waiting on a slow
+customer.
 
 **`reframe`.** The confirmed U5 paragraph. Shape may not be `done` without it.
 If `idea:` contradicts it, rewrite `idea:` or set `idea_outdated: true`.

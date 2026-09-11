@@ -27,7 +27,9 @@ type Phase = { name?: string; status?: string; artifact?: string; optional?: boo
 
 type State = {
   product?: string;
+  size?: string;
   engagement?: { site?: string };
+  outcome?: { kind?: string; why?: string };
   phase?: string | number;
   phases?: Record<string, Phase>;
   clone?: { customized?: string; setup?: string; tickets?: string; composed?: string };
@@ -110,9 +112,19 @@ const done = phases.filter(([, p]) => p.status === "done").map(([, p]) => p.name
 const now = phases.find(([, p]) => p.status === "in-progress" || p.status === "blocked");
 const upcoming = phases.find(([, p]) => p.status === "pending" && !p.optional);
 
+// A finished engagement must not read like one waiting on a slow customer.
+if (state.outcome?.kind) {
+  out.push("**Stopped**");
+  out.push(`${state.outcome.kind} — ${state.outcome.why ?? "no reason recorded"}`);
+  out.push("");
+}
+
 if (phases.length > 0) {
   out.push("**Where we are**");
   const bits: string[] = [];
+  if (state.size === "idea") {
+    bits.push("idea — no site named, so this is not an engagement yet");
+  }
   if (state.engagement?.site) bits.push(`site: ${state.engagement.site}`);
   if (state.clip?.kind) bits.push(`clip: ${state.clip.kind}`);
   if (state.surfaces?.length) bits.push(`surfaces: ${state.surfaces.join(", ")}`);

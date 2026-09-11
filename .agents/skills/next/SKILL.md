@@ -133,10 +133,40 @@ site, a pile, or "what they use today" is an **engagement** — do not ask.
 | Size | Route |
 |---|---|
 | **engagement** | Site + pile. Week-one clip. The default. `new-product` is an alias. |
+| **idea** | A claim with **no site**. Category scan, then stop. See below |
 | **New feature** in a product that already has a spine | `journeys` to add the steps, then build citing those step IDs |
 | **Small change** | Nothing here. Say so and get on with it |
 
 Running a six-phase pipeline over "add a column" is a failure, not thoroughness.
+
+### An idea with no site
+
+Someone describes a product and names no customer. This is **not** an engagement
+yet, and calling it one is how the loop gets run against nobody.
+
+Set `size: idea`. Then:
+
+- **Phase 0 runs** as a category scan — who already sells this, at what price, what
+  the current paid version does. Cite it like any salvage.
+- **Phase 1 may run.**
+- **Phases 2 onward do not open.** There is no site, so there is no homework, no
+  last-ten-cases, and therefore no eval set. Without an eval set the first slice
+  cannot be scored, which is the whole checkpoint. Do not shape. Do not write a
+  design doc. `check-drift` fails if you do.
+- Hold **one** `gather`, `who: fde`: who is the customer, and what do they use
+  today. Finding them is the FDE's job, not a product decision.
+
+There are exactly two ways out:
+
+| Exit | Do this |
+|---|---|
+| They name a site | Set `size: engagement`, record `engagement.site` and `replacing`, ask for the pile. The phases open. |
+| There is no customer yet, or the category already sells it | Record `outcome:` with the reason and stop. |
+
+**Stopping is a real result.** If seven vendors already ship the idea, saying so is
+the finding — the same call salvage makes when the incumbent already ships the
+feature they asked for. An engagement parked with a reason is honest; one left
+`blocked` forever looks like it is waiting on a slow customer.
 
 ## Phases
 

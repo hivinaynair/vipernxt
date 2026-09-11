@@ -22,8 +22,11 @@ type Held = {
   until?: string;
 };
 type State = {
+  size?: string;
   phases?: Record<string, Phase>;
   clone?: { customized?: string; tickets?: string; composed?: string };
+  engagement?: { site?: string };
+  outcome?: { kind?: string; why?: string };
   held?: Held[];
   idea?: string;
   idea_outdated?: boolean;
@@ -37,6 +40,10 @@ type Spine = { source?: string; features?: Feature[] };
 const STATE = "docs/product/state.yaml";
 const RECIPE = "docs/kit/recipe.yaml";
 const CLIP_KINDS = new Set(["replace", "wrap"]);
+const SIZES = new Set(["engagement", "new-product", "idea", "new-feature", "small-change"]);
+const OUTCOME_KINDS = new Set(["parked", "buy-instead"]);
+/** Phases that need a site: there is no homework and no eval set without one. */
+const SITE_PHASES = new Set(["field", "shape", "journeys", "build"]);
 const findings: string[] = [];
 
 if (!existsSync(STATE)) {
@@ -98,9 +105,48 @@ if (state.idea_outdated === true) {
   );
 }
 
+const shapePhase = Object.values(state.phases ?? {}).find((p) => p.name === "shape");
+
+// 5a. Sizing, and the idea route. A design doc written against nobody is the
+// failure the whole loop exists to prevent, so this is a hard drift.
+if (state.size !== undefined && !SIZES.has(state.size)) {
+  findings.push(
+    `size is "${state.size}" — use ${[...SIZES].join(", ")}`,
+  );
+}
+// The failure this guards, stated without relying on `size` being filled in:
+// a confirmed claim needs a confirmed customer. Shape is where that is decided.
+if (shapePhase?.status === "done" && !(state.engagement?.site ?? "").trim()) {
+  findings.push(
+    "phase shape is done but no engagement.site is named — a design doc confirmed by nobody is not confirmed",
+  );
+}
+if (state.size === "idea") {
+  if (state.engagement?.site) {
+    findings.push(
+      `size is idea but engagement.site is "${state.engagement.site}" — that is an engagement`,
+    );
+  }
+  for (const [key, phase] of Object.entries(state.phases ?? {})) {
+    if (!SITE_PHASES.has(phase.name ?? "")) continue;
+    if (phase.status && phase.status !== "pending") {
+      findings.push(
+        `size is idea but phase ${key} (${phase.name}) is ${phase.status} — no site means no eval set, so there is nothing to score a slice against`,
+      );
+    }
+  }
+}
+if (state.outcome && !OUTCOME_KINDS.has(state.outcome.kind ?? "")) {
+  findings.push(
+    `outcome.kind is "${state.outcome.kind ?? ""}" — use ${[...OUTCOME_KINDS].join(" or ")}`,
+  );
+}
+if (state.outcome && !(state.outcome.why ?? "").trim()) {
+  findings.push("outcome is set with no `why` — a stopped engagement must say why it stopped");
+}
+
 // 5b. Shape done without a confirmed reframe.
-const shape = Object.values(state.phases ?? {}).find((p) => p.name === "shape");
-if (shape?.status === "done") {
+if (shapePhase?.status === "done") {
   const reframe = (state.reframe ?? "").trim();
   if (!reframe) {
     findings.push("phase shape is done but `reframe` is empty — U5 is the exit test");
