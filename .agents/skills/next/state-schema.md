@@ -29,6 +29,10 @@ reframe: >-
 
 eval_set: docs/research/eval-set.md  # last 10 real cases; wave 0 seeds this
 
+clip:
+  kind: replace              # replace | wrap — set at U5
+surfaces: [web]              # web and/or agent; compose reads this
+
 prior_art:                   # optional; miners run on create
   - path: /abs/path/to-legacy
     note: Earlier build of this product
@@ -46,6 +50,7 @@ phases:
 
 clone:
   customized: pending
+  composed: pending            # compose.mjs --apply on a named clone
   setup: deferred              # not before they accept the clip
   tickets: deferred            # Linear after the clip
 
@@ -109,6 +114,10 @@ If it does not, that is a contradiction to report, not to fix silently.
 **`clone.customized`.** `pending` until `/next` finishes `customize` (`PRODUCT` in
 `.env.playbook`). If the flag says `done` but the package is still `vipernxt`, that
 is drift — report it, do not silently flip the flag.
+
+**`clip.kind` / `surfaces`.** Set at U5. `replace` or `wrap`. Surfaces are keys in
+`docs/kit/recipe.yaml` (`web`, `agent`, `db`, `ui`). `clone.composed: done` with
+an empty `surfaces` list is drift.
 
 **`clone.setup` / `clone.tickets`.** Default `deferred` on a new engagement. The first
 local clip does not wait on `setup.sh` or Linear. Flip to `pending` when they accept

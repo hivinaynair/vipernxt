@@ -23,16 +23,20 @@ type Held = {
 };
 type State = {
   phases?: Record<string, Phase>;
-  clone?: { customized?: string; tickets?: string };
+  clone?: { customized?: string; tickets?: string; composed?: string };
   held?: Held[];
   idea?: string;
   idea_outdated?: boolean;
   reframe?: string;
+  clip?: { kind?: string };
+  surfaces?: string[];
 };
 type Feature = { id?: string; title?: string; serves?: string[]; linear?: string };
 type Spine = { source?: string; features?: Feature[] };
 
 const STATE = "docs/product/state.yaml";
+const RECIPE = "docs/kit/recipe.yaml";
+const CLIP_KINDS = new Set(["replace", "wrap"]);
 const findings: string[] = [];
 
 if (!existsSync(STATE)) {
@@ -100,6 +104,29 @@ if (shape?.status === "done") {
   const reframe = (state.reframe ?? "").trim();
   if (!reframe) {
     findings.push("phase shape is done but `reframe` is empty — U5 is the exit test");
+  }
+}
+
+// 5c. Clip kind and surfaces against the kit recipe.
+if (state.clip?.kind && !CLIP_KINDS.has(state.clip.kind)) {
+  findings.push(`clip.kind is ${state.clip.kind} — use replace or wrap`);
+}
+if (state.clone?.composed === "done" && (!state.surfaces || state.surfaces.length === 0)) {
+  findings.push("clone.composed is done but surfaces is empty");
+}
+if (existsSync(RECIPE) && state.surfaces && state.surfaces.length > 0) {
+  try {
+    const recipe = Bun.YAML.parse(readFileSync(RECIPE, "utf8")) as {
+      surfaces?: Record<string, unknown>;
+    };
+    const known = new Set(Object.keys(recipe.surfaces ?? {}));
+    for (const s of state.surfaces) {
+      if (!known.has(s)) {
+        findings.push(`surfaces includes ${s} which is not in ${RECIPE}`);
+      }
+    }
+  } catch {
+    // malformed recipe is compose's job
   }
 }
 

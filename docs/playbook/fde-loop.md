@@ -65,7 +65,12 @@ A request that is this site's habit, not the domain: say so; do not encode it. C
 
 Ship an instrument on the eval set or live process: replay the 10 cases, count the baseline, shadow log. Not routes under `src/app` / `src/features`. Purpose: test the reframe against reality before the clip is software. For judgment steps, the probe *is* the first eval harness.
 
-## C — Clip (customize from the doc → ontology + spine → wave 0 + first slice)
+## C — Clip (compose from the recipe → ontology + spine → wave 0 + first slice)
+
+Surfaces come from [docs/kit/recipe.yaml](../kit/recipe.yaml), not from cloning a
+second template. `/next` runs `bun scripts/compose.mjs --add …` for what U5
+named (`web` / `agent` / `db`). Latest packages; overlays for feature folders,
+`@/env`, shadcn in `packages/ui`. Do not free-hand `create-next-app`.
 
 Ontology = **semantic** context (entities, states, SoR). Journey steps = **operational** context (what the clerk actually does), each tagged script / judgment / human. Seed data **is** the anonymized eval set. The first slice is scored against the U2 number, not "tests pass."
 

@@ -50,6 +50,8 @@ playbook_get() {
 }
 
 PRODUCT="$(playbook_get PRODUCT)"
+NEON_REGION="$(playbook_get NEON_REGION)"
+VERCEL_REGION="$(playbook_get VERCEL_REGION)"
 if [ -z "$PRODUCT" ]; then
   PRODUCT="$(ask 'Product name (kebab-case, e.g. kubera):')"
   [ -n "$PRODUCT" ] || { warn "A name is required. Run the customize skill first, or type one here."; exit 1; }
@@ -76,7 +78,12 @@ fi
 
 # ── 2. neon ──────────────────────────────────────────────────────────────────
 stage "Neon (one project, staging + production databases)"
-say "One project named ${PRODUCT}. Two databases on the default branch: staging, production."
+if [ -z "$NEON_REGION" ]; then
+  NEON_REGION="$(ask 'Neon region [aws-us-east-1]:')"
+  NEON_REGION="${NEON_REGION:-aws-us-east-1}"
+  env_put ".env.playbook" NEON_REGION "$NEON_REGION"
+fi
+say "One project named ${PRODUCT} in ${NEON_REGION}. Two databases on the default branch: staging, production."
 
 neon_project_id() {
   neonctl projects list --output json 2>/dev/null | python3 -c "
@@ -102,7 +109,7 @@ pid="$(neon_project_id "$PRODUCT")"
 if [ -n "$pid" ]; then
   good "project $PRODUCT exists ($pid)"
 elif confirm "Create Neon project $PRODUCT?"; then
-  neonctl projects create --name "$PRODUCT" --database staging --output json --no-secrets \
+  neonctl projects create --name "$PRODUCT" --region "$NEON_REGION" --database staging --output json --no-secrets \
     >/tmp/neon-project.json 2>/dev/null \
     && good "created $PRODUCT (database: staging)" \
     || warn "create failed for $PRODUCT"
@@ -140,6 +147,9 @@ fi
 
 # ── 3. vercel ────────────────────────────────────────────────────────────────
 stage "Vercel project"
+if [ -n "$VERCEL_REGION" ]; then
+  say "VERCEL_REGION=$VERCEL_REGION — set the project region in the Vercel dashboard (not a second template)."
+fi
 if [ -f .vercel/project.json ]; then
   good "already linked"
 elif confirm "Link this directory to Vercel?"; then

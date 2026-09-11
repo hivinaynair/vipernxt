@@ -38,4 +38,16 @@ describe("status", () => {
     expect(out).toContain("Photograph the incumbent");
     expect(out).toContain("site: North depot");
   });
+
+  test("names clip and surfaces", () => {
+    dir = mkdtempSync(join(tmpdir(), "status-"));
+    const path = join(dir, "state.yaml");
+    writeFileSync(
+      path,
+      `engagement:\n  site: North depot\nclip:\n  kind: wrap\nsurfaces: [web, agent]\nphases:\n  3: { name: shape, status: done }\n`,
+    );
+    const out = run(["--state", path]);
+    expect(out).toContain("clip: wrap");
+    expect(out).toContain("surfaces: web, agent");
+  });
 });

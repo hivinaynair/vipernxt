@@ -12,9 +12,8 @@
 // the failure shows up much later as a confusing resolution error. So the
 // interview stays with the agent and the find-and-replace does not.
 //
-// Vendor stripping (Clerk, Workflows, the database) is deliberately NOT here:
-// it deletes source files and edits app code, which needs judgement about what
-// else referenced them. The skill owns that.
+// Vendor stripping is not here. Surfaces come from docs/kit/recipe.yaml via
+// scripts/compose.mjs. This script only renames.
 
 import {
   existsSync,

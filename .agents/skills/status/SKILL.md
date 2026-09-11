@@ -21,8 +21,8 @@ not summarise afterwards. Never reconstruct state by reading prose.
 
 `check-drift.ts` reports contradictions: a phase marked done whose artifact is
 missing, a deferral whose date has passed, stale `idea_outdated`, shape done
-without a `reframe`, a feature with no Linear issue (unless `clone.tickets` is
-deferred). **Report them and change nothing.**
+without a `reframe`, a bad `clip.kind`, `composed` without `surfaces`, a feature
+with no Linear issue (unless `clone.tickets` is deferred). **Report them and change nothing.**
 A wrongly-closed item that gets silently fixed disappears from review entirely, which
 is worse than the noise.
 

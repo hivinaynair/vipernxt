@@ -9,7 +9,10 @@ Dry-run on a **throwaway clone**. Do not commit a live site, pile, or `docs/prod
 3. Outcome number (U2). Watch the work or absorb the pile (U3). Last 10 cases → eval set (U4). Bucket steps script / judgment / human.
 4. **U5 reframe** — they confirm. Why the obvious build is wrong, in one sentence. Name the fallback (usually the incumbent stays).
 5. Shape: that reframe *is* the claim. Clip = smallest path that moves the number.
-6. Customize from the doc. Ontology (semantic) + spine (operational). Wave 0 seeds the eval set. First slice. **They look at it.**
+6. Customize from the doc. Record `clip.kind` + `surfaces`. Compose from
+   [docs/kit/recipe.yaml](../kit/recipe.yaml) (`bun scripts/compose.mjs --add …`) —
+   latest packages, kit overlays. Ontology (semantic) + spine (operational).
+   Wave 0 seeds the eval set. First slice. **They look at it.**
 7. Only then: setup, Linear, factory. If a decision voids `idea:`, rewrite it (or `idea_outdated: true`).
 
 Do not: deep-research before the incumbent check; skip the market after U1; start from an idea paragraph; copy the incumbent's or a competitor's menu; dump eight questions; invent a second homework generator; run `setup.sh` before they accept the clip; mark shape done without U5; write the dry-run into this repo.

@@ -79,4 +79,30 @@ describe("check-drift", () => {
     expect(r.code).toBe(0);
     expect(r.out).toContain("no drift");
   });
+
+  test("flags unknown clip kind", () => {
+    dir = mkdtempSync(join(tmpdir(), "drift-"));
+    mkdirSync(join(dir, "docs/product"), { recursive: true });
+    writeFileSync(
+      join(dir, "docs/product/state.yaml"),
+      `product: demo\nclip:\n  kind: rebuild\nphases: {}\n`,
+    );
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "demo" }));
+    const r = run(dir);
+    expect(r.code).toBe(1);
+    expect(r.out).toContain("clip.kind");
+  });
+
+  test("flags composed without surfaces", () => {
+    dir = mkdtempSync(join(tmpdir(), "drift-"));
+    mkdirSync(join(dir, "docs/product"), { recursive: true });
+    writeFileSync(
+      join(dir, "docs/product/state.yaml"),
+      `product: demo\nclone:\n  composed: done\nphases: {}\n`,
+    );
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "demo" }));
+    const r = run(dir);
+    expect(r.code).toBe(1);
+    expect(r.out).toContain("surfaces is empty");
+  });
 });
