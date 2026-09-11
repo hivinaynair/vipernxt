@@ -265,3 +265,25 @@ describe("withAppScripts", () => {
     expect(added).toEqual([]);
   });
 });
+
+describe("surface deps", () => {
+  test("installs what the env module compose writes actually imports", () => {
+    // --apply always writes apps/web/src/env.ts importing these two. Without
+    // them the composed app does not typecheck.
+    const out = execFileSync("bun", [script, "--add", "web"], { encoding: "utf8" });
+    expect(out).toContain("bun add --cwd apps/web @t3-oss/env-nextjs zod");
+  });
+
+  test("env deps survive --without auth and --without jobs", () => {
+    const out = execFileSync(
+      "bun",
+      [script, "--add", "web", "--without", "auth", "--without", "jobs"],
+      {
+        encoding: "utf8",
+      },
+    );
+    expect(out).toContain("@t3-oss/env-nextjs zod");
+    expect(out).not.toContain("@clerk/nextjs");
+    expect(out).not.toMatch(/bun add --cwd apps\/web workflow/);
+  });
+});

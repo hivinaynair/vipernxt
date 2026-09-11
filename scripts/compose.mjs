@@ -215,11 +215,18 @@ function cmd(bin, argv = [], when = "before") {
 
 for (const name of selected) {
   const s = catalog[name];
-  if (!s?.command) continue;
-  const after = s.command === "bun add" || String(s.command).startsWith("bun add");
-  const argv = [...(s.args ?? [])];
-  if (after && s.path) cmd(s.command, ["--cwd", s.path, ...argv], "after");
-  else cmd(s.command, argv, after ? "after" : "before");
+  if (!s) continue;
+  if (s.command) {
+    const after = s.command === "bun add" || String(s.command).startsWith("bun add");
+    const argv = [...(s.args ?? [])];
+    if (after && s.path) cmd(s.command, ["--cwd", s.path, ...argv], "after");
+    else cmd(s.command, argv, after ? "after" : "before");
+  }
+  // Dependencies the overlay's own files import. Not facets — dropping one
+  // leaves a file compose wrote that does not compile.
+  if (s.deps?.length && s.path) {
+    cmd("bun add", ["--cwd", s.path, ...s.deps], "after");
+  }
 }
 
 const facets = recipe.facets ?? {};

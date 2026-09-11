@@ -34,6 +34,11 @@ surfaces:
       - --turbopack
     folders: [app, features, shared]
     env: "@/env"
+    # compose --apply always writes apps/web/src/env.ts, which imports these.
+    # They are not optional facets: without them the app does not typecheck.
+    deps:
+      - "@t3-oss/env-nextjs"
+      - zod
     auth: clerk
     jobs: vercel-workflows
     analytics: posthog
