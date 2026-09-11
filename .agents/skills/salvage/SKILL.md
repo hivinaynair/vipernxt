@@ -29,28 +29,35 @@ So before mining anything, answer this yourself:
 > it, what does it cost, and does every transaction go through it?
 
 Ask them only what they alone can know (what is on the machine); everything after that —
-the vendor, the price, the reviews — is yours to find. A paid incumbent that every
-transaction already flows through changes what the product *is*: you are replacing
-software, not digitising paper. Discovering that in phase 3 means the design doc was
-drafted against a premise that was never true.
+the vendor, the price, the reviews, **what the current paid version already does** — is
+yours to find. A paid incumbent that every transaction already flows through changes
+what the product *is*: you are replacing software, not digitising paper. If the vendor
+already ships the feature they asked you to build, **recommend they buy or upgrade it**.
+That is a finding, not a failed engagement. The clip shrinks to what the vendor will
+never cover (often the layer *across* many entities, before the SoR starts).
+
+Discovering any of this in phase 3 means the design doc was drafted against a premise
+that was never true.
 
 If the premise turns out wrong, say so plainly and record the correction on the phase.
 Reopening phase 0 is normal; carrying a false premise forward is not.
+
+If they are about to upgrade or migrate that SoR, the baseline numbers are
+**time-sensitive**. After the change you cannot unmix the vendor from the clip. Hold
+that gather before anything else.
 
 ## The rule
 
 **Mine for facts, never for structure.**
 
-Facts are what the domain is: what a receipt must legally carry, what states a booking
-moves through, what the accountant files monthly, which fields turned out to be required
-after real use. These are expensive to learn and cheap to carry over.
+Facts: receipt fields, real states, filings, always-empty columns, daily rituals.
+Structure: pages, nav, feature lists, unexplained menu labels.
 
-Structure is what the last build decided: which pages exist, how features were split, what
-the navigation looked like. Copying that reproduces the sprawl you are rebuilding to
-escape. The old app having sixteen features is evidence about scope creep, not a
-specification.
+**Job facts vs menu parity.** A Masters item you cannot explain is a hypothesis, not a
+backlog item. Photograph it; ask what staff *do* on a normal day; do not invent a subsystem
+to match a label.
 
-If you catch yourself writing "the new app should have a devotees page because the old one
+If you catch yourself writing "the new app should have a customers page because the old one
 did" — that is structure. Stop.
 
 Follow the `artifacts` house rules for anything you write: front-load the
@@ -72,6 +79,16 @@ photographs; ask what the columns mean and which ones are always left empty.
 handed to a customer. These carry hard requirements, often legal ones, that nobody
 thinks to mention out loud.
 
+**The market (required once U1 has a name).** Other apps selling the same job — not
+this site's incumbent, the category. Pricing page, changelog, onboarding, 2–3 star
+reviews. Dispatch one `salvage-miner` per named competitor in the same turn as the
+incumbent. If U1 is "none", scan the category anyway; that is how you find the
+incumbent they did not name.
+
+Mine: shared vocabulary, the pricing band, what the category's current paid version
+already does, the jobs they all fail at. Do not mine a feature matrix. The competitor
+trap is copying structure, not reading the market.
+
 **Public complaints about the incumbent and its competitors.** One-star reviews,
 support forums, subreddits, feature-request threads. This is the highest-yield source
 for a genuinely new product and the one people skip. Nobody writes a paragraph about
@@ -79,12 +96,8 @@ software that works; a furious review names the exact workflow that broke and wh
 mattered. Read the two- and three-star reviews most closely — one-stars are often
 about billing or support, threes about the product.
 
-**Competitors, read as products.** Onboarding flow, pricing page, docs, changelog. The
-pricing page tells you who they think the customer is; the changelog tells you what they
-got wrong and had to fix.
-
 **Adjacent domains.** Someone has solved this shape in another vertical. A booking
-system for clinics knows things a booking system for temples needs.
+system for clinics knows things a booking system for warehouses needs.
 
 Work these in parallel: dispatch one independent investigation per source, then
 reconcile. Do not read six sources serially in one context.
@@ -94,9 +107,9 @@ reconcile. Do not read six sources serially in one context.
 Most of the time there is no repo. There is a folder of photographs, a spreadsheet
 someone exported, screenshots of a desktop application, a wireframe drawn last month.
 
-**Ask for the pile before reading anything, and ask physically** — "send me anything you
-have" returns nothing; a checklist returns a folder. That request is one held item,
-`kind: gather`. Do not start mining a half-empty inbox.
+**Ask for the pile before reading anything, and ask physically** — name
+`docs/research/salvage-inbox/`. Cloud: transcripts if they already normalised,
+else one zip. Do not start mining a half-empty inbox.
 
 Read [pile.md](pile.md) for the checklist, the normaliser, and what each kind of artifact
 is worth. Do not improvise those from memory — the transcription rule in particular is
@@ -106,9 +119,9 @@ what keeps every later phase able to cite a photograph.
 
 Write `docs/research/salvage.md`:
 
-1. **Domain facts** — each one stated plainly, with where it came from. "A receipt carries
-   the trust's registration number, the seva name, the devotee's star and the amount
-   (`donations` schema + photographed receipt)."
+1. **Domain facts** — each one stated plainly, with where it came from. "A pick ticket
+   carries the SKU, the depot stamp, the picker id and the quantity (`orders` schema +
+   photographed ticket)."
 2. **The vocabulary** the domain actually uses, including words the old build got wrong.
 3. **Entities and their real states**, from the schema, not from what feels tidy.
 4. **What the prior art abandoned** — what was built and did not survive. A feature
@@ -162,7 +175,7 @@ and a **statistic from an article** — that is research. Salvage reads what peo
 
 Mining competitors is how products become clones. The facts/structure rule matters most
 here, and the test is simple: a fact survives when the competitor is deleted from the
-sentence. "Bookings must be cancellable up to 24 hours ahead because temples refund by
+sentence. "Picks must be cancellable up to the truck-load because the floor refunds by
 hand otherwise" is a fact. "They have a cancellations tab" is their structure.
 
 Never copy a flow, an information architecture, or a pricing model because a competitor

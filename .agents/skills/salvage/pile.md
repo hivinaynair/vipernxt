@@ -7,10 +7,20 @@ Most of the time there is no repo. There is a folder of photographs, a spreadshe
 someone exported, screenshots of a desktop application, a wireframe drawn last month.
 
 **Ask for the pile before reading anything, and ask physically.** "Send me anything you
-have" returns nothing. A checklist returns a folder:
+have" returns nothing. Name the folder. Prefer, in this order:
 
-> Drop whatever already exists into `docs/research/salvage-inbox/` — any format, don't
-> rename anything:
+1. **This machine** — drop into `docs/research/salvage-inbox/`.
+2. **Cloud, already processed** — they ran the normaliser on a laptop; they send
+   `INVENTORY.md` and `pages/*.transcript.md` only. You mine text. Originals never
+   leave their disk.
+3. **Cloud, originals** — attach **one zip**. You run `salvage-inbox.mjs` on it.
+   Not forty chat attachments. Not scp. Not the VM desktop. Not a Drive link.
+
+> Drop whatever already exists. Any format, don't rename anything.
+>
+> 1. **This machine:** `docs/research/salvage-inbox/`
+> 2. **Already processed:** `INVENTORY.md` + transcripts, not photos
+> 3. **Cloud originals:** one zip of the folder
 >
 > - [ ] Photos of whatever they use today — the spreadsheet on screen, the register, the whiteboard
 > - [ ] One **filled-in** copy of every form or receipt — filled in, not blank
@@ -18,6 +28,7 @@ have" returns nothing. A checklist returns a folder:
 > - [ ] Screenshots of the old software — every screen, including the ugly ones
 > - [ ] Anything printed that gets handed to a customer
 > - [ ] **Anything taped to a wall or clipped to the counter**, and anything laminated
+> - [ ] The last ten real cases (or a week of the job), even messy
 > - [ ] Wireframes or sketches, if any exist
 >
 > Say "nothing" for any line that genuinely does not exist — that is a finding too.
@@ -66,4 +77,4 @@ facts/structure rule harder to hold, not easier.
 **What is missing is a finding.** "No photograph of what the customer walks away with"
 goes to `field-kit` as an open question. Never quietly fill the gap.
 
-**Keep `raw/` out of version control.** Photographs of a register hold real names.
+**Keep `raw/` and page images out of version control.** Photographs of a register hold real names. Transcripts and `INVENTORY.md` captions are what later phases cite.

@@ -22,4 +22,4 @@ Migrations are additive. Both `staging` and `main` run [migrate.yml](../../.gith
 - Dates anchored to `SEED_NOW` via `seedDate()`. Never `new Date()`.
 - No faker — random names re-roll every run and break the pairing.
 - Idempotent: upsert on the fixed id.
-- Invented people only. Never a real name from the salvage inbox.
+- Anonymized eval-set cases, never a real name from the salvage inbox.

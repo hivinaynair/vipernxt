@@ -9,6 +9,10 @@ description: >-
 
 # setup
 
+Provisions a new product's infrastructure **after they accept the first slice**
+(`clone.setup` is `pending`), or when they ask for a hosted preview. Not a gate
+before wave 0. Use `.env.local` for the clip if keys already exist.
+
 Run the script. Do not do this with tool calls.
 
 ```bash
@@ -19,6 +23,12 @@ It is idempotent and skips what exists. An agent improvising the same
 provisioning conversation against live infrastructure produces two Neon projects
 named slightly differently; the script creates **one**, with `staging` and
 `production` databases inside it.
+
+Region is a flag, not a template. `NEON_REGION` from `.env.playbook` (customize
+question 9) is passed to `neonctl projects create --region`. Default
+`aws-us-east-1`. EU / Asia are values in [docs/kit/recipe.yaml](../../../docs/kit/recipe.yaml)
+`setup.neon.regions`. Env vars land in `.env.playbook` and `apps/web/.env.local`
+— do not invent keys; `apps/web/src/env.ts` is the schema.
 
 `/next` should already have run `customize`, so `PRODUCT` is in `.env.playbook`.
 If it has not, the script asks once and records it. Confirm this is the right

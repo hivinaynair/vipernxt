@@ -4,15 +4,44 @@
 committed, because cloud agents get a fresh clone and nothing else.
 
 ```yaml
-product: kubera
-started: 2026-08-25
-size: new-product          # new-product | new-feature | small-change
+product: acme
+started: 2026-09-11
+size: engagement           # engagement (default) | new-feature | small-change
+                           # new-product is an alias of engagement
 
-phase: 2                   # the phase in progress
+engagement:
+  site: North depot
+  replacing: spreadsheet + the incumbent WMS
+  outcome: "mis-picks per week"     # the U2 number
+  baseline: unknown                 # fill from the eval set when known
+  verifier: floor lead              # who can reject that the number moved
+  fallback: incumbent WMS stays     # U5: what runs if the clip is wrong
+
+idea: >-
+  Optional claim. The confirmed reframe is the source of truth.
+  Rewrite idea: to match it, or set idea_outdated: true (check-drift fails).
+
+idea_outdated: false
+
+reframe: >-
+  Confirmed U5 paragraph: outcome, who has the pain, real problem,
+  why the obvious build is wrong, and the safe fallback.
+
+eval_set: docs/research/eval-set.md  # last 10 real cases; wave 0 seeds this
+
+clip:
+  kind: replace              # replace | wrap — set at U5
+surfaces: [web]              # web and/or agent; compose reads this
+
+prior_art:                   # optional; miners run on create
+  - path: /abs/path/to-legacy
+    note: Earlier build of this product
+
+phase: 2
 phases:
   0: { name: salvage,      status: done,    artifact: docs/research/salvage.md }
-  1: { name: research,     status: done,    artifact: docs/research/temple-ops.md }
-  2: { name: field,        status: blocked, artifact: docs/product/homework/02-temple-visit.md }
+  1: { name: research,     status: done,    artifact: docs/research/before-we-build.md }
+  2: { name: field,        status: blocked, mode: pile, artifact: docs/product/homework/02-site-visit.md }
   3: { name: shape,        status: pending }
   4: { name: journeys,     status: pending }
   5a: { name: structure,   status: pending }
@@ -20,41 +49,46 @@ phases:
   6: { name: build,        status: pending }
 
 clone:
-  customized: pending          # pending | done — /next runs customize after shape
+  customized: pending
+  composed: pending            # compose.mjs --apply on a named clone
+  setup: deferred              # not before they accept the clip
+  tickets: deferred            # Linear after the clip
 
 held:
   - id: H3
-    kind: gather                       # gather | decide
+    kind: gather
+    who: site                  # fde (default) | site
     phase: 2
-    raised: 2026-08-25
-    what: Field visit to one temple using the current software
-    detail: docs/product/homework/02-temple-visit.md
-    done_when: All five stages in the homework file have captured values
-    status: open                       # open | answered | deferred
+    raised: 2026-09-11
+    what: Photograph the incumbent screens at the depot
+    detail: docs/product/homework/02-site-visit.md
+    done_when: All stages in the homework file have captured values
+    status: open
 
   - id: H4
     kind: decide
+    who: fde
     phase: 3
-    raised: 2026-08-26
-    what: Do priests get their own login, or does the counter clerk act for them?
-    options: [own login, clerk acts for them, decide after the visit]
-    recommendation: clerk acts for them
+    raised: 2026-09-11
+    what: Does the picker get their own login, or does the lead act for them?
+    options: [own login, lead acts for them, decide after the visit]
+    recommendation: lead acts for them
     status: answered
-    answer: "clerk does it, priests wont use a computer, maybe later for the big temples"
-    answered: 2026-08-27
+    answer: "lead does it on the floor device, pickers wont sit at a computer"
+    answered: 2026-09-12
 
   - id: H5
     kind: decide
     phase: 5b
     what: Pick a visual direction
     status: deferred
-    until: 2026-09-15
+    until: 2026-09-25
 
-decisions:                  # closed items, kept for the record
+decisions:
   - id: H1
     what: One URL with seats, or separate admin app?
     answer: "one url. seats. dont make me maintain two apps"
-    date: 2026-08-25
+    date: 2026-09-11
 ```
 
 ## Rules
@@ -66,27 +100,38 @@ story changed. Set `shape` back to `in-progress` only when the **claim** is in
 doubt (that closes the UI gate). Do not invent a second spine file.
 
 **`answer` is verbatim.** Their words, spelling and all. Never a paraphrase, never
-cleaned up. The paraphrase is how a decision quietly becomes a different decision.
+cleaned up.
 
-**Deferral is not closure.** `status: deferred` plus `until:` a date. It leaves the live
-list and comes back on that date.
+**Deferral is not closure.** `status: deferred` plus `until:` a date.
 
 **Ids never repeat.** `H1` means the same item forever, including after it closes.
 
-**Nothing here is inferred from prose.** If a phase says `done`, its `artifact` exists. If
-it does not, that is a contradiction to report, not to fix silently.
+**Nothing here is inferred from prose.** If a phase says `done`, its `artifact` exists.
+If it does not, that is a contradiction to report, not to fix silently.
 
-**`decisions:` is append-only.** It is the record of what was settled and when, so nothing
-gets re-asked and no later session quietly reverses it.
+**`decisions:` is append-only.**
 
-**`clone.customized`.** `pending` until `/next` finishes the `customize` skill
-(name + keep/strip applied, `PRODUCT` in `.env.playbook`). Infer from reality if
-needed: root `package.json` `name` is no longer `vipernxt`. If the flag says
-`done` but the package is still `vipernxt`, that is drift — report it, do not
-silently flip the flag.
+**`clone.customized`.** `pending` until `/next` finishes `customize` (`PRODUCT` in
+`.env.playbook`). If the flag says `done` but the package is still `vipernxt`, that
+is drift — report it, do not silently flip the flag.
+
+**`clip.kind` / `surfaces`.** Set at U5. `replace` or `wrap`. Surfaces are keys in
+`docs/kit/recipe.yaml` (`web`, `agent`, `db`, `ui`). `clone.composed: done` with
+an empty `surfaces` list is drift.
+
+**`clone.setup` / `clone.tickets`.** Default `deferred` on a new engagement. The first
+local clip does not wait on `setup.sh` or Linear. Flip to `pending` when they accept
+the clip (or ask for a hosted preview). Missing Linear IDs are not drift while
+`tickets` is `deferred`.
+
+**`who` on held items.** `fde` (default) or `site`. The digest splits **Waiting on you**
+vs **Waiting on the site**.
+
+**`reframe`.** The confirmed U5 paragraph. Shape may not be `done` without it.
+If `idea:` contradicts it, rewrite `idea:` or set `idea_outdated: true`.
 
 **`ui_writes`.** Optional. When omitted, a Cursor hook denies writes under
-`apps/*/src/app` and `apps/*/src/features` until the `shape` phase is `done`, then
-allows them (the walking skeleton). Set `ui_writes: allow` to open that tree early, or
-`ui_writes: deny` to keep it closed after shape. Boilerplate work with no state file is
-not gated.
+`apps/*/src/app` and `apps/*/src/features` until `shape` is `done`. Set
+`ui_writes: allow` to open that tree early, or `ui_writes: deny` to keep it closed
+after shape. No state file = boilerplate, not gated. A **probe** (eval replay,
+baseline count) is not product UI — keep it out of those trees.

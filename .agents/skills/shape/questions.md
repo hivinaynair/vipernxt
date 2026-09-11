@@ -124,34 +124,55 @@ Ask this before any screen copy. Changing it later is a rewrite, not a change. A
 whose vocabulary is not English usually still wants the domain terms untranslated — see
 `ontology`.
 
-## F. Stack (record in the doc; do not edit the tree)
+## F. Surfaces (record in the doc; do not compose)
 
 Canonical list for skill step 8. Ask only what is still unknown. One at a time.
 
-Read the project's constraints doc first (step 1) and name the actual vendors it ships. Ask one question per vendor, in this shape:
+Read [docs/kit/recipe.yaml](../../../docs/kit/recipe.yaml). The recipe is the stack; this bank only chooses **which surfaces this clip needs**.
 
-**F1. Auth** — the project wires in [vendor]. For this claim?
+**F0. Clip kind** — what is v1 doing to the incumbent?
+
+- A) `replace` — a path the incumbent's menu never named (or a public clip)
+- B) `wrap` — the SoR stays; we sit above it
+
+**F1. Surfaces** — from the journey buckets. Recipe knows `web`, `ui`, `db`, `agent`.
+
+- A) `web` (script steps / a screen)
+- B) `agent` (judgment steps — Eve)
+- C) both
+- D) neither (human-only clip; buy/upgrade the incumbent)
+
+Recommended: match the buckets. Do not add Eve because it is fashionable.
+
+**F2. Auth** — recipe default is Clerk. For this claim? Skip if no `web`.
 
 - A) Keep
-- B) Strip (public clip / no login)
+- B) Skip (public clip / no login)
 - C) Keep and enable organizations (B2B)
 
-**F2. Database** — [ORM + host] as wired?
+**F3. Database** — recipe default is Neon + Drizzle. Skip if no `web`.
+
+- A) Keep (`--add db`)
+- B) Skip (static artifacts / no persistence in v1)
+
+**F4. Background work** — Vercel Workflows. Skip if no `web`.
 
 - A) Keep
-- B) Strip (static artifacts / no persistence in v1)
+- B) Skip (`--without jobs`)
 
-**F3. Background work** — [jobs/workflow vendor]?
-
-- A) Keep
-- B) Strip
-
-**F4. Extra apps** — another app (`marketing`, `admin`) in this repo for v1?
+**F5. Extra apps** — another app (`marketing`, `admin`) in this repo for v1?
 
 - A) No (default)
 - B) Yes (they asked; still do not scaffold it in this skill)
 
 Recommended: A.
+
+**F6. Region** — where Neon (and optionally Vercel) should live. Setup applies this, not shape.
+
+- A) `aws-us-east-1` (default)
+- B) `aws-eu-central-1`
+- C) `aws-ap-southeast-1`
+- D) Other (must be a value in the recipe `setup.neon.regions`)
 
 ---
 

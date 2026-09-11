@@ -1,18 +1,23 @@
 # ViperNxt
 
-**Bring one idea. Leave with a product that is planned, specified, and built.**
+**Sit with a site. Leave with a clip that moves a number — then a factory.**
 
 ViperNxt is two things in one repository:
 
-1. **A SaaS starter kit** — Bun, Next.js 16, Clerk, Drizzle + Neon, shadcn/ui,
-   Biome, Playwright. Wired together, opinions already argued out.
-2. **A playbook** — a set of agent skills that take a rough idea, interview you
-   about it, research the domain, write the design doc, turn it into a journey
-   map, split that into tickets, and then build them.
+1. **An FDE playbook** — agent skills that run an engagement: salvage the pile,
+   watch the work, reframe the request, seed an eval set, ship one slice, then
+   (only then) the factory.
+2. **A stack recipe** — [docs/kit/recipe.yaml](docs/kit/recipe.yaml). After U5,
+   compose downloads the latest Next.js / Clerk / Neon / shadcn / Eve within
+   pinned majors and applies kit overlays (feature folders, `@/env`, shadcn in
+   `packages/ui`). There is no second template repo to clone and strip.
 
-You clone it, type `/next`, and answer questions. It does the rest, stopping
-only when it needs something it cannot get for itself — a decision that is
-yours, or a fact that exists only out in the world.
+You clone it, type `/next`, and name a **site** plus what they use today. It
+does the rest, stopping only when it needs something it cannot get for itself —
+a decision that is yours, or a fact that exists only at the counter.
+
+This is not "idea in, weekend MVP out." Product UI stays locked until the
+reframe exists. Procedure: [docs/playbook/fde-loop.md](docs/playbook/fde-loop.md).
 
 **Requires** [Bun](https://bun.sh) `1.4.x`. Anything else fails on install.
 
@@ -20,20 +25,23 @@ yours, or a fact that exists only out in the world.
 
 ## Who this is for
 
-- You have an idea and no product yet.
-- You are one person, or a very small team, shipping a real SaaS.
+- You are embedding with a real site (or about to), and you want the loop
+  written down so an agent can run it.
+- You are one person, or a very small team, shipping a real product after the
+  clip.
 - You are happy to let agents write most of the code, as long as you can see
   what they did.
-- You want the boring decisions already made so you can think about the product.
+- You want the boring stack decisions already made.
 
 ## Who this is not for
 
 - You want a demo app to restyle. `apps/web` is leftover starter copy on
   purpose — there is no product here until you make one.
-- You want to pick your own stack. The stack is decided. You may *remove*
-  things; you cannot swap them in.
-- You want to start coding immediately. Until the design doc is approved, a hook
-  physically blocks writes to product UI. This is the point, not a bug.
+- You want to pick a new stack per site. Change [docs/kit/recipe.yaml](docs/kit/recipe.yaml)
+  in this kit; clones compose from it. A site does not invent Prisma or NextAuth.
+- You want to start coding immediately. Until the design doc is approved **and**
+  the U5 reframe exists, a hook physically blocks writes to product UI. This is
+  the point, not a bug.
 - You use npm, pnpm, yarn, ESLint, Vitest, Prisma, or NextAuth. Those arguments
   are closed here.
 
@@ -42,7 +50,7 @@ yours, or a fact that exists only out in the world.
 ## The whole flow
 
 ```
-   your idea
+   a site + what they use today
       │
       ▼
   ┌─────────┐
@@ -50,39 +58,31 @@ yours, or a fact that exists only out in the world.
   └────┬────┘
        │
        ▼
-  1. salvage      reads what already exists — old code, spreadsheets, photos
+  U  understand   salvage the pile · incumbent gate · watch the work
+                  last 10 cases become the eval set
        │
-       ▼  ✋ you drop your pile in. it will not mine a half-empty folder.
+       ▼  ✋ they confirm the reframe (U5). no product UI before this.
        │
-  2. research     reads what is documented — rules, specs, competitors
-  3. field work   it writes you homework; you go and fill it in
-       │
-       ▼  ✋ you come back with it. nothing moves until you do.
-       │
-  4. shape        the interview. one question at a time → design doc
-       │
-       ▼  ✋ you approve the design doc. product UI unlocks here.
-       │
-  5. customize    names your clone, strips what you don't want
-  6. setup        GitHub, Neon, Vercel, Clerk, Linear — provisioned
-  7. ontology     the domain's real vocabulary and entities
-  8. journeys     the spine — every step gets a permanent ID
-  9. linear-sync  the spine becomes tickets, grouped into waves
-       │
-       ▼
- 10. wave 0       all database tables + seed data
- 11. first slice  one journey, working, end to end
+  R  reframe      the design-doc claim *is* that paragraph
+  P  probe        optional: replay the eval set, count the baseline
+                  (not product UI)
+  C  clip         compose from the recipe → ontology + spine → wave 0
+                  seeds the eval set → one journey, working
        │
        ▼  ✋ YOU LOOK AT IT. the only mandatory stop in the build.
        │
- 12. the factory  up to 5 agents building in parallel, PRs into staging
+  F  factory      setup, Linear, parallel slices — only after they accept
        │
        ▼
- 13. you review   feel the MVP, comment on PRs, say what's wrong
- 14. release      staging → main
+     you review   feel the MVP, comment on PRs, say what's wrong
+     release      staging → main
 ```
 
 Four stops. Everything between them runs without you.
+
+Live engagements belong on a **throwaway clone**. Do not commit a site, a pile,
+or `docs/product/state.yaml` into this kit. Learnings that generalize come back
+as playbook.
 
 ---
 
@@ -92,7 +92,7 @@ Four stops. Everything between them runs without you.
 bun install
 ```
 
-Then type `/next` and describe your idea in a paragraph.
+Then type `/next`. Name the site and what they use today. Drop the pile.
 
 That is genuinely the whole instruction. `/next` figures out where you are and
 what happens next, every time. You never need to remember which skill to run.
@@ -111,7 +111,8 @@ the source. What is left over is genuinely yours, and it comes in two kinds:
 
 - **Gather** — facts that exist only in the real world. A photograph, a filled-in
   form, what the clerk actually does on a Tuesday. No amount of research
-  substitutes for these.
+  substitutes for these. The digest splits **Waiting on you** vs **Waiting on
+  the site**.
 - **Decide** — a call only you can make.
 
 There are four of these, and every one is a hard stop.
@@ -119,14 +120,19 @@ There are four of these, and every one is a hard stop.
 ### 1. Your pile — *gather*
 
 Before it invents anything, `salvage` reads what already exists. It asks you for
-it with a checklist and **will not start on a half-empty folder**.
+it with a checklist and **will not start on a half-empty folder**. It also
+checks the incumbent: name, vendor, price, whether every transaction already
+goes through it, and what the paid version already does. Recommending they
+upgrade instead of building is a valid outcome.
 
 See [Where to put your stuff](#where-to-put-your-stuff) below.
 
 ### 2. The homework — *gather*
 
 `field-kit` writes you a form: who to talk to, what to ask, what to photograph,
-what to bring back. It renders as a `.docx` you can type into on site.
+what to bring back. It renders as a `.docx` you can type into on site. If they
+are about to change the system of record, the first page is **baseline numbers
+this week** — after an upgrade those numbers mix forever.
 
 This one is a genuine blocker. The agent can research a domain all day and still
 not know that the counter clerk keeps a handwritten code sheet taped to the
@@ -136,11 +142,11 @@ product is being designed from guesses — so it waits.
 While you are out, it keeps researching anything that does not depend on you. It
 does not idle.
 
-### 3. Approving the design doc — *decide*
+### 3. Approving the reframe / design doc — *decide*
 
-Before this, the agent has interviewed you, read your old code, researched the
-domain, and written a document describing what the product is. You read it and
-say yes, or say what is wrong.
+Before this, the agent has watched (or absorbed the pile), named an outcome
+number, and written **why the obvious build is wrong**. You confirm that
+paragraph. That *is* the design-doc claim.
 
 Until you say yes, **writes to `apps/*/src/app` and `apps/*/src/features` are
 denied by a hook.** Not discouraged — denied. This exists because the fastest
@@ -150,7 +156,7 @@ what it is.
 ### 4. Looking at the first slice — *decide*
 
 Before the factory builds forty tickets, it builds **one journey, end to end,
-through real data**. Then it stops and shows you.
+through the eval set**. Then it stops and shows you.
 
 Half an hour of your attention here is worth days later. If the domain model is
 wrong — and it usually is wrong in one place — you find out after one ticket
@@ -168,13 +174,20 @@ a script that makes what you drop in actually readable by an agent.
 Scribbled notes, a spreadsheet, screenshots of the old software, photographs of a
 register, a wireframe you drew last month, an exported CSV, an email thread.
 
-**Do not rename anything. Any format is fine.** Then normalise it:
+**Do not rename anything. Any format is fine.**
+
+**This machine:** drop the files in `docs/research/salvage-inbox/`, then:
 
 ```bash
-node scripts/salvage-inbox.mjs ~/Desktop/temple-photos
+node scripts/salvage-inbox.mjs docs/research/salvage-inbox
 ```
 
-That copies your originals to `raw/`, writes readable JPEGs to `pages/`, and
+**Cloud:** a Cloud Agent cannot see that folder. Prefer they run the command above
+on a laptop and send only `INVENTORY.md` plus the `.transcript.md` files. If the
+originals have to travel, attach **one zip** of the folder — not forty photos in
+the thread, not a Drive link, not the VM desktop.
+
+That copies originals to `raw/`, writes readable JPEGs to `pages/`, and
 generates an `INVENTORY.md` with a line per page for you to caption. It exists
 because an iPhone photo is HEIC — which an agent cannot open at all — and a 4K
 screenshot is too large to read. If the text comes out sideways, re-run with
@@ -189,12 +202,14 @@ What is worth digging out:
 | Screenshots of the old software — including the ugly screens | Vocabulary, dropdown states, error text |
 | Anything **taped to a wall** or clipped to the counter, and anything laminated | This is where the workarounds live. A handwritten code sheet stuck to a monitor is staff telling you exactly where the software fails them |
 | Anything printed that gets handed to a customer | Legal requirements nobody thinks to mention |
+| The last ten real cases (or a week of the job) | This becomes the eval set. Wave 0 seeds it |
 
 Saying "we don't have that" is a real answer — the absence is itself a finding.
 Say it rather than leaving a blank.
 
-> `raw/` is gitignored. Photographs of a register hold real names, and they are
-> not going into version control.
+> `raw/` and the page JPEGs are gitignored. Photographs of a register hold real
+> names, and they are not going into version control — especially not from a
+> cloud agent PR.
 
 ### What comes back from the field → `docs/product/intake/`
 
@@ -202,14 +217,14 @@ Say it rather than leaving a blank.
 Word document you can actually type into on site:
 
 ```bash
-node scripts/homework.mjs build docs/product/homework/02-temple-visit.md
+node scripts/homework.mjs build docs/product/homework/02-site-visit.md
 ```
 
 Fill it in, drop the filled copy into `docs/product/intake/`, and it gets read
 back:
 
 ```bash
-node scripts/homework.mjs read docs/product/intake/02-temple-visit.docx
+node scripts/homework.mjs read docs/product/intake/02-site-visit.docx
 ```
 
 Formatting is not your job — messy is fine. Photographs you took while you were
@@ -236,8 +251,8 @@ what is happening, not so you can drive them manually.
 | `journeys` | Turns the design doc's journey table into the ID'd spine. | Phase 4 |
 | `design-system` | Layout primitives and semantic tokens, before any page exists. | Phase 5 |
 | `linear-sync` | Publishes the spine to Linear as tickets carrying step IDs. | Phase 4.5 |
-| `customize` | Names your clone, applies keep/strip. | After shape |
-| `setup` | Runs `setup.sh` — GitHub, Neon, Vercel, Clerk, Linear. | After customize |
+| `customize` | Names your clone, composes surfaces from the recipe. | After shape |
+| `setup` | Runs `setup.sh` — GitHub, Neon, Vercel, Clerk, Linear. | After they accept the clip |
 | `plan` | One feature → a short spec and the smallest buildable slices. | Phase 6 |
 | `build` | Implements one slice: isolate, build, prove, ship. | Phase 6 |
 | `prototype` | Three real variants of one component, behind a picker. | Mid-build |
@@ -264,7 +279,7 @@ After you approve the first slice, the rest is built in **waves**.
 before any feature ticket starts. This is what makes parallel building safe: if
 all the migrations are already done, no two agents can fight over the database.
 
-Seed data ships with it — invented people, fixed ids, frozen dates. This matters
+Seed data ships with it — the **anonymized eval set**, fixed ids, frozen dates. This matters
 more than it sounds. Forty screens with empty tables tell you nothing about
 whether the product feels right.
 
@@ -313,11 +328,11 @@ If a step's meaning changes, it gets a new ID. It is never recycled.
 Then everything cites them:
 
 ```
-J1.S3  "the priest confirms the booking"
+J1.S3  "the lead confirms the pick"
    │
    ├── feature F2 says it serves J1.S3
    ├── the Linear ticket carries J1.S3
-   ├── the test is named  it("J1.S3: confirms the booking")
+   ├── the test is named  it("J1.S3: confirms the pick")
    ├── the PR body says it landed J1.S3
    └── the screenshot proving it is filed against J1.S3
 ```
@@ -353,8 +368,8 @@ This is why it asks for your pile before it starts — see
 ### One vocabulary, everywhere
 
 `ontology` records what the domain calls things — in the domain's own words, not
-a framework's. If the temple says *seva*, the code says `seva`, not
-`ServiceBooking`.
+a framework's. If the site says *pick ticket*, the code says `pick_ticket`, not
+`OrderItem`.
 
 Those terms become the only names allowed: tables, types, components, routes, UI
 copy. Left unchecked, five parallel agents will invent five reasonable
@@ -380,22 +395,30 @@ For screens behind login, `agent-browser` only accepts a URL — so there is a
 preview-only route that makes the signed-in state reachable by URL. It 404s in
 production, requires a secret, and signs in seeded users only.
 
-### The stack is closed
+### The stack is a recipe
 
-| Layer | Use | Skip |
+Edit [docs/kit/recipe.yaml](docs/kit/recipe.yaml) when the default should change.
+`bun scripts/compose.mjs --add web --add db` prints the commands. Overlays keep
+every clone on feature folders, `@/env`, and shadcn in `packages/ui` even when
+package patch versions differ. `--apply` refuses on this kit.
+
+| Layer | Recipe default | Skip |
 |---|---|---|
-| Install | Bun `1.4.x` | npm, pnpm, yarn |
-| App | Next.js 16, one `apps/web` | Extra apps until you ask |
-| Auth | Clerk | NextAuth, hand-rolled JWT |
-| Database | Drizzle + Neon, import `env` from `@/env` | Prisma, `process.env` in app code |
-| Jobs | Vercel Workflows | A second queue on day one |
+| Install | Bun (`majors.bun`) | npm, pnpm, yarn |
+| App | Next.js App Router, `apps/web` | Extra apps until you ask |
+| Auth | Clerk | `--without auth` |
+| Database | Drizzle + Neon, import `env` from `@/env` | omit `--add db` |
+| Jobs | Vercel Workflows | `--without jobs` |
 | UI | shadcn in `packages/ui` | Components installed into `apps/web` |
+| Agents | Eve, `apps/agent` | until U5 names judgment steps |
 | Lint | Biome | ESLint, Prettier |
 | Test | `bun test`, Playwright | Vitest, Jest, Cypress |
+| Region | `NEON_REGION` at setup | a per-region template |
 
-`customize` may **remove** something after the design doc says so. Nothing adds
-a second option "just in case". Billing and Clerk org UI are not in the tree —
-add them when a product actually asks.
+`customize` composes what the design doc named. Nothing adds a second option
+"just in case". Billing and Clerk org UI wait until a product asks. This repo
+still ships a reference `apps/web` until compose runs the CLIs — do not strip
+that tree on every clone as the long-term motion.
 
 ---
 
@@ -407,8 +430,9 @@ add them when a product actually asks.
 | `packages/ui` | shadcn (`@repo/ui`). `bun run ui:add -- <component>` |
 | `packages/db` | Drizzle + Neon. Server-only. Schema empty until a product needs tables |
 | `e2e/web` | Playwright |
+| `docs/kit/` | Stack recipe. Compose reads this. |
 | `docs/` | Design doc, journeys, research — after `/next` |
-| `.agents/skills/` | The playbook. `.cursor/skills/` and `.claude/skills/` symlink here |
+| `.agents/skills/` | The playbook (phases and child jobs). `.cursor/skills/` and `.claude/skills/` symlink here. Cursor Task adapters in `.cursor/agents/` pin Grok |
 
 ## Commands
 
@@ -417,6 +441,7 @@ bun install
 bun run dev
 bun run check-types && bun run check-boundaries && bun run check-tokens && bun run check-journeys && bun test
 bun run status && bun run check-drift
+bun scripts/compose.mjs --add web
 bun run ui:add -- button
 bun run db generate && bun run db migrate && bun run db:seed
 ```

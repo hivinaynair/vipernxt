@@ -21,6 +21,10 @@ saving, not as a later pass.
 Brevity is not omission. Every fact that someone downstream needs must be present. The
 target is density, not shortness — say everything, in the fewest words that still say it.
 
+**Chat is an artifact too.** Interview turns: one question, few sentences. Do not paste
+research into the ask bubble. Caps below apply to files; the same delete-test applies to
+replies.
+
 ## Rules
 
 **Front-load.** First line is the finding, verdict or answer. Not context, not the
