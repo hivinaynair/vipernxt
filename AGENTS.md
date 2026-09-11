@@ -33,7 +33,26 @@ bun run check-types && bun run check-boundaries && bun run check-tokens && bun r
 ```
 
 Branches: PRs target `staging`; `main` is production. Pushes to either run the
-migrate workflow.
+migrate workflow. Branch **from** `staging` too, and rebase onto it before the
+merge bar — base and target must match. Hotfixes are the exception: branch from
+`main`, land on `main`, back-merge the same day.
+
+A PR body names the journey step IDs it landed and links its evidence. One that
+cannot name a step is building something the spine does not describe.
+
+## Building in parallel
+
+Up to five agents at once, one slice each. Feature folders may not import each
+other, so agents in different `src/features/<slug>/` cannot collide. Everything
+else is shared surface — `src/app`, `src/shared`, `packages/*`, the schema, any
+`package.json` — and **a slice touching shared surface runs alone**.
+
+Schema and seed data land first, in wave 0, before any feature slice. Feature
+slices never write a migration.
+
+`docs/product/ontology.md` holds the canonical domain terms. They are the only
+names allowed in tables, types, components, routes and UI copy — a rejected
+synonym in the code is a defect.
 
 ## Shaping a new product
 

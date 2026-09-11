@@ -13,10 +13,12 @@
     "check-tokens": "bun scripts/check-tokens.mjs",
     "check-journeys": "bun scripts/journey.ts ids docs/journeys",
     "check-drift": "bun scripts/check-drift.ts",
+    "status": "bun scripts/status.ts",
     "ui:add": "turbo run add --filter=@repo/ui",
     "db": "bun scripts/db.mjs",
     "db:generate": "turbo run db:generate --filter=@repo/db",
     "db:migrate": "turbo run db:migrate --filter=@repo/db",
+    "db:seed": "turbo run db:seed --filter=@repo/db",
     "db:studio": "turbo run db:studio --filter=@repo/db",
     "preinstall": "bunx only-allow@1.2.2 bun",
     "prepare": "lefthook install"

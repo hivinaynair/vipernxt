@@ -1,11 +1,29 @@
 #!/usr/bin/env node
-// Markdown homework → editable .docx (and read back).
-//   node scripts/homework.mjs build <homework.md> [--out file.docx]
-//   node scripts/homework.mjs read  <filled.docx> [--out file.md]
+// Turns a field-research homework file into a .docx someone can actually type into,
+// and reads the filled copy back out as markdown.
 //
-// Conventions: ## section (new page) · ### sub · - question · indented note ·
-// - [ ] capture. ## Closed / ## Settled sections are NOT rendered (answered Qs
-// stay in the .md for the record). Put ## Photographs (or Capture) first.
+//   node scripts/homework.mjs build docs/product/homework/02-temple-visit.md
+//   node scripts/homework.mjs read  ~/Downloads/02-temple-visit.docx
+//
+// The markdown stays the source of truth. The .docx is a render of it, so the homework
+// is edited in one place and never diverges from the file state.yaml points at.
+//
+// Conventions the renderer relies on — keep homework written this way:
+//   ## Stage 2 — the counter clerk   section, starts a new page, numbered "Section 2 of 8"
+//   ### What to ask                  sub-heading
+//   - Walk me through yesterday      question, gets a numbered box
+//     Why we ask: ...                indented under a question — a note, not a question
+//   - [ ] Photograph every screen    thing to capture, gets a tick box
+//   Anything else                    instruction; no box, nobody has to fill it
+//
+// Layout follows Dillman's principles for self-administered questionnaires
+// (Internet, Mail and Mixed-Mode Surveys, 2009): questions on a lightly shaded
+// field with the answer space in white beneath (#16, #17 — white answer spaces
+// measurably reduce item non-response), dark print for questions and light for
+// instructions (#12), consecutive numbering (#9), instructions placed exactly
+// where they are needed rather than in a preamble (#2), more space between
+// questions than within one (#11), and 12pt body text, which is his minimum for
+// older respondents.
 
 import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -33,12 +51,11 @@ const plain = (s) =>
 
 const W = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
 
-const FONT = '<w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:eastAsia="Calibri" w:cs="Calibri"/>';
+const FONT = '<w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:cs="Arial"/>';
 
 const run = (text, { size = 24, bold = false, italic = false, color = null } = {}) =>
-  `<w:r><w:rPr>${FONT}${bold ? "<w:b/><w:bCs/>" : ""}${italic ? "<w:i/><w:iCs/>" : ""}` +
-  `${color ? `<w:color w:val="${color}"/>` : ""}` +
-  `<w:sz w:val="${size}"/><w:szCs w:val="${size}"/></w:rPr>` +
+  `<w:r><w:rPr>${FONT}${bold ? "<w:b/>" : ""}${italic ? "<w:i/>" : ""}` +
+  `${color ? `<w:color w:val="${color}"/>` : ""}<w:sz w:val="${size}"/></w:rPr>` +
   `<w:t xml:space="preserve">${esc(text)}</w:t></w:r>`;
 
 const para = (
@@ -50,26 +67,21 @@ const para = (
     color = null,
     before = 0,
     after = 80,
-    line = null,
+    pageBreak = false,
     shade = null,
   } = {},
 ) =>
   "<w:p><w:pPr>" +
-  (shade ? `<w:shd w:val="clear" w:color="auto" w:fill="${shade}"/>` : "") +
-  `<w:spacing w:before="${before}" w:after="${after}"` +
-  (line ? ` w:line="${line}" w:lineRule="auto"` : "") +
-  "/></w:pPr>" +
+  (pageBreak ? "<w:pageBreakBefore/>" : "") +
+  (shade ? `<w:shd w:val="clear" w:fill="${shade}"/>` : "") +
+  `<w:spacing w:before="${before}" w:after="${after}"/></w:pPr>` +
   (text ? run(text, { size, bold, italic, color }) : "") +
   "</w:p>";
 
-const pageBreak = () =>
-  '<w:p><w:pPr><w:spacing w:before="0" w:after="0"/></w:pPr>' +
-  '<w:r><w:br w:type="page"/></w:r></w:p>';
-
-const borders = (color, size = 8) =>
+const borders = (color) =>
   "<w:tblBorders>" +
   ["top", "left", "bottom", "right", "insideH", "insideV"]
-    .map((e) => `<w:${e} w:val="single" w:sz="${size}" w:space="0" w:color="${color}"/>`)
+    .map((e) => `<w:${e} w:val="single" w:sz="4" w:space="0" w:color="${color}"/>`)
     .join("") +
   "</w:tblBorders>";
 
@@ -82,108 +94,61 @@ const borders = (color, size = 8) =>
 // handwriting if this gets printed.
 const CONTENT_WIDTH = 9638; // A4 minus the 1134-twip margins on each side
 
-const tableGrid = () => `<w:tblGrid><w:gridCol w:w="${CONTENT_WIDTH}"/></w:tblGrid>`;
-
-const tableProps = (borderColor) =>
+const tableProps = (fill) =>
   "<w:tblPr>" +
-  '<w:tblStyle w:val="TableGrid"/>' +
   `<w:tblW w:w="${CONTENT_WIDTH}" w:type="dxa"/>` +
   '<w:tblLayout w:type="fixed"/>' +
-  borders(borderColor) +
-  '<w:tblCellMar><w:top w:w="140" w:type="dxa"/><w:left w:w="200" w:type="dxa"/>' +
-  '<w:bottom w:w="140" w:type="dxa"/><w:right w:w="200" w:type="dxa"/></w:tblCellMar>' +
-  "</w:tblPr>" +
-  tableGrid();
-
-const cellProps = (fill, { spanHeight = null } = {}) =>
-  "<w:tcPr>" +
-  `<w:tcW w:w="${CONTENT_WIDTH}" w:type="dxa"/>` +
-  `<w:shd w:val="clear" w:color="auto" w:fill="${fill}"/>` +
-  (spanHeight
-    ? `<w:tcMar><w:top w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/></w:tcMar>`
-    : "") +
-  "</w:tcPr>";
+  borders(fill) +
+  '<w:tblCellMar><w:top w:w="120" w:type="dxa"/><w:left w:w="160" w:type="dxa"/>' +
+  '<w:bottom w:w="120" w:type="dxa"/><w:right w:w="160" w:type="dxa"/></w:tblCellMar>' +
+  "</w:tblPr>";
 
 // A band, not a shaded paragraph — paragraph shading does not reliably fill the
 // line, so a one-cell table is what actually reads as a section divider.
 const sectionBand = (label, title) =>
   "<w:tbl>" +
-  tableProps("B8C9D9") +
-  "<w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc>" +
-  cellProps("E8F0F7") +
-  para(label, { size: 20, bold: true, color: "4A6478", after: 60 }) +
-  para(title, { size: 32, bold: true, after: 40, line: 276 }) +
+  tableProps("D0D0D0") +
+  '<w:tr><w:tc><w:tcPr><w:tcW w:w="' +
+  CONTENT_WIDTH +
+  '" w:type="dxa"/>' +
+  '<w:shd w:val="clear" w:fill="DCE6F0"/></w:tcPr>' +
+  para(label, { size: 18, color: "5A6B7B", after: 20 }) +
+  para(title, { size: 30, bold: true, after: 0 }) +
   "</w:tc></w:tr></w:tbl>" +
-  para("", { size: 20, after: 120, before: 0 });
+  para("", { size: 16, after: 0 });
 
-// One question is one table: shaded prompt on top, white answer space below.
-const questionBlock = (n, question, note, tick) => {
-  const answerHeight = tick ? 560 : 1200;
-  return (
-    "<w:tbl>" +
-    tableProps("C5C5C5") +
-    "<w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc>" +
-    cellProps("F3F3F3") +
-    para(`${n}.`, {
-      size: 20,
-      bold: true,
-      color: "666666",
-      after: 60,
-    }) +
-    para((tick ? "\u2610  " : "") + question, {
-      size: 24,
-      bold: true,
-      after: note ? 60 : 40,
-      line: 276,
-    }) +
-    (note ? para(note, { size: 22, italic: true, color: "555555", after: 40, line: 276 }) : "") +
-    "</w:tc></w:tr>" +
-    `<w:tr><w:trPr><w:cantSplit/><w:trHeight w:val="${answerHeight}" w:hRule="atLeast"/></w:trPr><w:tc>` +
-    cellProps("FFFFFF") +
-    para("Your answer:", { size: 18, color: "A0A0A0", after: 40 }) +
-    para("", { size: 24, after: 0, before: 0 }) +
-    "</w:tc></w:tr>" +
-    "</w:tbl>" +
-    // More space between questions than inside one.
-    para("", { size: 20, after: 160, before: 0 })
-  );
-};
-
-const STYLES_XML =
-  '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-  `<w:styles ${W}>` +
-  "<w:docDefaults>" +
-  "<w:rPrDefault><w:rPr>" +
-  FONT +
-  '<w:sz w:val="24"/><w:szCs w:val="24"/>' +
-  '<w:lang w:val="en-IN" w:eastAsia="en-IN" w:bidi="hi-IN"/>' +
-  "</w:rPr></w:rPrDefault>" +
-  '<w:pPrDefault><w:pPr><w:spacing w:after="120" w:line="276" w:lineRule="auto"/></w:pPr></w:pPrDefault>' +
-  "</w:docDefaults>" +
-  '<w:style w:type="paragraph" w:default="1" w:styleId="Normal">' +
-  '<w:name w:val="Normal"/>' +
-  `<w:qFormat/><w:rPr>${FONT}<w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr>` +
-  "</w:style>" +
-  '<w:style w:type="table" w:styleId="TableGrid">' +
-  '<w:name w:val="Table Grid"/>' +
-  '<w:basedOn w:val="TableNormal"/>' +
-  "<w:tblPr>" +
-  borders("C5C5C5", 4) +
-  "</w:tblPr>" +
-  "</w:style>" +
-  "</w:styles>";
-
-const CLOSED_H2 = /^(closed|settled|answered|do not send)$/i;
+// One question is one table: a shaded cell carrying the number and the question,
+// then a white cell to answer in. Stacked rather than side by side so a long
+// question does not wrap into a column two words wide, and so the answer space is
+// the full width of the page whether it is typed into or written on. The white box
+// is deliberately tall: a larger answer space produces longer answers (Christian &
+// Dillman 2004), and it has to hold handwriting if this gets printed.
+const questionBlock = (n, total, question, note, tick) =>
+  "<w:tbl>" +
+  tableProps("BFBFBF") +
+  "<w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc>" +
+  `<w:tcPr><w:tcW w:w="${CONTENT_WIDTH}" w:type="dxa"/><w:shd w:val="clear" w:fill="EFEFEF"/></w:tcPr>` +
+  para(`Question ${n} of ${total}`, { size: 17, color: "6E6E6E", after: 30 }) +
+  para((tick ? "\u2610  " : "") + question, { size: 24, bold: true, after: note ? 30 : 0 }) +
+  (note ? para(note, { size: 21, italic: true, color: "4A4A4A", after: 0 }) : "") +
+  "</w:tc></w:tr>" +
+  '<w:tr><w:trPr><w:trHeight w:val="1000"/></w:trPr><w:tc>' +
+  `<w:tcPr><w:tcW w:w="${CONTENT_WIDTH}" w:type="dxa"/><w:shd w:val="clear" w:fill="FFFFFF"/></w:tcPr>` +
+  para("", { size: 24, after: 0 }) +
+  "</w:tc></w:tr>" +
+  "</w:tbl>" +
+  // More space between questions than inside one.
+  para("", { size: 20, after: 0 });
 
 function build(mdPath) {
   const md = readFileSync(mdPath, "utf8");
 
-  // Pass one: parse. Indented lines under a question are notes. Hard-wrapped
-  // prose joins into one paragraph. ## Closed / Settled / Answered are skipped
-  // so the Word pack only carries open asks.
+  // Pass one: parse. A line indented under a question is that question's note,
+  // not a question of its own — instructions belong where they are needed. A run
+  // of ordinary lines is ONE paragraph: markdown hard-wraps, and rendering each
+  // wrapped line as its own paragraph is what made the intro look broken.
   const items = [];
   let prose = [];
-  let skip = false;
 
   const flushProse = () => {
     if (prose.length > 0) {
@@ -203,15 +168,9 @@ function build(mdPath) {
     const h = line.match(/^(#{1,3})\s+(.*)$/);
     if (h) {
       flushProse();
-      const level = h[1].length;
-      const title = plain(h[2]);
-      if (level === 2) skip = CLOSED_H2.test(title);
-      if (skip) continue;
-      items.push({ type: `h${level}`, text: title });
+      items.push({ type: `h${h[1].length}`, text: plain(h[2]) });
       continue;
     }
-
-    if (skip) continue;
 
     const tick = line.match(/^[-*]\s+\[[ xX]?\]\s+(.*)$/);
     if (tick) {
@@ -227,6 +186,8 @@ function build(mdPath) {
       continue;
     }
 
+    // Indented under a question, and no paragraph in progress: it is that
+    // question's note rather than prose of its own.
     const last = items[items.length - 1];
     if (prose.length === 0 && /^\s\s+\S/.test(raw) && last?.type === "q" && !last.note) {
       last.note = plain(line);
@@ -239,6 +200,7 @@ function build(mdPath) {
 
   // Pass two: render, now that the totals are known — progress is only
   // reassuring if it says what it is progress towards.
+  const totalQuestions = items.filter((i) => i.type === "q").length;
   const totalSections = items.filter((i) => i.type === "h2").length;
 
   const body = [];
@@ -249,18 +211,18 @@ function build(mdPath) {
 
   for (const item of items) {
     if (item.type === "h1") {
-      body.push(para(item.text, { size: 44, bold: true, after: 160, line: 276 }));
+      body.push(para(item.text, { size: 40, bold: true, after: 120 }));
       continue;
     }
     if (item.type === "h2") {
       section += 1;
-      if (seenSection) body.push(pageBreak());
+      if (seenSection) body.push(para("", { size: 2, after: 0, pageBreak: true }));
       body.push(sectionBand(`Section ${section} of ${totalSections}`, item.text));
       seenSection = true;
       continue;
     }
     if (item.type === "h3") {
-      body.push(para(item.text, { size: 26, bold: true, before: 200, after: 120 }));
+      body.push(para(item.text, { size: 26, bold: true, before: 240, after: 100 }));
       continue;
     }
     if (item.type === "q") {
@@ -270,31 +232,28 @@ function build(mdPath) {
             "If you do not know an answer, write \u201cdon\u2019t know\u201d and move on \u2014 that is a " +
               "useful answer too. Nothing here has to be filled in perfectly, and you can " +
               "answer in any language.",
-            { size: 20, italic: true, color: "5A5A5A", after: 200, line: 276 },
+            { size: 20, italic: true, color: "5A5A5A", after: 200 },
           ),
         );
         seenFirstQuestion = true;
       }
       n += 1;
-      body.push(questionBlock(n, item.text, item.note, item.tick));
+      body.push(questionBlock(n, totalQuestions, item.text, item.note, item.tick));
       continue;
     }
-    body.push(para(item.text, { size: 22, after: 140, line: 276 }));
+    body.push(para(item.text, { size: 22, after: 120 }));
   }
 
   const doc =
     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     `<w:document ${W}><w:body>${body.join("")}` +
-    "<w:sectPr>" +
-    '<w:pgSz w:w="11906" w:h="16838"/>' +
-    '<w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134"/>' +
-    "</w:sectPr>" +
+    '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/>' +
+    '<w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134"/></w:sectPr>' +
     "</w:body></w:document>";
 
   const dir = mkdtempSync(join(tmpdir(), "homework-"));
   mkdirSync(join(dir, "_rels"));
   mkdirSync(join(dir, "word"));
-  mkdirSync(join(dir, "word", "_rels"));
   writeFileSync(
     join(dir, "[Content_Types].xml"),
     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
@@ -302,7 +261,6 @@ function build(mdPath) {
       '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
       '<Default Extension="xml" ContentType="application/xml"/>' +
       '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
-      '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>' +
       "</Types>",
   );
   writeFileSync(
@@ -312,14 +270,6 @@ function build(mdPath) {
       '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
       "</Relationships>",
   );
-  writeFileSync(
-    join(dir, "word", "_rels", "document.xml.rels"),
-    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
-      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
-      "</Relationships>",
-  );
-  writeFileSync(join(dir, "word", "styles.xml"), STYLES_XML);
   writeFileSync(join(dir, "word", "document.xml"), doc);
 
   const out = outArg ?? resolve(`${basename(mdPath, extname(mdPath))}.docx`);
@@ -366,12 +316,8 @@ function read(docxPath) {
         if (band.length > 1) out.push(`\n## ${band[band.length - 1]}\n`);
         continue;
       }
-      const q = cellText(cells[0] ?? "")
-        .replace(/^Question \d+ of \d+\s*/, "")
-        .replace(/^\d+\.\s*/, "");
-      const a = cellText(cells[1] ?? "")
-        .replace(/^Your answer:\s*/i, "")
-        .trim();
+      const q = cellText(cells[0] ?? "").replace(/^Question \d+ of \d+\s*/, "");
+      const a = cellText(cells[1] ?? "").replace(/^Your answer:\s*/, "");
       if (!q) continue;
       total += 1;
       if (a) answered += 1;

@@ -68,27 +68,31 @@ Type `/next`. It reads `docs/product/state.yaml` and does every step that is not
 
 | Skill | Job |
 |---|---|
-| `next` | Router. Runs the current phase. One held item at a time. Interview mode: one question per turn. |
-| `status` | Read-only glance. Also injected on local `sessionStart`. |
+| `next` | Router. Runs the current phase. One held item at a time. |
+| `status` | Read-only glance. Runs `scripts/status.ts` + `check-drift.ts`. |
 | `artifacts` | House rules for anything under `docs/product`, `docs/plans`, `docs/research`, `docs/journeys`. |
 | `salvage` | Mine prior art for domain facts. Incumbent gate first; facts ≠ menu parity. |
 | `field-kit` | Homework only they can fill; photo-first; prune Closed; gap-pass before shape. |
 | `shape` | Interview → design doc. Canvas is a view of that doc. |
 | `ontology` | Domain entities before schema or spine. |
 | `journeys` | Expand the design-doc journey table into an ID’d YAML spine. |
-| `linear-sync` | Spine → Linear issues. IDs come back; nothing else. |
+| `linear-sync` | Spine → Linear issues via `scripts/linear-sync.ts plan`, executed through the MCP. IDs come back; nothing else. |
 | `design-system` | Layout primitives and semantic tokens before pages. |
 | `plan` | One spine feature → short spec + slices. `/next` runs it after the spine. |
 | `build` | Implements one slice. Tests cite step IDs. PR to `staging`. Host-agnostic. |
 | `prototype` | Three variants of one component, mid-build. |
-| `customize` | Names the clone and applies keep/strip. `/next` runs it after shape; before setup. |
+| `customize` | Names the clone (`scripts/customize.mjs`) and applies keep/strip. `/next` runs it after shape; before setup. |
 | `setup` | Runs `setup.sh`. One Neon project, two databases. |
 | `next-dev-loop` | Runtime verify after app edits (`/_next/mcp` + browser). |
-| `turborepo` | Vendor skill for the monorepo. |
+| `before-and-after` | Vendor skill. Before/after screenshot pair for a PR. |
 
 Phases, from [`next/SKILL.md`](../.agents/skills/next/SKILL.md): salvage → research → field → shape → ontology → journeys → structure / visual → Linear → build. Ship one walking skeleton after the spine exists. `prototype` is not a phase. A wrong product story reopens `shape` on the journeys table, then `journeys` — still `/next`, no new skill.
 
-Worked example for idea + legacy path: [`docs/playbook/golden-path.md`](playbook/golden-path.md). Scripts: `bun scripts/check-drift.ts`, `node scripts/homework.mjs build <md>`.
+Build runs in **waves**. Wave 0 is schema plus deterministic seed data; feature waves
+follow, at most five agents at once, one per feature folder, and anything touching shared
+surface runs alone. The first slice is the one mandatory stop — they look at it before the
+rest is unleashed. `build` carries the isolate / hoist / prove / ship rules; there is no
+separate skill for them.
 
 No `docs/product/state.yaml` means no product. Boilerplate may be edited. This repo is in that state.
 
@@ -96,20 +100,27 @@ No `docs/product/state.yaml` means no product. Boilerplate may be edited. This r
 
 | Piece | Path | Does |
 |---|---|---|
-| UI gate | [`.cursor/hooks/playbook.py`](../.cursor/hooks/playbook.py) `gate` | Denies Write/StrReplace/Delete under `apps/*/src/app` and `apps/*/src/features` until `shape` is `done` (or `ui_writes: allow`). Fail-closed. Missing state file = boilerplate, allowed. |
-| Session digest | same file, `session` | Injects a `status` glance. Cloud chats do not run `sessionStart`; the playbook rule still applies. |
+| UI gate | [`.cursor/hooks/playbook.ts`](../.cursor/hooks/playbook.ts) `gate` | Denies Write/StrReplace/Delete under `apps/*/src/app` and `apps/*/src/features` until `shape` is `done` (or `ui_writes: allow`). Fail-closed. Missing state file = boilerplate, allowed. |
+| Branch gate | same file, `branch` | `beforeShellExecution`. Denies `git push` to `main`, `gh pr create --base main`, and `--force` without `--force-with-lease`. Releasing is the user's move. |
+| Session digest | same file, `session` | Runs `scripts/status.ts` and injects it. Cloud chats do not run `sessionStart`; the playbook rule still applies. |
 | `salvage-miner` | [`.cursor/agents/salvage-miner.md`](../.cursor/agents/salvage-miner.md) | One prior-art source. Facts, not structure. |
+| `pile-reader` | [`.cursor/agents/pile-reader.md`](../.cursor/agents/pile-reader.md) | One inbox page → citable transcript. Verbatim, untranslated. |
 | `domain-researcher` | [`.cursor/agents/domain-researcher.md`](../.cursor/agents/domain-researcher.md) | One research thread. Parent files the note. |
 | `spine-checker` | [`.cursor/agents/spine-checker.md`](../.cursor/agents/spine-checker.md) | Validates `docs/journeys/*.yaml`. |
 | `ui-gate-auditor` | [`.cursor/agents/ui-gate-auditor.md`](../.cursor/agents/ui-gate-auditor.md) | Reports gated-path edits. Does not fix. |
 
 Subagents do not inherit skills. Pass `.agents/skills/<name>/SKILL.md` in the task prompt. Do not send playbook work to Gemini.
 
-Rules: [`.cursor/rules/playbook.mdc`](../.cursor/rules/playbook.mdc) (always), `next-features`, `shadcn`, `testing`, `next-dev-loop`.
+Rules: [`.cursor/rules/playbook.mdc`](../.cursor/rules/playbook.mdc) (always), `next-features` (feature folders + ontology names), `db` (wave 0, deterministic seed), `shadcn`, `testing`, `next-dev-loop`.
 
 ## Checks
 
 Local, on commit ([`lefthook.yml`](../lefthook.yml)): Biome, boundaries, affected typechecks.
+
+Deterministic where it can be: `scripts/status.ts` renders the digest, `check-drift.ts`
+reports contradictions across artifacts, `linear-sync.ts` decides what Linear should say,
+`customize.mjs` renames the clone, `journey.ts` validates and renders the spine. Skills
+carry judgement; scripts carry anything that should come out the same every time.
 
 Declared merge bar ([`AGENTS.md`](../AGENTS.md)):
 
@@ -125,5 +136,6 @@ CI: [`.github/workflows/check.yml`](../.github/workflows/check.yml) on PRs and o
 |---|---|
 | Starter leftovers | “Create Next App” copy. `customize` question 1 and 7 delete it on the first real clone. |
 | Billing | Not in the tree. Extend `customize` when a product asks. |
+| `check-evidence` | PR bodies name step IDs by convention; no script enforces it yet. Add one if a false "done" ever lands. |
 | Clerk orgs | Setup can flip the flag. No org UI until a product is B2B. |
 | Build-skill names | Closed. `plan` and `build` — not `game-plan` / `lets-cook`. No verbose ticket writer. |

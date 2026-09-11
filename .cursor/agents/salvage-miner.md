@@ -24,7 +24,8 @@ Return to the parent:
 1. Facts table (claim + source)
 2. Vocabulary this source uses
 3. Entities and states this source proves
-4. What not to rebuild, if this source shows sprawl
+4. What this source shows was built and abandoned — what it was, the evidence it died.
+   Record what happened; do not write a verdict on the new build
 5. Open questions this source cannot answer
 
 Follow the artifacts caps. Do not use Gemini or any model other than Cursor Grok 4.6.

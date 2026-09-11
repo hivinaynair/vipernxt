@@ -46,3 +46,6 @@ yarn-error.log*
 .DS_Store
 *.pem
 lefthook-local.yml
+
+# Salvage originals — photographs of registers and receipts hold real names
+docs/research/salvage-inbox/raw/

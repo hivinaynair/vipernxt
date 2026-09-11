@@ -1,0 +1,25 @@
+---
+description: Schema lands in wave 0; seed data is deterministic
+globs: packages/db/**
+alwaysApply: false
+---
+
+# Database
+
+`@repo/db` is server-only — Server Components, Server Actions, Route Handlers, `"use step"` functions. Never imported from a client component.
+
+## Schema is wave 0
+
+Every table the ontology names lands **before** any feature slice starts. A feature slice never writes a migration: that is what lets five agents build in parallel without colliding on the database. If a slice needs a column that does not exist, stop and hand back to `/next`.
+
+Migrations are additive. Both `staging` and `main` run [migrate.yml](../../.github/workflows/migrate.yml) on push.
+
+## Seed data is deterministic
+
+`src/seed.ts` is not decoration — the MVP review and `before-and-after` both depend on it. Empty tables make a screen unjudgeable, and data that differs between two deployments makes every screenshot pair read as a change.
+
+- Fixed ids, written out. No `uuid()`, no `Math.random()`.
+- Dates anchored to `SEED_NOW` via `seedDate()`. Never `new Date()`.
+- No faker — random names re-roll every run and break the pairing.
+- Idempotent: upsert on the fixed id.
+- Invented people only. Never a real name from the salvage inbox.

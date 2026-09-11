@@ -25,8 +25,6 @@ type State = {
   phases?: Record<string, Phase>;
   clone?: { customized?: string };
   held?: Held[];
-  idea?: string;
-  idea_outdated?: boolean;
 };
 type Feature = { id?: string; title?: string; serves?: string[]; linear?: string };
 type Spine = { source?: string; features?: Feature[] };
@@ -86,14 +84,7 @@ if (existsSync("package.json")) {
   }
 }
 
-// 5. Idea paragraph superseded by a decision but not rewritten.
-if (state.idea_outdated === true) {
-  findings.push(
-    "idea_outdated is true — rewrite docs/product/state.yaml `idea:` to match closed decisions, then clear the flag",
-  );
-}
-
-// 6. Each spine against the design doc it claims to view, and its features.
+// 5. Each spine against the design doc it claims to view, and its features.
 const spines = [...new Bun.Glob("docs/journeys/*.yaml").scanSync(".")];
 for (const path of spines) {
   let spine: Spine;

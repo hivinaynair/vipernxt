@@ -7,11 +7,11 @@
       "skillPath": "skills/next-dev-loop/SKILL.md",
       "computedHash": "d6c10996c5c31b32faa269715852006922fa4357d1151403bb3a49dfa121bcfd"
     },
-    "turborepo": {
-      "source": "vercel/turborepo",
+    "before-and-after": {
+      "source": "michaelshimeles/skills",
       "sourceType": "github",
-      "skillPath": "skills/turborepo/SKILL.md",
-      "computedHash": "33d4adbcd2fd56074cf9b72b23804cd0e72f4ce24d1d427079e369b87a671ae5"
+      "skillPath": ".agents/skills/before-and-after/SKILL.md",
+      "computedHash": "24170d8b5ea6ba68ed1fb41ce58d2d725b365e5d5a2d047462cda8289fef51b8"
     },
     "customize": {
       "source": ".",
@@ -23,7 +23,7 @@
       "source": ".",
       "sourceType": "local",
       "skillPath": ".agents/skills/artifacts/SKILL.md",
-      "computedHash": "a5f0623b4ade2af10027a4ac04ddfc0c1ce7caad1aac736f9eff6c386475bbf3"
+      "computedHash": "73895f78b5495df18dddc36ce85825f3bd54fcb1ef51524fc5825dad40e25f89"
     },
     "design-system": {
       "source": ".",
@@ -35,7 +35,7 @@
       "source": ".",
       "sourceType": "local",
       "skillPath": ".agents/skills/field-kit/SKILL.md",
-      "computedHash": "852dc04f5cdfc0578aea017e64bcde8d3ec8478f0d0f5de1bbe1b1a44c6a79fb"
+      "computedHash": "b39cf46c497a388b81d1b4071c9f62263ebb5e72a9a72c2d5ff16dd85742c444"
     },
     "plan": {
       "source": ".",
@@ -83,7 +83,7 @@
       "source": ".",
       "sourceType": "local",
       "skillPath": ".agents/skills/salvage/SKILL.md",
-      "computedHash": "56398c3c05e1742869d0f50511c84d9842c4a6cbfa009cb6b7b9bf58fa3864d5"
+      "computedHash": "79e93a80b52a97a5d007d0c02f590a024354c6f37c46a23cf12e9c28a65b55d4"
     },
     "setup": {
       "source": ".",

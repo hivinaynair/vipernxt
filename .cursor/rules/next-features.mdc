@@ -11,3 +11,9 @@ alwaysApply: false
 - `shared/` — this app only; never import a feature.
 - Cross-app libraries go in `packages/`.
 - `src/lib` and `src/components` at the app root are not composition roots. Put that code in `shared/` or a feature.
+
+## Names come from the ontology
+
+`docs/product/ontology.md` holds the canonical domain terms. Those are the **only** names allowed — features, components, types, columns, routes, UI copy. A rejected synonym in the code is a defect, not a style preference. If the term you want is not there, the ontology is incomplete: say so rather than inventing a translation.
+
+A `check-boundaries` failure means a mechanic has earned promotion to `shared/` or a package. It never means the rule should bend.

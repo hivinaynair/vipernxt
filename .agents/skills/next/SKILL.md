@@ -83,19 +83,13 @@ A choice that would **expand the contract** needs all five of these, in one mess
 4. **What accepting costs, and what declining costs.**
 5. Your recommendation, and why it serves what they actually wanted.
 
-If you cannot state the cost, you are not ready to ask or record.
+Point 4 is the one that gets dropped, and dropping it is what turns an override into a
+decision nobody priced. If you cannot state the cost, you are not ready to ask.
 
-One held item per gate — not one per question. A review that raises six questions is one
-held item pointing at the report.
+One held item per gate, not one per question. A review raising six questions is one item
+pointing at the report.
 
-### Interview mode (keep tokens low)
-
-When something waits on them: **one question or one A/B/C set per message**. A few
-sentences max. No research dumps or digests in the same turn (`status` is the glance).
-Prefer tables in artifacts. Prefer `state.yaml` over re-reading design docs. Fold a
-checklist into an existing skill — do not add a new skill for ten lines of guidance.
-
-Never use the words "held", "state file", or "pipeline" when talking to them. Ask the
+Never use the words "held", "state file" or "pipeline" when talking to them. Ask the
 question; keep the machinery to yourself.
 
 ## Recording an answer
@@ -128,7 +122,7 @@ Running a six-phase pipeline over "add a column" is a failure, not thoroughness.
 | # | Phase | Skill | Who works |
 |---|---|---|---|
 | 0 | Salvage prior art | `salvage` | you |
-| 1 | Domain research | `/deep-research`, or research yourself | you |
+| 1 | Domain research | `/deep-research`, or research yourself; ends with the digest | you |
 | 2 | Field research | `field-kit` | **them**, in the real world |
 | 3 | Shape | `shape` | interview |
 | 3.5 | Domain model | `ontology` | you draft, they confirm |
@@ -136,13 +130,17 @@ Running a six-phase pipeline over "add a column" is a failure, not thoroughness.
 | 5a | Structure | `design-system` | you |
 | 5b | Visual direction | `design-system` | them, optional, any time |
 | 4.5 | Publish to Linear | `linear-sync` | you |
-| 6 | Build | `plan` then `build`; cite journey IDs; `prototype` when a component is open | you |
+| 6 | Build | `plan` then `build` in waves; cite journey IDs; `prototype` when a component is open | you |
 
 **Ship something before the planning is finished.** Once the spine exists, build one
 journey end to end — a thin slice through real data — before the full component inventory.
 Forward-deployed teams ship working code in week one for a reason: a slice tests the domain
 model in a way no further planning can, and it is the cheapest way to discover the model is
 wrong. Then return to 5a.
+
+That first slice is also the **one mandatory stop** in the build phase. Show it to them and
+wait. Everything after it can run unattended; nothing before it should. A domain model that
+is wrong costs one slice to correct here and forty to correct later.
 
 `linear-sync` runs after the spine is confirmed and again whenever features change.
 `prototype` is not a phase — reach for it mid-build whenever a component's shape is
@@ -159,6 +157,41 @@ root `package.json` `name` is still `vipernxt` or `.env.playbook` has no `PRODUC
 read [customize](../customize/SKILL.md) and run it now. One question at a time.
 Honour keep/strip the design doc already recorded. They do not type `/customize`.
 Do not run `setup.sh` under the boilerplate name.
+
+## The factory
+
+After the checkpoint, build runs in **waves**. A wave is a set of slices that share no
+surface, launched together and merged before the next one starts.
+
+| Wave | Contains |
+|---|---|
+| 0 | Schema and seed data. Every table the ontology names, landed before any feature slice |
+| 1..n | Feature slices, at most **five agents at once**, one per feature folder |
+
+Wave 0 is what makes the rest safe. If all migrations land first, feature slices never
+write one, and parallel merges cannot collide on the database. Seed data ships with it —
+deterministic, fixed ids, frozen dates. Empty tables make both the review and
+`before-and-after` worthless.
+
+Feature folders may not import each other, so agents in different folders cannot collide.
+Everything else is shared surface — `src/app`, `src/shared`, `packages/*`, the schema, any
+`package.json`. **A slice touching shared surface runs alone.**
+
+Group the waves when `linear-sync` publishes the spine, so the order is visible to them
+rather than living in this session.
+
+### Stop conditions
+
+An unattended agent stops for the right reasons instead of improvising. Hold an item and
+wait when any of these fire:
+
+- The merge bar fails twice on the same slice.
+- A product decision the spine does not settle.
+- A slice needs a column wave 0 did not create.
+- The third fix on the same theme — the abstraction is wrong, not the code.
+- Two rounds of review feedback have not closed the PR. The slice was wrong; re-plan it.
+
+Autonomy is not "never stops". It is "stops without corrupting anything, and says why".
 
 ## The journey is wrong
 
@@ -180,20 +213,14 @@ payoff — do **not** start a new skill or a second journey file. Reopen this lo
 
 They keep typing `/next`. They do not type `/shape` or `/journeys` to revise.
 
-Phase 0 runs on every new product, not only rebuilds — there is almost always something being replaced, even if it is a spreadsheet. It is skipped only when `salvage` reports there is genuinely nothing to read.
+**Phase 1 ends with a digest, not a pile of notes.** Ten cited notes nobody rereads is
+worse than three. Write `docs/research/before-we-build.md`: what still blocks nothing,
+the handful of unknowns that would actually change what gets built (open or closed), what
+is already decided and must not be relitigated, and what *you* decide rather than them.
+Every claim points at the note that sources it. That file is what the next phase reads
+first.
 
-**Incumbent gate.** Before phase-1 fan-out: know what runs the job today (name + photos, or
-explicit "none"). Hold one `gather` if needed; do not deep-research against an unchecked
-"paper" claim.
-
-**Prior-art miners.** If `prior_art:` lists paths (or they name a legacy repo in the idea
-turn), dispatch `salvage-miner` per path in that same turn — do not wait for `/salvage`.
-
-**Gap-pass before shape.** Before marking field `done` / opening shape: skim open homework,
-incumbent screens, and hard problems; add or drop asks; rebuild the `.docx`. Ten lines of
-checklist — not a new skill.
-
-Phase 1 can run in parallel with 2 — send
+Phase 0 runs on every new product, not only rebuilds — there is almost always something being replaced, even if it is a spreadsheet. It is skipped only when `salvage` reports there is genuinely nothing to read. Phase 1 can run in parallel with 2 — send
 them out to gather, then keep researching while they are gone. **Never idle while a
 `gather` item is open.**
 
@@ -201,11 +228,8 @@ Phases 0 and 1 are wide and human-free: dispatch independent investigations in p
 one per source or feature area, and reconcile the results yourself. Use whatever
 parallelism this harness offers; do not depend on a specific one.
 
-On Cursor, that fan-out is the project subagents in `.cursor/agents/`
-(`salvage-miner`, `domain-researcher`). They are pinned to **Cursor Grok 4.6**. Do not
-send playbook work to Gemini. Pass the skill path in the task prompt — subagents do not
-inherit the parent's skill catalog. `spine-checker` validates a journey YAML;
-`ui-gate-auditor` checks product-UI writes against `shape`.
+On Cursor that fan-out is `.cursor/agents/` — see `docs/map.md` for what each one does.
+Subagents do not inherit the parent's skills, so pass the skill path in the task prompt.
 
 ## Every run
 
