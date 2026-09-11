@@ -1,6 +1,6 @@
 # FDE process: understand first, code only after the reframe
 
-Checked 2026-09-11. Palantir (origin), Varick, LangChain, HappyRobot, plus craft sources (The Forward Deployed, Vibe Engines, Perspective AI's 2026 function playbook). Shared finding: **operational context is the scarce input.** Code is cheap; the wrong problem is expensive. This kit already has salvage / field / shape / ontology / clip. The exit test it lacked: no product UI until you can name the **outcome number**, the **reframe**, and an **eval set of real cases**.
+Checked 2026-09-11. Palantir (origin), Varick, LangChain, HappyRobot, plus craft sources (The Forward Deployed, Vibe Engines, Perspective AI's 2026 function playbook) and the open [Applied AI Field Guide](https://github.com/davidahmann/fde-guide) (Ahmann). Shared finding: **operational context is the scarce input.** Code is cheap; the wrong problem is expensive. This kit already has salvage / field / shape / ontology / clip. The exit test it lacked: no product UI until you can name the **outcome number**, the **reframe**, and an **eval set of real cases**.
 
 Dry-run this loop on throwaway clones. **Never write a live site into this repo.** Two shapes the loop must survive are in [fde-loop.md](../playbook/fde-loop.md) (incumbent replacement vs judgment-over-documents). Neither is a product here.
 
@@ -66,6 +66,11 @@ Foundry is Palantir-internal. Steal the *pattern* (ontology → one action on li
 | Earn-the-right scope | HappyRobot | Clip first; factory after they accept |
 | Productize back to the kit | Perspective / Palantir Echo | Dry-run learnings land here as playbook, never as a site |
 | Site vs FDE queues | implied by embed | `who: fde \| site` |
+| Independent verifier + safe fallback | [Field Guide](https://github.com/davidahmann/fde-guide) | U2 names who can reject the number; U5 names the fallback (incumbent stays) |
+| Smallest mechanism, not "an agent" | Field Guide factor 7 | Judgment ≠ automatically an LLM; read-back from the SoR after a write |
+| Handoff is an exercise | Field Guide transfer | They ran a case without you. Docs are not a handoff |
+
+Do not import that repo's JSON charters, control catalog, or 16 skills. Steal the gates; keep our artifacts.
 
 ## Open
 

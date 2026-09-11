@@ -7,7 +7,7 @@ Dry-run on a **throwaway clone**. Do not commit a live site, pile, or `docs/prod
 1. `/next` → site, what they use today, pile (`docs/research/salvage-inbox/`; cloud: transcripts or one zip). Record `engagement.site`. An idea is a **claim**, optional.
 2. Same turn: incumbent gate (name + photos + what the paid version already does, or "none"); **market scan** (other apps selling that job); miners; salvage the pile. If they are about to change the SoR, baseline numbers **this week**.
 3. Outcome number (U2). Watch the work or absorb the pile (U3). Last 10 cases → eval set (U4). Bucket steps script / judgment / human.
-4. **U5 reframe** — they confirm. Why the obvious build is wrong, in one sentence.
+4. **U5 reframe** — they confirm. Why the obvious build is wrong, in one sentence. Name the fallback (usually the incumbent stays).
 5. Shape: that reframe *is* the claim. Clip = smallest path that moves the number.
 6. Customize from the doc. Ontology (semantic) + spine (operational). Wave 0 seeds the eval set. First slice. **They look at it.**
 7. Only then: setup, Linear, factory. If a decision voids `idea:`, rewrite it (or `idea_outdated: true`).

@@ -14,6 +14,8 @@ engagement:
   replacing: spreadsheet + the incumbent WMS
   outcome: "mis-picks per week"     # the U2 number
   baseline: unknown                 # fill from the eval set when known
+  verifier: floor lead              # who can reject that the number moved
+  fallback: incumbent WMS stays     # U5: what runs if the clip is wrong
 
 idea: >-
   Optional claim. The confirmed reframe is the source of truth.

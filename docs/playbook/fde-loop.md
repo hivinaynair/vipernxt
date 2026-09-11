@@ -36,17 +36,17 @@ Input: a **site**, what they use today, the pile. Not an idea.
 | # | Do | Done when |
 |---|---|---|
 | U1 | Incumbent gate — name + photos, or explicit "none". What the **current paid version** already does. Then **2–3 other vendors** selling this job (pricing, changelog, 2–3★ reviews). If they are about to upgrade/migrate, capture baseline numbers **before** the SoR changes | You are not researching against an unchecked "paper" claim; you are not about to reimplement a vendor feature; the market is cited, not copied |
-| U2 | Climb **request → outcome** — "If this works, what number moves in 90 days?" | One baseline metric, current value if known |
+| U2 | Climb **request → outcome** — "If this works, what number moves in 90 days?" Name who **independently** accepts that it moved (the clerk, a reconciling SoR, not the clip itself) | One baseline metric, current value if known, a verifier who can reject |
 | U3 | Watch the work (buyer is not the worker). Capture operational context separately from entities. Where the data may live (this machine / this network) | A dependency graph of the job + exceptions; laminated-card / workaround list; residency constraint if any |
 | U4 | Last **10 real cases** (or a week of the job). If the SoR already stores expert-labelled history, that *is* the eval set — anonymize it | Anonymized, frozen, cited to photos/exports/SoR |
-| U5 | **Reframe** — outcome, who has the pain, real problem, **one sentence why the obvious build is wrong** | They confirm or correct. Until this exists, no `shape` done, no product UI |
+| U5 | **Reframe** — outcome, who has the pain, real problem, **one sentence why the obvious build is wrong**, and the **safe fallback** if the clip is wrong (usually: incumbent stays; propose, don't post). Keep `idea:` — do not silently rewrite the brief | They confirm or correct. Until this exists, no `shape` done, no product UI |
 
 Bucket every step while mapping:
 
 | Bucket | Means | Not |
 |---|---|---|
 | **script** | Deterministic. Arithmetic, matching, a rule | An agent, a screen |
-| **judgment** | Messy interpretation; agent proposes, human gates | Auto-post to the SoR |
+| **judgment** | Messy interpretation. Smallest mechanism that can propose: a rule, retrieval, one model call, then a human gate. Not "therefore an agent" | Auto-post to the SoR |
 | **human-only** | Stays with the person. Three reasons, keep them separate: **judgement** (needs the client), **responsibility** (their name is on it), **relationship** (the conversation *is* the service) | "AI assist" chrome on a conversation that should stay human |
 
 Do not plan a screen for a script step. Do not plan an agent for a human-only step. Recommending they **buy or upgrade the incumbent** is a valid U1 outcome — record it and shrink the clip to what the vendor will never cover (usually the layer across many entities, before the SoR starts). The market scan is how you know that without waiting for the field visit.
@@ -71,7 +71,7 @@ Ontology = **semantic** context (entities, states, SoR). Journey steps = **opera
 
 They look at it. That is the mandatory stop.
 
-Shadow before replace: the slice may sit beside the current process before it is the process. A judgment clip proposes; it does not post to the SoR until they say so.
+Shadow before replace: the slice may sit beside the current process before it is the process. A judgment clip proposes; it does not post to the SoR until they say so. After a write, **read the result back from the SoR** before telling anyone it is done.
 
 ## F — Factory
 
@@ -87,3 +87,4 @@ A kit change that fell out of a dry-run (incumbent gate, eval-set seed, buckets)
 - **Shape is done** when the claim *is* that paragraph and the clip would move the number.
 - **Build may start** when the eval set exists and wave 0 can seed it.
 - **Factory may start** when they used the clip on a real (or seeded-real) case and did not say the story is wrong.
+- **Handoff may start** when they ran that case **without you**. Documents are not a handoff.
