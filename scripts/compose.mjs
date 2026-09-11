@@ -44,6 +44,37 @@ function objectBlock(lines) {
   return `{\n${lines.join("\n")}\n  }`;
 }
 
+/**
+ * create-next-app writes dev/build/start/lint but no `check-types`, so
+ * `turbo run check-types` reports green having never typechecked the app the
+ * product is written in. Add the script (and the deps turbo needs to order it)
+ * without disturbing anything the CLI wrote.
+ *
+ * Exported for the test; returns the keys it added.
+ */
+export function withAppScripts(pkg) {
+  const added = [];
+  const scripts = { ...(pkg.scripts ?? {}) };
+  if (!scripts["check-types"]) {
+    scripts["check-types"] = "tsc --noEmit";
+    added.push("check-types");
+  }
+  return { pkg: { ...pkg, scripts }, added };
+}
+
+function ensureAppScripts(appDir) {
+  const pkgPath = join(appDir, "package.json");
+  if (!existsSync(pkgPath)) {
+    process.stderr.write(`warn: ${pkgPath} not found — run the empty-path CLI before --apply.\n`);
+    return;
+  }
+  const before = JSON.parse(readFileSync(pkgPath, "utf8"));
+  const { pkg, added } = withAppScripts(before);
+  if (!added.length) return;
+  writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
+  process.stdout.write(`scripts ${pkgPath.replace(`${cwd}/`, "")} + ${added.join(", ")}\n`);
+}
+
 function generateWebEnv({ auth, db, analytics, email, files }) {
   const server = [];
   const client = [];
@@ -252,8 +283,16 @@ if (without.has("analytics")) lines.push("setup: skip PostHog — --without anal
 if (without.has("email")) lines.push("setup: skip Resend — --without email");
 if (without.has("files")) lines.push("setup: skip Blob — --without files");
 
+const uiAdd = catalog.ui?.add;
+if (uiAdd && selected.includes("ui")) {
+  lines.push("", "components (any time after --apply):");
+  lines.push(`  ${uiAdd} <component>`);
+  lines.push("  packages/ui is supplied by the overlay. Do not run `shadcn init` there —");
+  lines.push("  it prompts for a framework template and scaffolds a second project.");
+}
+
 lines.push("", "order: empty-path CLIs, then --apply, then `commands (after --apply)`.");
-lines.push("      create-next-app / eve init / shadcn init refuse a non-empty folder.");
+lines.push("      create-next-app / eve init refuse a non-empty folder.");
 
 const text = `${lines.join("\n")}\n`;
 
@@ -330,6 +369,10 @@ if (selected.includes("web")) {
   process.stdout.write(
     `env ${envPath.replace(`${cwd}/`, "")} · auth=${envOpts.auth ? "on" : "off"} db=${envOpts.db ? "on" : "off"} analytics=${envOpts.analytics ? "on" : "off"} email=${envOpts.email ? "on" : "off"} files=${envOpts.files ? "on" : "off"}\n`,
   );
+}
+
+if (selected.includes("web")) {
+  ensureAppScripts(join(cwd, catalog.web?.path ?? "apps/web"));
 }
 
 setCloneFlag(cwd, "composed", "done");

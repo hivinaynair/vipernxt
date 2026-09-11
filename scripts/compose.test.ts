@@ -36,12 +36,11 @@ function run(argv: string[], cwd = root) {
 }
 
 describe("compose", () => {
-  test("catalog lists Next, shadcn, Eve, and Neon regions", () => {
+  test("catalog lists Next, Eve, and Neon regions", () => {
     const r = run([]);
     expect(r.code).toBe(0);
     expect(r.out).toContain("compose catalog");
     expect(r.out).toContain("create-next-app@latest");
-    expect(r.out).toContain("shadcn@latest");
     expect(r.out).toContain("eve@latest");
     expect(r.out).toContain("--cwd packages/db");
     expect(r.out).toContain("aws-eu-central-1");
@@ -55,7 +54,8 @@ describe("compose", () => {
     expect(r.out).toContain("compose plan");
     expect(r.out).toContain("surfaces: web, ui");
     expect(r.out).toContain("create-next-app@latest");
-    expect(r.out).toContain("shadcn@latest");
+    // ui is scaffolded by the overlay, not by a CLI — see the "ui surface" tests.
+    expect(r.out).toContain("bun run ui:add --");
     expect(r.out).toContain("@clerk/nextjs");
     expect(r.out).toContain("posthog-js");
     expect(r.out).toContain("resend");
@@ -226,5 +226,42 @@ describe("compose", () => {
     expect(env).not.toContain("POSTHOG");
     expect(env).not.toContain("RESEND");
     expect(env).not.toContain("BLOB_");
+  });
+});
+
+describe("ui surface", () => {
+  test("prints no shadcn init — the overlay is the scaffold", () => {
+    const out = execFileSync("bun", [script, "--add", "web"], { encoding: "utf8" });
+    expect(out).toContain("commands (empty paths):");
+    expect(out).toContain("create-next-app");
+    // `shadcn init` is a create-a-project flow: it prompts for a framework
+    // template, which hangs an unattended run, and would overwrite the overlay.
+    expect(out).not.toMatch(/shadcn@latest init|shadcn init --cwd/);
+  });
+
+  test("says how to add components instead", () => {
+    const out = execFileSync("bun", [script, "--add", "web"], { encoding: "utf8" });
+    expect(out).toContain("components (any time after --apply):");
+    expect(out).toContain("bun run ui:add --");
+  });
+});
+
+describe("withAppScripts", () => {
+  test("adds check-types, which create-next-app does not write", async () => {
+    const { withAppScripts } = await import("./compose.mjs");
+    const { pkg, added } = withAppScripts({
+      name: "web",
+      scripts: { dev: "next dev", build: "next build", lint: "biome check" },
+    });
+    expect(added).toEqual(["check-types"]);
+    expect(pkg.scripts["check-types"]).toBe("tsc --noEmit");
+    expect(pkg.scripts.dev).toBe("next dev");
+    expect(pkg.name).toBe("web");
+  });
+
+  test("leaves an existing check-types alone", async () => {
+    const { withAppScripts } = await import("./compose.mjs");
+    const { added } = withAppScripts({ scripts: { "check-types": "tsc -b" } });
+    expect(added).toEqual([]);
   });
 });

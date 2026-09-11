@@ -43,11 +43,11 @@ surfaces:
     e2e: playwright
   ui:
     path: packages/ui
-    command: bunx shadcn@latest
-    args:
-      - init
-      - --cwd
-      - packages/ui
+    # No scaffold command. `shadcn init` is a create-a-project flow: it prompts
+    # for a framework template and would write a second project over the
+    # overlay. The overlay under overlays/ui/ already supplies package.json,
+    # components.json, tsconfig.json, globals.css and lib/utils.ts — which is
+    # everything init would have produced for a non-app package.
     add: bun run ui:add --
   db:
     path: packages/db
