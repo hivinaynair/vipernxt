@@ -18,12 +18,16 @@ bun scripts/compose.mjs --add web --add db --apply  # overlays + env.ts
 empty-path CLIs first, then `--apply` to copy `overlays/` and write
 `composed.yaml`, then the `commands (after --apply)` (`bun add --cwd …`).
 `--without auth` drops Clerk from `apps/web/src/env.ts`.
+`--without analytics` / `--without email` / `--without files` drop PostHog,
+Resend, and Vercel Blob the same way. Those keys are optional until setup —
+the local clip runs without them. Setup pastes tokens; it does not create
+the PostHog project, Resend domain, or Blob store.
 The lockfile belongs on the site, not here. This kit does not ship a Next app.
 
 | Want | Do |
 |---|---|
 | Latest Next / shadcn / Eve | Leave `command:` as `@latest`; bump `majors:` when you accept a breaking line |
-| Clerk, Neon, Workflows | Surfaces + facets in the recipe; `--without auth` / `--without jobs` to drop them |
+| Clerk, Neon, Workflows, PostHog, Resend, Blob | Surfaces + facets in the recipe; `--without auth` / `jobs` / `analytics` / `email` / `files` to drop them |
 | Feature folders, `@/env`, UI gate | Overlays. CLIs will not do this. |
 | EU / Asia | `NEON_REGION` at setup (`aws-eu-central-1`, `aws-ap-southeast-1`, …). Not a template. |
 | Env vars | `setup.sh` writes `.env.playbook` and `.env.local`. Schema stays `apps/web/src/env.ts`. |

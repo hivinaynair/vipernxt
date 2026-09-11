@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
 /**
- * setup.sh asks whether Neon / Clerk stages run.
+ * setup.sh asks whether Neon / Clerk / PostHog / Resend / Blob stages run.
  *
- *   bun scripts/lib/compose-need.mjs db|auth|web
+ *   bun scripts/lib/compose-need.mjs db|auth|web|analytics|email|files
  *
  * Prints 1 or 0. No composed.yaml → 1 (fat provision, same as before).
  */
@@ -21,10 +21,14 @@ if (!existsSync(p)) {
 const c = Bun.YAML.parse(readFileSync(p, "utf8"));
 const s = new Set(c.surfaces ?? []);
 const w = new Set(c.without ?? []);
+const web = s.has("web");
 const need = {
   db: s.has("db"),
-  web: s.has("web"),
-  auth: s.has("web") && !w.has("auth"),
+  web,
+  auth: web && !w.has("auth"),
+  analytics: web && !w.has("analytics"),
+  email: web && !w.has("email"),
+  files: web && !w.has("files"),
 };
 
 process.stdout.write(need[q] ? "1" : "0");

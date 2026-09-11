@@ -10,9 +10,9 @@
  * `--apply` writes docs/kit/composed.yaml on a named site clone and copies
  * overlay files from docs/kit/overlays/. It refuses while the root package is
  * still vipernxt. It does not run the CLIs yet — run those into empty paths
- * first, then `--apply`. `--without auth` rewrites apps/web/src/env.ts so
- * Clerk keys are not required. It sets clone.composed: done when state.yaml
- * exists.
+ * first, then `--apply`. `--without auth` / `analytics` / `email` / `files`
+ * rewrites apps/web/src/env.ts so those keys are not required. It sets
+ * clone.composed: done when state.yaml exists.
  */
 
 import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -25,6 +25,9 @@ const OVERLAYS = {
   "env-module": "import env from @/env; never process.env in app code",
   "check-boundaries": "tooling/dependency-cruiser + bun run check-boundaries",
   "ui-gate": "deny apps/*/src/app and src/features until shape is done",
+  analytics: "PostHog errors + product analytics; keys optional until setup",
+  email: "Resend; RESEND_API_KEY optional until setup",
+  files: "Vercel Blob; BLOB_READ_WRITE_TOKEN optional until setup",
   "server-only-db": "@repo/db is server-only; schema empty until wave 0",
   "judgment-gate": "Eve proposes; a human posts. Do not put Eve and Workflows on the same step",
 };
@@ -36,21 +39,42 @@ const SURFACE_OVERLAYS = {
   agent: ["bun-only", "judgment-gate"],
 };
 
-function generateWebEnv({ auth, db }) {
+function objectBlock(lines) {
+  if (!lines.length) return "{}";
+  return `{\n${lines.join("\n")}\n  }`;
+}
+
+function generateWebEnv({ auth, db, analytics, email, files }) {
   const server = [];
+  const client = [];
+  const runtime = [];
   if (db) {
     server.push("    DATABASE_URL: z.url(),");
     server.push("    DATABASE_URL_UNPOOLED: z.url().optional(),");
   }
   if (auth) {
     server.push("    CLERK_SECRET_KEY: z.string().min(1),");
+    client.push("    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().min(1),");
+    runtime.push(
+      "    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,",
+    );
+  }
+  if (email) {
+    server.push("    RESEND_API_KEY: z.string().min(1).optional(),");
+  }
+  if (files) {
+    server.push("    BLOB_READ_WRITE_TOKEN: z.string().min(1).optional(),");
+  }
+  if (analytics) {
+    client.push("    NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: z.string().min(1).optional(),");
+    client.push("    NEXT_PUBLIC_POSTHOG_HOST: z.url().optional(),");
+    runtime.push(
+      "    NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN,",
+    );
+    runtime.push("    NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,");
   }
   server.push("    /** Preview-only screenshot login. Never set in production. */");
   server.push("    PREVIEW_LOGIN_SECRET: z.string().min(16).optional(),");
-  const client = auth ? `{\n    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().min(1),\n  }` : "{}";
-  const runtime = auth
-    ? `{\n    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,\n  }`
-    : "{}";
   return `import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
 
@@ -58,8 +82,8 @@ export const env = createEnv({
   server: {
 ${server.join("\n")}
   },
-  client: ${client},
-  experimental__runtimeEnv: ${runtime},
+  client: ${objectBlock(client)},
+  experimental__runtimeEnv: ${objectBlock(runtime)},
   skipValidation: Boolean(process.env.SKIP_ENV_VALIDATION),
   emptyStringAsUndefined: true,
 });
@@ -188,6 +212,12 @@ for (const name of selected) {
     overlayIds.push(id);
   }
 }
+for (const name of Object.keys(facets)) {
+  if (without.has(name) || !selected.includes(facets[name]?.on)) continue;
+  if (!OVERLAYS[name] || overlaySeen.has(name)) continue;
+  overlaySeen.add(name);
+  overlayIds.push(name);
+}
 
 const mode = requested.length ? "plan" : "catalog";
 const lines = [`compose ${mode}`, `surfaces: ${selected.join(", ")}`];
@@ -218,6 +248,9 @@ if (setup.neon && selected.includes("db")) {
   lines.push("", "setup: skip Neon — db is not a selected surface");
 }
 if (without.has("auth")) lines.push("setup: skip Clerk — --without auth");
+if (without.has("analytics")) lines.push("setup: skip PostHog — --without analytics");
+if (without.has("email")) lines.push("setup: skip Resend — --without email");
+if (without.has("files")) lines.push("setup: skip Blob — --without files");
 
 lines.push("", "order: empty-path CLIs, then --apply, then `commands (after --apply)`.");
 lines.push("      create-next-app / eve init / shadcn init refuse a non-empty folder.");
@@ -273,18 +306,29 @@ for (const name of selected) {
   process.stdout.write(`overlay ${name} → ${destRel}\n`);
 }
 
+for (const name of Object.keys(facets)) {
+  if (without.has(name) || !selected.includes(facets[name]?.on)) continue;
+  const src = join(overlayRoot, name);
+  const destRel = catalog[facets[name].on]?.path;
+  if (!destRel || !existsSync(src)) continue;
+  cpSync(src, join(cwd, destRel), { recursive: true });
+  process.stdout.write(`overlay ${name} → ${destRel}\n`);
+}
+
 if (selected.includes("web")) {
+  const web = selected.includes("web");
+  const envOpts = {
+    auth: web && !without.has("auth"),
+    db: selected.includes("db"),
+    analytics: web && !without.has("analytics"),
+    email: web && !without.has("email"),
+    files: web && !without.has("files"),
+  };
   const envPath = join(cwd, catalog.web?.path ?? "apps/web", "src/env.ts");
   mkdirSync(dirname(envPath), { recursive: true });
-  writeFileSync(
-    envPath,
-    generateWebEnv({
-      auth: !without.has("auth") && selected.includes("web"),
-      db: selected.includes("db"),
-    }),
-  );
+  writeFileSync(envPath, generateWebEnv(envOpts));
   process.stdout.write(
-    `env ${envPath.replace(`${cwd}/`, "")} · auth=${without.has("auth") ? "off" : "on"} db=${selected.includes("db") ? "on" : "off"}\n`,
+    `env ${envPath.replace(`${cwd}/`, "")} · auth=${envOpts.auth ? "on" : "off"} db=${envOpts.db ? "on" : "off"} analytics=${envOpts.analytics ? "on" : "off"} email=${envOpts.email ? "on" : "off"} files=${envOpts.files ? "on" : "off"}\n`,
   );
 }
 

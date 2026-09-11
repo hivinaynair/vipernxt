@@ -410,6 +410,9 @@ package patch versions differ. `--apply` refuses on this kit.
 | Auth | Clerk | `--without auth` |
 | Database | Drizzle + Neon, import `env` from `@/env` | omit `--add db` |
 | Jobs | Vercel Workflows | `--without jobs` |
+| Analytics | PostHog (errors + product) | `--without analytics` |
+| Email | Resend | `--without email` |
+| Files | Vercel Blob | `--without files` |
 | UI | shadcn in `packages/ui` | Components installed into `apps/web` |
 | Agents | Eve, `apps/agent` | until U5 names judgment steps |
 | Lint | Biome | ESLint, Prettier |

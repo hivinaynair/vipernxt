@@ -1,7 +1,15 @@
 #!/usr/bin/env bun
 import { afterEach, describe, expect, test } from "bun:test";
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -49,6 +57,9 @@ describe("compose", () => {
     expect(r.out).toContain("create-next-app@latest");
     expect(r.out).toContain("shadcn@latest");
     expect(r.out).toContain("@clerk/nextjs");
+    expect(r.out).toContain("posthog-js");
+    expect(r.out).toContain("resend");
+    expect(r.out).toContain("@vercel/blob");
     expect(r.out).toContain("--cwd apps/web");
     expect(r.out).not.toContain("eve@latest");
   });
@@ -69,6 +80,26 @@ describe("compose", () => {
     expect(r.out).not.toContain("@clerk/nextjs");
     expect(r.out).toContain("workflow");
     expect(r.out).toContain("skip Clerk");
+  });
+
+  test("--without analytics, email, files drops those packages", () => {
+    const r = run([
+      "--add",
+      "web",
+      "--without",
+      "analytics",
+      "--without",
+      "email",
+      "--without",
+      "files",
+    ]);
+    expect(r.code).toBe(0);
+    expect(r.out).not.toContain("posthog-js");
+    expect(r.out).not.toContain("resend");
+    expect(r.out).not.toContain("@vercel/blob");
+    expect(r.out).toContain("skip PostHog");
+    expect(r.out).toContain("skip Resend");
+    expect(r.out).toContain("skip Blob");
   });
 
   test("unknown surface fails", () => {
@@ -135,7 +166,65 @@ describe("compose", () => {
     const env = readFileSync(join(dir, "apps/web/src/env.ts"), "utf8");
     expect(env).not.toContain("CLERK");
     expect(env).not.toContain("DATABASE_URL");
+    expect(env).toContain("NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN");
+    expect(env).toContain("RESEND_API_KEY");
+    expect(env).toContain("BLOB_READ_WRITE_TOKEN");
     const state = readFileSync(join(dir, "docs/product/state.yaml"), "utf8");
     expect(state).toContain("composed: done");
+  });
+
+  test("--apply copies PostHog, Resend, and Blob overlays", () => {
+    dir = mkdtempSync(join(tmpdir(), "compose-"));
+    mkdirSync(join(dir, "docs/kit"), { recursive: true });
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "acme" }));
+    writeFileSync(join(dir, "docs/kit/recipe.yaml"), readFileSync(recipe, "utf8"));
+    for (const name of ["web", "analytics", "email", "files"]) {
+      cpSync(join(root, "docs/kit/overlays", name), join(dir, "docs/kit/overlays", name), {
+        recursive: true,
+      });
+    }
+    const r = run(["--cwd", dir, "--add", "web", "--apply"]);
+    expect(r.code).toBe(0);
+    expect(existsSync(join(dir, "apps/web/src/instrumentation-client.ts"))).toBe(true);
+    expect(existsSync(join(dir, "apps/web/src/shared/posthog-server.ts"))).toBe(true);
+    expect(existsSync(join(dir, "apps/web/src/shared/email.ts"))).toBe(true);
+    expect(existsSync(join(dir, "apps/web/src/shared/blob.ts"))).toBe(true);
+    expect(existsSync(join(dir, "apps/web/src/app/global-error.tsx"))).toBe(true);
+    expect(r.out).toContain("overlay analytics → apps/web");
+    expect(r.out).toContain("overlay email → apps/web");
+    expect(r.out).toContain("overlay files → apps/web");
+  });
+
+  test("--apply --without analytics,email,files skips those overlays", () => {
+    dir = mkdtempSync(join(tmpdir(), "compose-"));
+    mkdirSync(join(dir, "docs/kit"), { recursive: true });
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "acme" }));
+    writeFileSync(join(dir, "docs/kit/recipe.yaml"), readFileSync(recipe, "utf8"));
+    for (const name of ["web", "analytics", "email", "files"]) {
+      cpSync(join(root, "docs/kit/overlays", name), join(dir, "docs/kit/overlays", name), {
+        recursive: true,
+      });
+    }
+    const r = run([
+      "--cwd",
+      dir,
+      "--add",
+      "web",
+      "--without",
+      "analytics",
+      "--without",
+      "email",
+      "--without",
+      "files",
+      "--apply",
+    ]);
+    expect(r.code).toBe(0);
+    expect(existsSync(join(dir, "apps/web/src/instrumentation-client.ts"))).toBe(false);
+    expect(existsSync(join(dir, "apps/web/src/shared/email.ts"))).toBe(false);
+    expect(existsSync(join(dir, "apps/web/src/shared/blob.ts"))).toBe(false);
+    const env = readFileSync(join(dir, "apps/web/src/env.ts"), "utf8");
+    expect(env).not.toContain("POSTHOG");
+    expect(env).not.toContain("RESEND");
+    expect(env).not.toContain("BLOB_");
   });
 });

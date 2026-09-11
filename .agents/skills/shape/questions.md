@@ -160,6 +160,21 @@ Recommended: match the buckets. Tag every spine step `bucket: script | judgment 
 - A) Keep
 - B) Skip (`--without jobs`)
 
+**F4b. Analytics** — PostHog (errors + product). Skip if no `web`.
+
+- A) Keep
+- B) Skip (`--without analytics`)
+
+**F4c. Email** — Resend. Skip if no `web`.
+
+- A) Keep
+- B) Skip (`--without email`)
+
+**F4d. Files** — Vercel Blob. Skip if no `web`.
+
+- A) Keep
+- B) Skip (`--without files`)
+
 **F5. Extra apps** — another app (`marketing`, `admin`) in this repo for v1?
 
 - A) No (default)
