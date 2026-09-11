@@ -13,9 +13,12 @@ type Screen = { id: string; route?: string; bands?: string[]; states?: string[] 
 type Exit = { id: string; title?: string };
 export type NextEdge = { to: string; when?: string };
 type NextRaw = string | NextEdge;
+const BUCKETS = new Set(["script", "judgment", "human"]);
+type Bucket = "script" | "judgment" | "human";
 type Step = {
   id: string;
   title: string;
+  bucket?: Bucket | string;
   screen?: string;
   state?: string;
   sees?: string;
@@ -109,6 +112,12 @@ export function validateSpine(spine: Spine): { errors: string[]; warnings: strin
       if (!STEP_ID.test(s.id)) err(`${s.id}: step id must look like ${j.id}.S1 or ${j.id}.S2b`);
       if (!s.title) err(`${s.id}: missing title`);
 
+      if (s.bucket) {
+        if (!BUCKETS.has(s.bucket)) err(`${s.id}: bucket must be script, judgment, or human`);
+      } else {
+        warn(`${s.id}: no bucket — tag script, judgment, or human`);
+      }
+
       if (s.screen) {
         usedScreens.add(s.screen);
         const sc = screens.get(s.screen);
@@ -118,7 +127,8 @@ export function validateSpine(spine: Spine): { errors: string[]; warnings: strin
             `${s.id}: state "${s.state}" is not one of screen ${s.screen}'s states (${sc.states.join(", ")})`,
           );
       } else if (!s.uses) {
-        warn(`${s.id}: no screen — journey steps should land somewhere`);
+        // script / judgment often have no screen. human-only may be out of band.
+        if (!s.bucket) warn(`${s.id}: no screen — journey steps should land somewhere`);
       }
 
       const edges = nextEdges(s);
@@ -252,7 +262,7 @@ export function render(spine: Spine): string {
     for (const s of j.steps) {
       const where = s.screen ? `${s.screen}${s.state ? ` · ${s.state}` : ""}` : "";
       const extra = s.uses ? `uses ${s.uses}` : "";
-      const small = [where, extra].filter(Boolean).join(" · ");
+      const small = [s.bucket, where, extra].filter(Boolean).join(" · ");
       const label = small ? `${esc(s.title)}<br/><small>${small}</small>` : esc(s.title);
       out.push(`  ${s.id.replace(".", "_")}["${label}"]`);
     }
@@ -274,13 +284,13 @@ export function render(spine: Spine): string {
     }
 
     out.push(
-      "| Step | Screen · state | Sees | Does | Next | Criteria |",
-      "|---|---|---|---|---|---|",
+      "| Step | Bucket | Screen · state | Sees | Does | Next | Criteria |",
+      "|---|---|---|---|---|---|---|",
     );
     for (const s of j.steps) {
       const where = s.screen ? `\`${s.screen}\`${s.state ? ` · ${s.state}` : ""}` : "—";
       out.push(
-        `| \`${s.id}\` ${esc(s.title)} | ${where} | ${cell(s.sees)} | ${cell(s.does)} | ${nextCell(s)} | ${s.criteria?.length ?? 0} |`,
+        `| \`${s.id}\` ${esc(s.title)} | ${s.bucket ?? "—"} | ${where} | ${cell(s.sees)} | ${cell(s.does)} | ${nextCell(s)} | ${s.criteria?.length ?? 0} |`,
       );
     }
     out.push("");

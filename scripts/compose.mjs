@@ -9,8 +9,10 @@
  *
  * `--apply` writes docs/kit/composed.yaml on a named site clone and copies
  * overlay files from docs/kit/overlays/. It refuses while the root package is
- * still vipernxt. It does not run the CLIs yet — the printed commands are
- * what the agent runs, in that order, then the copied overlays.
+ * still vipernxt. It does not run the CLIs yet — run those into empty paths
+ * first, then `--apply`. `--without auth` rewrites apps/web/src/env.ts so
+ * Clerk keys are not required. It sets clone.composed: done when state.yaml
+ * exists.
  */
 
 import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -24,14 +26,53 @@ const OVERLAYS = {
   "check-boundaries": "tooling/dependency-cruiser + bun run check-boundaries",
   "ui-gate": "deny apps/*/src/app and src/features until shape is done",
   "server-only-db": "@repo/db is server-only; schema empty until wave 0",
+  "judgment-gate": "Eve proposes; a human posts. Do not put Eve and Workflows on the same step",
 };
 
 const SURFACE_OVERLAYS = {
   web: ["bun-only", "feature-folders", "env-module", "check-boundaries", "ui-gate"],
   ui: ["bun-only", "ui-in-packages"],
   db: ["bun-only", "server-only-db"],
-  agent: ["bun-only"],
+  agent: ["bun-only", "judgment-gate"],
 };
+
+function generateWebEnv({ auth, db }) {
+  const server = [];
+  if (db) {
+    server.push("    DATABASE_URL: z.url(),");
+    server.push("    DATABASE_URL_UNPOOLED: z.url().optional(),");
+  }
+  if (auth) {
+    server.push("    CLERK_SECRET_KEY: z.string().min(1),");
+  }
+  server.push("    /** Preview-only screenshot login. Never set in production. */");
+  server.push("    PREVIEW_LOGIN_SECRET: z.string().min(16).optional(),");
+  const client = auth ? `{\n    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().min(1),\n  }` : "{}";
+  const runtime = auth
+    ? `{\n    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,\n  }`
+    : "{}";
+  return `import { createEnv } from "@t3-oss/env-nextjs";
+import { z } from "zod";
+
+export const env = createEnv({
+  server: {
+${server.join("\n")}
+  },
+  client: ${client},
+  experimental__runtimeEnv: ${runtime},
+  skipValidation: Boolean(process.env.SKIP_ENV_VALIDATION),
+  emptyStringAsUndefined: true,
+});
+`;
+}
+
+function setCloneFlag(root, key, value) {
+  const p = join(root, "docs/product/state.yaml");
+  if (!existsSync(p)) return;
+  const before = readFileSync(p, "utf8");
+  const after = before.replace(new RegExp(`^(  ${key}: )pending\\s*$`, "m"), `$1${value}`);
+  if (after !== before) writeFileSync(p, after);
+}
 
 const args = process.argv.slice(2);
 const has = (name) => args.includes(`--${name}`);
@@ -144,7 +185,7 @@ lines.push("", "overlays:");
 for (const id of overlayIds) lines.push(`  ${id}: ${OVERLAYS[id]}`);
 
 const setup = recipe.setup ?? {};
-if (setup.neon) {
+if (setup.neon && selected.includes("db")) {
   const region = setup.neon.default ?? "aws-us-east-1";
   const flagName = setup.neon.regionFlag ?? "--region";
   lines.push("", "setup (after they accept the clip):");
@@ -152,7 +193,13 @@ if (setup.neon) {
   lines.push(`  NEON_REGION default: ${region}`);
   if (setup.neon.regions) lines.push(`  regions: ${setup.neon.regions.join(", ")}`);
   if (setup.env) lines.push(`  env: ${setup.env}`);
+} else if (setup.neon && !selected.includes("db")) {
+  lines.push("", "setup: skip Neon — db is not a selected surface");
 }
+if (without.has("auth")) lines.push("setup: skip Clerk — --without auth");
+
+lines.push("", "order: run the commands into empty paths, then --apply to copy overlays.");
+lines.push("      create-next-app / eve init / shadcn init refuse a non-empty folder.");
 
 const text = `${lines.join("\n")}\n`;
 
@@ -185,10 +232,42 @@ const overlayRoot = join(dirname(recipePath), "overlays");
 for (const name of selected) {
   const src = join(overlayRoot, name);
   const destRel = catalog[name]?.path;
-  if (!destRel || !existsSync(src)) continue;
-  cpSync(src, join(cwd, destRel), { recursive: true });
+  if (!destRel) continue;
+  if (!existsSync(src)) {
+    process.stderr.write(`warn: no overlay directory for ${name} at ${src}\n`);
+    continue;
+  }
+  const dest = join(cwd, destRel);
+  if (
+    name !== "db" &&
+    existsSync(dest) &&
+    !existsSync(join(dest, "package.json")) &&
+    existsSync(join(dest, "src"))
+  ) {
+    process.stderr.write(
+      `warn: ${destRel} has overlay files but no package.json — the CLI will refuse this directory. Scaffold into an empty path, then --apply.\n`,
+    );
+  }
+  cpSync(src, dest, { recursive: true });
   process.stdout.write(`overlay ${name} → ${destRel}\n`);
 }
+
+if (selected.includes("web")) {
+  const envPath = join(cwd, catalog.web?.path ?? "apps/web", "src/env.ts");
+  mkdirSync(dirname(envPath), { recursive: true });
+  writeFileSync(
+    envPath,
+    generateWebEnv({
+      auth: !without.has("auth") && selected.includes("web"),
+      db: selected.includes("db"),
+    }),
+  );
+  process.stdout.write(
+    `env ${envPath.replace(`${cwd}/`, "")} · auth=${without.has("auth") ? "off" : "on"} db=${selected.includes("db") ? "on" : "off"}\n`,
+  );
+}
+
+setCloneFlag(cwd, "composed", "done");
 
 process.stdout.write(text);
 process.stdout.write(`wrote ${outPath}\n`);

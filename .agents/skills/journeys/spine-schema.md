@@ -2,7 +2,7 @@
 
 One YAML file per product (or per large surface). Keys not listed here are ignored
 by the renderer, so notes are safe to add — but anything the team relies on should
-be in the schema, not freeform.
+be in the schema, not freeform. `bucket` is not a note: missing it is a warning.
 
 How to fill this file: [SKILL.md](SKILL.md) (read the design-doc tables, then
 expand). Keys not listed here are ignored.
@@ -36,7 +36,8 @@ journeys:
     steps:
       - id: J1.S1                # <journey id>.S<n> or .S<n><letter>
         title: <one line>
-        screen: <screen id>
+        bucket: script | judgment | human   # required in spirit; warning if omitted
+        screen: <screen id>      # optional for script / judgment / out-of-band human
         state: <one of that screen's states>
         sees: <what is on screen at this moment>
         does: <the action they take>
@@ -60,6 +61,11 @@ features:
 the Transition label. A `uses` step maps each child JourneyExit on `next.when`,
 unless it has exactly one unlabeled `next`.
 
+`bucket` is the FDE loop tag: **script** (deterministic), **judgment** (propose,
+never auto-post), **human** (their name / the conversation *is* the service).
+Do not invent a screen for a script step that has none. Out-of-band human
+(WhatsApp, a paper book) is a human step with no `screen`.
+
 ## What validation enforces
 
 Errors (spine is invalid, exit 1):
@@ -76,10 +82,12 @@ Errors (spine is invalid, exit 1):
 - every step is reachable (`entry` or first step, or something points at it)
 - every journey has at least one terminal step
 - `satisfaction` is 1–5
+- `bucket`, if present, is `script`, `judgment`, or `human`
 
 Warnings (advice, exit 0):
 
-- a step with no screen (unless it `uses` a child), or no criteria
+- a step with no `bucket` (script / judgment / human)
+- a step with no screen **and** no `bucket` (unless it `uses` a child), or no criteria
 - a criterion with no `SHALL` — probably not EARS
 - a screen no step uses
 - a feature that serves nothing

@@ -12,9 +12,10 @@ bun scripts/compose.mjs --add web --add db          # plan
 bun scripts/compose.mjs --add web --add db --apply  # site clone only
 ```
 
-`--apply` refuses while this repo is still named `vipernxt`. On a named clone it
-copies `overlays/` and writes `composed.yaml`. The lockfile belongs on the site,
-not here. This kit does not ship a Next app.
+`--apply` refuses while this repo is still named `vipernxt`. Run the printed
+CLIs into empty paths first, then `--apply` to copy `overlays/` and write
+`composed.yaml`. `--without auth` drops Clerk from `apps/web/src/env.ts`.
+The lockfile belongs on the site, not here. This kit does not ship a Next app.
 
 | Want | Do |
 |---|---|
