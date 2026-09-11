@@ -27,21 +27,30 @@ env_put() { # env_put FILE KEY VALUE — idempotent upsert
 
 # ── 0. preflight ─────────────────────────────────────────────────────────────
 stage "Checking tools"
+NEED_DB="$(bun scripts/lib/compose-need.mjs db)"
+NEED_AUTH="$(bun scripts/lib/compose-need.mjs auth)"
 missing=0
-for t in gh vercel neonctl git; do
+for t in gh vercel git; do
   if have "$t"; then good "$t"; else warn "$t not found"; missing=1; fi
 done
+if [ "$NEED_DB" = 1 ]; then
+  if have neonctl; then good "neonctl"; else warn "neonctl not found"; missing=1; fi
+else
+  good "neonctl skipped — no db surface in docs/kit/composed.yaml"
+fi
 if [ "$missing" = 1 ]; then
   say "Install what is missing, then re-run."
   say "  gh:       brew install gh"
   say "  vercel:   bun add -g vercel"
-  say "  neonctl:  bun add -g neonctl"
+  [ "$NEED_DB" = 1 ] && say "  neonctl:  bun add -g neonctl"
   exit 1
 fi
 gh auth status >/dev/null 2>&1 || { warn "gh not authenticated"; say "Run: gh auth login"; exit 1; }
 good "gh authenticated as $(gh api user --jq .login 2>/dev/null || echo '?')"
-neonctl me >/dev/null 2>&1 || { warn "neonctl not authenticated"; say "Run: neonctl auth"; exit 1; }
-good "neonctl authenticated"
+if [ "$NEED_DB" = 1 ]; then
+  neonctl me >/dev/null 2>&1 || { warn "neonctl not authenticated"; say "Run: neonctl auth"; exit 1; }
+  good "neonctl authenticated"
+fi
 
 playbook_get() {
   local k="$1"
@@ -78,6 +87,9 @@ fi
 
 # ── 2. neon ──────────────────────────────────────────────────────────────────
 stage "Neon (one project, staging + production databases)"
+if [ "$NEED_DB" != 1 ]; then
+  say "skipped — composed.yaml has no db surface"
+else
 if [ -z "$NEON_REGION" ]; then
   NEON_REGION="$(ask 'Neon region [aws-us-east-1]:')"
   NEON_REGION="${NEON_REGION:-aws-us-east-1}"
@@ -86,23 +98,11 @@ fi
 say "One project named ${PRODUCT} in ${NEON_REGION}. Two databases on the default branch: staging, production."
 
 neon_project_id() {
-  neonctl projects list --output json 2>/dev/null | python3 -c "
-import sys, json
-name = sys.argv[1]
-ps = json.load(sys.stdin)
-ps = ps.get('projects', ps) if isinstance(ps, dict) else ps
-print(next((p['id'] for p in ps if p.get('name') == name), ''))
-" "$1"
+  neonctl projects list --output json 2>/dev/null | bun scripts/lib/json-pick.mjs project-id "$1"
 }
 
 neon_has_db() {
-  neonctl databases list --project-id "$1" --output json 2>/dev/null | python3 -c "
-import sys, json
-want = sys.argv[1]
-data = json.load(sys.stdin)
-dbs = data.get('databases', data) if isinstance(data, dict) else data
-print('yes' if any(d.get('name') == want for d in dbs) else 'no')
-" "$2"
+  neonctl databases list --project-id "$1" --output json 2>/dev/null | bun scripts/lib/json-pick.mjs has-db "$2"
 }
 
 pid="$(neon_project_id "$PRODUCT")"
@@ -144,6 +144,7 @@ if [ -n "$pid" ]; then
     fi
   done
 fi
+fi
 
 # ── 3. vercel ────────────────────────────────────────────────────────────────
 stage "Vercel project"
@@ -160,6 +161,9 @@ fi
 
 # ── 4. clerk ─────────────────────────────────────────────────────────────────
 stage "Clerk"
+if [ "$NEED_AUTH" != 1 ]; then
+  say "skipped — composed.yaml has --without auth, or no web surface"
+else
 if ! have clerk; then
   warn "clerk CLI not found — skipping"
   say "Install with: bun add -g @clerk/clerk-cli   (then: clerk auth login)"
@@ -168,7 +172,7 @@ elif ! clerk whoami >/dev/null 2>&1; then
   say "Run: clerk auth login   then re-run this script"
 else
   good "clerk authenticated"
-  linked=$(clerk whoami 2>/dev/null | python3 -c "import sys,json;print('yes' if json.load(sys.stdin).get('linked') else 'no')" 2>/dev/null || echo no)
+  linked=$(clerk whoami 2>/dev/null | bun scripts/lib/json-pick.mjs clerk-linked 2>/dev/null || echo no)
   if [ "$linked" = yes ]; then
     good "project already linked to a Clerk application"
   else
@@ -197,6 +201,7 @@ else
       say "organizations off — enable later with: clerk enable orgs"
     fi
   fi
+fi
 fi
 
 # ── 5. linear ────────────────────────────────────────────────────────────────

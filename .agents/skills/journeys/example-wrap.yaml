@@ -1,0 +1,86 @@
+# Wrap clip. Judgment proposes; a human posts. No fake screen on ingest.
+product: wrap-clip
+source: docs/plans/example-wrap-design.md
+
+actors:
+  - id: operator
+    name: Operator
+    type: person
+  - id: agent
+    name: Agent
+    type: system
+  - id: sor
+    name: System of record
+    type: system
+
+screens:
+  - id: gate
+    route: /inbox
+    bands: [header, evidence, proposal, actions]
+    states: [proposed, posted, rejected]
+
+journeys:
+  - id: J1
+    title: Ingest, propose, human gate
+    actor: operator
+    goal: Close the gap without auto-post
+    proves: The kit proposes; the operator posts
+    exits:
+      - id: posted
+        title: Operator posted; SoR read back
+      - id: rejected
+        title: Operator rejected; SoR untouched
+    steps:
+      - id: J1.S1
+        title: Document arrives
+        bucket: script
+        sees: A file against a site
+        does: Store it — do not post
+        next: J1.S2
+        criteria:
+          - WHEN a document is dropped THE SYSTEM SHALL store it without writing to the system of record
+      - id: J1.S2
+        title: Agent proposes
+        bucket: judgment
+        sees: A Proposal, not posted
+        does: Agent writes the Proposal
+        next: J1.S3
+        criteria:
+          - WHEN the agent reads the document THE SYSTEM SHALL create a Proposal and SHALL NOT post it
+      - id: J1.S3
+        title: Operator reviews
+        bucket: human
+        screen: gate
+        state: proposed
+        sees: Evidence beside the Proposal; accept or reject; no skip-review
+        does: Accepts or rejects
+        next:
+          - { to: J1.S4, when: accept }
+          - { to: J1.S3b, when: reject }
+        criteria:
+          - WHEN a Proposal is proposed THE SYSTEM SHALL require the operator's decision before any system-of-record write
+      - id: J1.S3b
+        title: Rejected
+        bucket: human
+        screen: gate
+        state: rejected
+        sees: Reject reason; SoR unchanged
+        does: Nothing
+        exit: rejected
+        criteria:
+          - WHEN the operator rejects THE SYSTEM SHALL leave the system of record unchanged
+      - id: J1.S4
+        title: Posted; read back
+        bucket: human
+        screen: gate
+        state: posted
+        sees: Posted-at from the SoR
+        does: Posts
+        exit: posted
+        criteria:
+          - WHEN the operator accepts THE SYSTEM SHALL post only then and SHALL read the result back from the system of record
+
+features:
+  - id: F1
+    title: Propose then gate
+    serves: [J1.S1, J1.S2, J1.S3, J1.S3b, J1.S4]

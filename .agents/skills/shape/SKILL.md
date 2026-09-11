@@ -24,7 +24,7 @@ Shaping:
 - [ ] 4. Claim — confirmed → **create the doc**
 - [ ] 5. Actors — confirmed → append
 - [ ] 6. Journeys — confirmed → append
-- [ ] 7. Low-fi screens — confirmed → append
+- [ ] 7. Low-fi screens — confirmed, **or skipped**: clip has no screen
 - [ ] 8. Surfaces from the recipe — recorded in the doc, not composed
 - [ ] 9. Canvas (view of the doc) — or skipped: host has none
 - [ ] 10. Doc read end to end; user said it is right; STOP
@@ -38,7 +38,7 @@ Violate none of these:
   interview-mode budget as `/next` (few sentences; no digests in the ask turn).
 - **Research after there is enough to search;** come back with 2–3 findings and a question. Write cited notes under `docs/research/` if useful.
 - **The doc is the state.** Create `docs/plans/<date>-<name>-design.md` the moment the claim is confirmed, then append each section as its gate passes. Confirmed work never lives only in this chat.
-- **Confirm in order: claim paragraph → actors → journeys → THEN screens.** Do not skip journey confirmation.
+- **Confirm in order: claim paragraph → actors → journeys → THEN screens (or skip screens).** Do not skip journey confirmation. Skip screens when the clip has none.
 - **Canvas only if the host has one.** Step 9 is skippable, not a blocker; every other gate is mandatory.
 - **Canvas is a VIEW of the design doc, not a second source of truth.** Canvas files live at `~/.cursor/projects/<workspace>/canvases/<name>-design.canvas.tsx`. Import only from `cursor/canvas`. Read the canvas skill before writing one. Host theme tokens, no hardcoded hex, no emoji/gradients/shadows.
 - **Low-fi screens = layout bands + per-role copy.** Not Figma. Not implementing the app.
@@ -216,12 +216,15 @@ append it to the doc and tick the gate. Do not invent a second shape.
 ```markdown
 ## Journeys
 
-| Seat | Wants | Can click | Sees after beat 1 | Sees at the end |
-| Owner | | | | |
+| Seat | Bucket | Wants | Does | Sees after beat 1 | Sees at the end |
+| Owner | human | | | | |
+| Cook | human | | WhatsApp photo | | |
+| Agent | judgment | | Propose a row | | |
 ```
 
-Forbidden click: which seat never gets the dangerous control — that row must not
-list it.
+Forbidden: which seat never posts, pings everyone, or gets a login — that row
+must not list it. **Does** is a click, a script, or out of band. A wrap clip
+often has a seat that never opens this URL.
 
 This table is what the `journeys` skill reads. It is not the ID'd spine. After
 the doc is approved, that skill expands each row + the clip beats into YAML.
@@ -233,7 +236,9 @@ Re-ask actors or the claim only if they said those are wrong too.
 
 ## 7. Low-fi screens
 
-Only after journeys are confirmed.
+Only after journeys are confirmed. **Skip this gate** when every journey row is
+script, judgment, or out-of-band human — tick it skipped, omit the Screens
+section, and go to surfaces. Do not invent a screen so the template looks full.
 
 **Ask the language question first**, before any copy is written: which languages does the
 interface carry at v1, and which is canonical? It reads like a detail and is not — it

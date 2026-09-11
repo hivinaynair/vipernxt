@@ -1,14 +1,14 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 // Normalises a salvage dump so an agent can actually read it.
 //
-//   node scripts/salvage-inbox.mjs <source-dir-or-files-or-zip...> [--inbox <dir>] [--rotate <deg>]
+//   bun scripts/salvage-inbox.mjs <source-dir-or-files-or-zip...> [--inbox <dir>] [--rotate <deg>]
 //
 // HEIC/PDF/oversized images break agent sessions outright, so nothing is read
 // until it is a JPEG under the vision limits. Originals are never touched.
 //
 //   <inbox>/raw/     originals, copied verbatim (gitignored — may hold real data)
 //   <inbox>/pages/   normalised JPEGs, <= 2000px long edge, one per page for PDFs
-//   <inbox>/INVENTORY.md   one line per page, with a blank caption for the human
+//   <inbox>/INVENTORY.md   one line per page. Re-runs keep captions and Not-here.
 //
 // macOS: sips. Linux (cloud agents): ffmpeg. HEIC that neither can read is
 // copied to raw/ and listed as not rendered — export a JPEG.
@@ -16,9 +16,11 @@
 import { execFileSync } from "node:child_process";
 import {
   copyFileSync,
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readdirSync,
+  readFileSync,
   rmSync,
   statSync,
   writeFileSync,
@@ -26,7 +28,34 @@ import {
 import { tmpdir } from "node:os";
 import { basename, extname, join, resolve } from "node:path";
 
-const LONG_EDGE = 2000; // above this the many-image dimension cap starts rejecting
+function loadNotHere(text) {
+  const idx = text.search(/^## Not here/m);
+  if (idx === -1) return null;
+  const rest = text.slice(idx).trimEnd();
+  const bullets = rest.split("\n").filter((l) => /^\s*-\s+\S/.test(l));
+  return bullets.length ? `${rest}\n` : null;
+}
+
+function loadCaptions(inventoryPath) {
+  const map = new Map();
+  if (!existsSync(inventoryPath)) return map;
+  for (const line of readFileSync(inventoryPath, "utf8").split("\n")) {
+    if (!line.startsWith("|")) continue;
+    const cells = line
+      .split("|")
+      .slice(1, -1)
+      .map((c) => c.trim());
+    if (cells.length < 2) continue;
+    const first = cells[0].replace(/`/g, "");
+    if (!first || first === "Page" || first === "file" || /^-+$/.test(first)) continue;
+    const caption = cells[cells.length - 1];
+    if (!caption || caption === "Caption" || caption === "caption") continue;
+    const from = (cells[1] ?? first).replace(/`/g, "");
+    map.set(first, caption);
+    map.set(from, caption);
+  }
+  return map;
+}
 
 // Photographs of a screen or a wall are often sideways with nothing in the EXIF to say
 // so — the camera was level, the subject was not. Nothing can detect that from the file,
@@ -185,24 +214,32 @@ for (const src of files) {
 }
 
 rows.sort((a, b) => a.page.localeCompare(b.page));
-const inventory = `# Salvage inbox
-
-${rows.length} item(s) normalised from ${files.length} file(s). Originals in \`raw/\`, readable pages in \`pages/\`.
-
-**Caption every row before anything is mined.** What is this, and who gave it to you?
-An uncaptioned photograph is not evidence.
-${rotate ? `\nRotated ${rotate}° on import.\n` : "\nIf the text in these runs sideways, re-run with `--rotate 90` — legibility is worth the second pass.\n"}
-
-| Page | From | Kind | Caption |
-|---|---|---|---|
-${rows.map((r) => `| \`${r.page}\` | \`${r.from}\` | ${r.kind} | |`).join("\n")}
-
-## Not here
+const inventoryPath = join(inbox, "INVENTORY.md");
+const previous = existsSync(inventoryPath) ? readFileSync(inventoryPath, "utf8") : "";
+const captions = loadCaptions(inventoryPath);
+const captionFor = (r) => captions.get(r.from) ?? captions.get(r.page) ?? "";
+const notHere =
+  loadNotHere(previous) ??
+  `## Not here
 
 List what you looked for and could not find. A missing artifact is a finding — it
 goes to \`field-kit\` as an open question, it does not get papered over.
 
 - 
+`;
+const inventory = `# Salvage inbox
+
+${rows.length} item(s) normalised from ${files.length} file(s). Originals in \`raw/\`, readable pages in \`pages/\`.
+
+**Caption every row before anything is mined.** What is this, and who gave it to you?
+An uncaptioned photograph is not evidence. Re-running this script keeps captions already written.
+${rotate ? `\nRotated ${rotate}° on import.\n` : "\nIf the text in these runs sideways, re-run with `--rotate 90` — legibility is worth the second pass.\n"}
+
+| Page | From | Kind | Caption |
+|---|---|---|---|
+${rows.map((r) => `| \`${r.page}\` | \`${r.from}\` | ${r.kind} | ${captionFor(r)} |`).join("\n")}
+
+${notHere.trimEnd()}
 `;
 
 writeFileSync(join(inbox, "INVENTORY.md"), inventory);

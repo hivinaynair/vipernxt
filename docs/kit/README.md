@@ -9,12 +9,16 @@ A site clone after U5:
 
 ```sh
 bun scripts/compose.mjs --add web --add db          # plan
-bun scripts/compose.mjs --add web --add db --apply  # site clone only
+# empty-path CLIs from the plan, then:
+bun scripts/compose.mjs --add web --add db --apply  # overlays + env.ts
+# then `commands (after --apply)` — bun add --cwd packages/db / apps/web
 ```
 
-`--apply` refuses while this repo is still named `vipernxt`. On a named clone it
-copies `overlays/` and writes `composed.yaml`. The lockfile belongs on the site,
-not here. This kit does not ship a Next app.
+`--apply` refuses while this repo is still named `vipernxt`. Run the printed
+empty-path CLIs first, then `--apply` to copy `overlays/` and write
+`composed.yaml`, then the `commands (after --apply)` (`bun add --cwd …`).
+`--without auth` drops Clerk from `apps/web/src/env.ts`.
+The lockfile belongs on the site, not here. This kit does not ship a Next app.
 
 | Want | Do |
 |---|---|

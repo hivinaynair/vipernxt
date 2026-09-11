@@ -72,7 +72,7 @@ second template. `/next` runs `bun scripts/compose.mjs --add …` for what U5
 named (`web` / `agent` / `db`). Latest packages; overlays for feature folders,
 `@/env`, shadcn in `packages/ui`. Do not free-hand `create-next-app`.
 
-Ontology = **semantic** context (entities, states, SoR). Journey steps = **operational** context (what the clerk actually does), each tagged script / judgment / human. Seed data **is** the anonymized eval set. The first slice is scored against the U2 number, not "tests pass."
+Ontology = **semantic** context (entities, states, SoR). Journey steps = **operational** context (what the clerk actually does), each tagged `bucket: script | judgment | human`. A script or judgment step often has no screen. Seed data **is** the anonymized eval set. The first slice is scored against the U2 number, not "tests pass."
 
 They look at it. That is the mandatory stop.
 

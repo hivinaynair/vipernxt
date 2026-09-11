@@ -168,7 +168,8 @@ on the first slice. Do not wait for them to type those skills or to say go.
 still `vipernxt` or `.env.playbook` has no `PRODUCT`: run [customize](../customize/SKILL.md)
 from the design doc. Honour surfaces already recorded; ask only what the doc left
 open. Compose from [docs/kit/recipe.yaml](../../../docs/kit/recipe.yaml) —
-`bun scripts/compose.mjs --add …` — do not free-hand a Next tree. They do not
+`bun scripts/compose.mjs --add …`. Run the printed CLIs into empty paths, then
+`--apply`. Do not free-hand a Next tree. They do not
 type `/customize`. Do not run `setup.sh` under the boilerplate name.
 
 **Setup is not on the path to the clip.** Use `.env.local` if keys already exist. If
@@ -344,7 +345,7 @@ Say this, almost verbatim:
 
 A Cloud Agent cannot see their Finder. Do not ask them to scp, open the VM desktop, attach forty files, or commit photos. Drive/Dropbox/Notion links are not the pile — auth and PII in a second cloud. Understand with originals belongs on a laptop; cloud mines transcripts.
 
-Then run `node scripts/salvage-inbox.mjs` on whatever landed (zips included). `raw/` and page JPEGs stay gitignored.
+Then run `bun scripts/salvage-inbox.mjs` on whatever landed (zips included). `raw/` and page JPEGs stay gitignored.
 
 Checklist: [salvage/pile.md](../salvage/pile.md).
 

@@ -50,4 +50,26 @@ describe("status", () => {
     expect(out).toContain("clip: wrap");
     expect(out).toContain("surfaces: web, agent");
   });
+
+  test("after shape, points at customize", () => {
+    dir = mkdtempSync(join(tmpdir(), "status-"));
+    const path = join(dir, "state.yaml");
+    writeFileSync(
+      path,
+      `engagement:\n  site: North depot\nclone:\n  customized: pending\n  composed: pending\nphases:\n  3: { name: shape, status: done }\n`,
+    );
+    const out = run(["--state", path]);
+    expect(out).toContain("names the clone next");
+  });
+
+  test("after customize, points at compose", () => {
+    dir = mkdtempSync(join(tmpdir(), "status-"));
+    const path = join(dir, "state.yaml");
+    writeFileSync(
+      path,
+      `engagement:\n  site: North depot\nclip:\n  kind: wrap\nsurfaces: [web, agent]\nclone:\n  customized: done\n  composed: pending\nphases:\n  3: { name: shape, status: done }\n`,
+    );
+    const out = run(["--state", path]);
+    expect(out).toContain("composes the stack next");
+  });
 });

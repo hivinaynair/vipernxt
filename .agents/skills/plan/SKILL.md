@@ -29,7 +29,10 @@ decision the spine does not settle).
 3. If a step the feature needs is missing, or the clip is the wrong story, stop.
    `/next` reopens `shape` / `journeys`. Do not paper over it in the spec.
 4. Read `AGENTS.md` and the design doc the spine points at. Inspect code only to
-   fill a gap (does this screen exist yet?).
+   fill a gap (does this screen exist yet?). Judgment and script steps often
+   have no screen — do not invent one in the spec.
+5. The first slice is scored against the eval set (`docs/research/eval-set.md`),
+   not "tests pass". Name the eval ids the slice covers.
 
 ## Spec
 

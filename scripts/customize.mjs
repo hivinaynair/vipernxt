@@ -1,8 +1,8 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 // Applies the mechanical half of `customize`: renaming the clone.
 //
-//   node scripts/customize.mjs --name acme [--scope @acme] [--app dashboard]
-//   node scripts/customize.mjs --name acme --apply
+//   bun scripts/customize.mjs --name acme [--scope @acme] [--app dashboard]
+//   bun scripts/customize.mjs --name acme --apply
 //
 // Dry run unless --apply is passed; it prints every file it would touch.
 //
@@ -113,7 +113,7 @@ const envAfter = /^PRODUCT=/m.test(envBefore)
 if (envAfter !== envBefore) edits.set(envPath, envAfter);
 
 // Report, then write.
-if (edits.size === 0 && renames.length === 0) {
+if (edits.size === 0 && renames.length === 0 && !apply) {
   console.log("nothing to change — already customized?");
   process.exit(0);
 }
@@ -129,6 +129,16 @@ if (!apply) {
 
 for (const [path, content] of edits) writeFileSync(path, content);
 for (const [from, to] of renames) renameSync(from, to);
+
+const statePath = "docs/product/state.yaml";
+if (existsSync(statePath)) {
+  const before = readFileSync(statePath, "utf8");
+  const after = before.replace(/^( {2}customized: )pending\s*$/m, "$1done");
+  if (after !== before) {
+    writeFileSync(statePath, after);
+    console.log("  edit  docs/product/state.yaml (clone.customized: done)");
+  }
+}
 
 console.log(`\nwrote ${edits.size} file(s), moved ${renames.length}.`);
 console.log("Now run: bun install && bun run check-types && bun run check-boundaries");

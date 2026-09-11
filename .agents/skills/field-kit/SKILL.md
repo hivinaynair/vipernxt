@@ -126,7 +126,7 @@ Finish with the **open questions from earlier phases** this trip should settle.
 A markdown file in a repo is not a form. Run:
 
 ```
-node scripts/homework.mjs build docs/product/homework/02-site-visit.md
+bun scripts/homework.mjs build docs/product/homework/02-site-visit.md
 ```
 
 It renders a `.docx` with every question and capture as a row with an empty box beside
@@ -171,7 +171,7 @@ They come back with photos, scribbled notes, voice memos, a PDF of a receipt, du
 Read the filled document back with:
 
 ```
-node scripts/homework.mjs read docs/product/intake/02-site-visit.docx
+bun scripts/homework.mjs read docs/product/intake/02-site-visit.docx
 ```
 
 It prints each question with the answer underneath and a count — `14/22 answered`. That
