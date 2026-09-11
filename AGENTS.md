@@ -33,6 +33,9 @@ strip a fat tree, and do not add a vendor the recipe does not name.
 bun run check-types && bun run check-boundaries && bun run check-tokens && bun run check-journeys && bun test
 ```
 
+`check-journeys` fails citations that are not spine IDs. Unbuilt served steps
+do not fail a slice. When the clip is done: `bun run check-journeys -- --complete`.
+
 Branches: PRs target `staging`; `main` is production. Pushes to either run the
 migrate workflow. Branch **from** `staging` too, and rebase onto it before the
 merge bar — base and target must match. Hotfixes are the exception: branch from

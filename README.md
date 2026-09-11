@@ -340,7 +340,9 @@ This is why the system can run unattended. An agent cannot quietly build
 something nobody asked for, because there is nowhere to hang it. If a slice
 cannot name the step ID it serves, that is the signal to stop and ask you.
 
-`bun run check-journeys` enforces that the IDs are real.
+`bun run check-journeys` enforces that the IDs are real. It does not require
+every served step to be cited — a first slice correctly leaves later beats
+uncited. `bun run check-journeys -- --complete` is clip acceptance.
 
 ### The UI gate
 

@@ -4,8 +4,12 @@
  *
  *   bun journey.ts validate docs/journeys/app.yaml
  *   bun journey.ts render   docs/journeys/app.yaml --out docs/journeys/app.md
+ *   bun journey.ts ids      docs/journeys
+ *   bun journey.ts ids      docs/journeys --complete
  *
  * The spine is the source of truth. The markdown is generated; never hand-edit it.
+ * `ids` (the merge bar) checks that cited IDs exist on the spine. `--complete`
+ * is clip acceptance: every served step with criteria is cited.
  */
 
 type Actor = { id: string; name: string; type?: string };
@@ -348,6 +352,16 @@ export function render(spine: Spine): string {
   return out.join("\n");
 }
 
+export function allStepIds(spine: Spine): string[] {
+  const ids: string[] = [];
+  for (const j of spine.journeys ?? []) {
+    for (const s of j.steps ?? []) {
+      if (s.id) ids.push(s.id);
+    }
+  }
+  return ids;
+}
+
 export function requiredStepIds(spine: Spine): string[] {
   const byId = new Map<string, Step>();
   for (const j of spine.journeys ?? []) {
@@ -378,6 +392,37 @@ export function missingStepIds(required: string[], cited: Set<string>): string[]
   return required.filter((id) => !cited.has(id));
 }
 
+export function unknownCitedIds(cited: Iterable<string>, known: Iterable<string>): string[] {
+  const knownSet = known instanceof Set ? known : new Set(known);
+  return [...cited].filter((id) => !knownSet.has(id)).sort();
+}
+
+export type JourneyIdCheck = {
+  unknown: string[];
+  missing: string[];
+};
+
+/** Merge bar: citations must be real IDs. `--complete`: also require every served step. */
+export function checkJourneyCitations(opts: {
+  known: Iterable<string>;
+  required: string[];
+  cited: Set<string>;
+  complete: boolean;
+}): JourneyIdCheck {
+  return {
+    unknown: unknownCitedIds(opts.cited, opts.known),
+    missing: opts.complete ? missingStepIds(opts.required, opts.cited) : [],
+  };
+}
+
+export function parseIdsArgs(argv: string[]): { root: string; complete: boolean } {
+  const args = argv.filter(Boolean);
+  return {
+    complete: args.includes("--complete"),
+    root: args.find((a) => a !== "--complete") ?? "docs/journeys",
+  };
+}
+
 async function loadSpine(path: string): Promise<Spine> {
   try {
     return Bun.YAML.parse(await Bun.file(path).text()) as Spine;
@@ -390,7 +435,7 @@ if (import.meta.main) {
   const [cmd, file, ...rest] = process.argv.slice(2);
   if (!cmd || !["validate", "render", "ids"].includes(cmd)) {
     console.error(
-      "usage: bun journey.ts <validate|render|ids> <spine.yaml|docs/journeys> [--out <file.md>]",
+      "usage: bun journey.ts <validate|render|ids> [spine.yaml|docs/journeys] [--out <file.md>] [--complete]",
     );
     process.exit(2);
   }
@@ -400,7 +445,7 @@ if (import.meta.main) {
   }
 
   if (cmd === "ids") {
-    const root = file ?? "docs/journeys";
+    const { root, complete } = parseIdsArgs([file, ...rest].filter((a): a is string => a != null));
     const glob = new Bun.Glob("*.yaml");
     const spines: string[] = [];
     const target = Bun.file(root);
@@ -423,15 +468,24 @@ if (import.meta.main) {
       process.exit(0);
     }
 
+    // Product tests live under apps/ and packages/. Skip scripts/ so the
+    // checker's own fixtures (J1.S1 in journey-ids.test.ts) are not citations.
     const testGlob = new Bun.Glob("**/*.{test,spec}.{ts,tsx}");
     const texts: string[] = [];
-    for await (const path of testGlob.scan(".")) {
-      if (path.includes("node_modules") || path.includes(".agents/")) continue;
-      texts.push(await Bun.file(path).text());
+    for (const dir of ["apps", "packages"]) {
+      try {
+        for await (const path of testGlob.scan(dir)) {
+          if (path.includes("node_modules")) continue;
+          texts.push(await Bun.file(`${dir}/${path}`).text());
+        }
+      } catch {
+        // empty kit may not have composed apps/ yet
+      }
     }
     const cited = citedStepIds(texts);
 
     let required: string[] = [];
+    const known = new Set<string>();
     for (const path of spines) {
       let spine: Spine;
       try {
@@ -445,23 +499,51 @@ if (import.meta.main) {
         for (const e of errors) console.error(`ERROR ${e}`);
         process.exit(1);
       }
+      for (const id of allStepIds(spine)) known.add(id);
       required = required.concat(requiredStepIds(spine));
     }
     required = [...new Set(required)].sort();
-    if (!required.length) {
+    const { unknown, missing } = checkJourneyCitations({
+      known,
+      required,
+      cited,
+      complete,
+    });
+    if (unknown.length) {
+      console.error("ERROR test/spec citations are not step IDs on the spine:");
+      for (const id of unknown) console.error(`  ${id}`);
+      process.exit(1);
+    }
+    if (complete) {
+      if (!required.length) {
+        console.error(
+          "ok: spines have no features.serves yet — completeness waits until features are cut.",
+        );
+        process.exit(0);
+      }
+      if (missing.length) {
+        console.error("ERROR journey step IDs with criteria are not cited in any test or spec:");
+        for (const id of missing) console.error(`  ${id}`);
+        console.error('Name the test after the step (e.g. it("J1.S3: …")).');
+        process.exit(1);
+      }
+      console.error(`ok: ${required.length} journey ID(s) cited in tests.`);
+      process.exit(0);
+    }
+    const uncited = required.length ? missingStepIds(required, cited) : [];
+    if (uncited.length) {
       console.error(
-        "ok: spines have no features.serves yet — ID check waits until features are cut.",
+        `ok: cited journey IDs are on the spine; ${uncited.length} served step(s) not yet cited (use --complete when the clip is done).`,
       );
       process.exit(0);
     }
-    const missing = missingStepIds(required, cited);
-    if (missing.length) {
-      console.error("ERROR journey step IDs with criteria are not cited in any test or spec:");
-      for (const id of missing) console.error(`  ${id}`);
-      console.error('Name the test after the step (e.g. it("J1.S3: …")).');
-      process.exit(1);
+    if (required.length) {
+      console.error(`ok: ${required.length} journey ID(s) cited in tests.`);
+      process.exit(0);
     }
-    console.error(`ok: ${required.length} journey ID(s) cited in tests.`);
+    console.error(
+      "ok: spines have no features.serves yet — ID check waits until features are cut.",
+    );
     process.exit(0);
   }
 

@@ -201,6 +201,10 @@ do not skip the wave.
 Group the waves when `linear-sync` publishes the spine, so the order is visible to them
 rather than living in this session.
 
+Per-slice merge bar uses `bun run check-journeys` (citations must be real IDs).
+After the last wave merges, `bun run check-journeys -- --complete` before
+calling the clip done.
+
 ### Stop conditions
 
 An unattended agent stops for the right reasons instead of improvising. Hold an item and
