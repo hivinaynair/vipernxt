@@ -101,6 +101,21 @@ describe("a stopped engagement", () => {
     expect(out).toContain("no reason recorded");
   });
 
+  test("does not advertise a phase the idea route keeps shut", () => {
+    const out = state(
+      `size: idea\nphases:\n  0: { name: salvage, status: blocked }\n  1: { name: research, status: done }\n  2: { name: field, status: pending }\n`,
+    );
+    expect(out).not.toContain("next: field");
+    expect(out).toContain("next: name a site");
+  });
+
+  test("an engagement still gets its real next phase", () => {
+    const out = state(
+      `size: engagement\nengagement:\n  site: North depot\nphases:\n  1: { name: research, status: done }\n  2: { name: field, status: pending }\n`,
+    );
+    expect(out).toContain("next: field");
+  });
+
   test("an idea that has not stopped still reports normally", () => {
     const out = state(
       `size: idea\nphases:\n  0: { name: salvage, status: blocked }\n  1: { name: research, status: pending }\n`,
