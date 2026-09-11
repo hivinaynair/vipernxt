@@ -54,21 +54,24 @@ slices never write a migration.
 names allowed in tables, types, components, routes and UI copy — a rejected
 synonym in the code is a defect.
 
-## Shaping a new product
+## Shaping an engagement
 
 The playbook ships in this clone under `.agents/skills/` (also linked from
 `.cursor/skills/` and `.claude/skills/`). Type `/next`; it reads
-`docs/product/state.yaml` and works out what happens now. The clone map is
+`docs/product/state.yaml` and works out what happens now. The loop is
+[docs/playbook/fde-loop.md](docs/playbook/fde-loop.md). The clone map is
 [docs/map.md](docs/map.md). Pin `/next` as a Custom Mode
 for a shaping session so it stays in context. `status` is the glance. `/next`
-runs `customize` after the design doc, before `setup.sh`. After the spine,
-`/next` runs `plan` then `build`. Those skills are host-agnostic — they do not
-name a cloud or a model as a prerequisite. `shape` and `design-system` read this
-file for the constraints above.
+runs `customize` after the design doc, then the first local clip. `setup.sh`
+waits until they accept the slice. After the spine, `/next` runs `plan` then
+`build`. Those skills are host-agnostic — they do not name a cloud or a model as
+a prerequisite. `shape` and `design-system` read this file for the constraints
+above.
 
 Until `shape` is `done`, do not edit product UI, routes, or features
 (`apps/*/src/app`, `apps/*/src/features`). A project hook denies those writes. No state
-file means no product yet — the boilerplate may be edited.
+file means no engagement yet — the boilerplate may be edited. Live sites belong
+on a throwaway clone, not in this kit.
 
 Parallel salvage/research on Cursor uses `.cursor/agents/` on **Cursor Grok 4.6**. Do not
 fan that work out to Gemini.

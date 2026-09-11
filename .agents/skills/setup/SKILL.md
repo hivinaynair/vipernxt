@@ -9,6 +9,10 @@ description: >-
 
 # setup
 
+Provisions a new product's infrastructure **after they accept the first slice**
+(`clone.setup` is `pending`), or when they ask for a hosted preview. Not a gate
+before wave 0. Use `.env.local` for the clip if keys already exist.
+
 Run the script. Do not do this with tool calls.
 
 ```bash

@@ -3,26 +3,27 @@
 Clone this repo, type `/next`. It names the clone when the design doc is
 approved — you do not type `/customize`. Do not invent a product UI first. The
 stack stays: Bun, Clerk, Drizzle + Neon, shadcn in `packages/ui`, Vercel
-Workflows, Biome, Playwright.
+Workflows, Biome, Playwright. The engagement order is
+[playbook/fde-loop.md](playbook/fde-loop.md).
 
 This file is the map a future clone and an agent read. The GitHub
 [README](../README.md) is the public scan. The Cursor canvas **ViperNxt map**
 is a view of this file — not a second spec.
 
-## Start a product
+## Start an engagement
 
 | Step | Who | What |
 |---|---|---|
-| 1. Clone | you | New repo from this tree. Keep the opinions. |
-| 2. `/next` | agent | Creates `docs/product/state.yaml`, researches, interviews one question at a time. Pin `/next` as a Custom Mode. |
-| 3. Approve the design doc | you | Until `shape` is `done`, a hook denies writes under `apps/*/src/app` and `apps/*/src/features`. |
+| 1. Clone | you | Throwaway clone for a live site. Keep the opinions. Do not park a customer in the kit. |
+| 2. `/next` | agent | Creates `docs/product/state.yaml`, incumbent gate, salvage, field. Pin `/next` as a Custom Mode. |
+| 3. Confirm U5 | you | Outcome, who has the pain, why the obvious build is wrong. Until `shape` is `done`, a hook denies product UI. |
 | 4. Name the clone | `/next` | Invokes `customize` — name first, then keep/strip. Writes `PRODUCT` to `.env.playbook`. |
-| 5. `setup` | script | [`.agents/skills/setup/setup.sh`](../.agents/skills/setup/setup.sh) — GitHub, one Neon project with `staging` + `production` databases, Vercel, Clerk, Linear key. |
-| 6. Journey spine | `/next` | `journeys` expands the design-doc table. IDs are permanent. |
-| 7. Thin slice | agent | One journey through real data before the full component inventory. |
+| 5. Thin slice | agent | Ontology + spine + wave 0 (eval set) + one journey on `.env.local`. |
+| 6. You look at it | you | Mandatory stop. |
+| 7. `setup` | script | After they accept — [setup.sh](../.agents/skills/setup/setup.sh). GitHub, Neon, Vercel, Clerk, Linear. |
 | Journey is the wrong story | `/next` | Reopen `shape` on the clip + journeys table, confirm, re-expand. No new skill. Same moments keep IDs. |
 
-`status` is the glance. `setup` provisions. `shape` does not rename packages.
+`status` is the glance. `setup` waits for the clip. `shape` does not rename packages. Loop: [playbook/fde-loop.md](playbook/fde-loop.md).
 
 ## Repo
 
@@ -81,12 +82,12 @@ Type `/next`. It reads `docs/product/state.yaml` and does every step that is not
 | `plan` | One spine feature → short spec + slices. `/next` runs it after the spine. |
 | `build` | Implements one slice. Tests cite step IDs. PR to `staging`. Host-agnostic. |
 | `prototype` | Three variants of one component, mid-build. |
-| `customize` | Names the clone (`scripts/customize.mjs`) and applies keep/strip. `/next` runs it after shape; before setup. |
+| `customize` | Names the clone (`scripts/customize.mjs`) and applies keep/strip. `/next` runs it after shape; first local clip next, not setup. |
 | `setup` | Runs `setup.sh`. One Neon project, two databases. |
 | `next-dev-loop` | Runtime verify after app edits (`/_next/mcp` + browser). |
 | `before-and-after` | Vendor skill. Before/after screenshot pair for a PR. |
 
-Phases, from [`next/SKILL.md`](../.agents/skills/next/SKILL.md): salvage → research → field → shape → ontology → journeys → structure / visual → Linear → build. Ship one walking skeleton after the spine exists. `prototype` is not a phase. A wrong product story reopens `shape` on the journeys table, then `journeys` — still `/next`, no new skill.
+Phases, from [`next/SKILL.md`](../.agents/skills/next/SKILL.md): understand (salvage → research → field) → reframe (shape) → clip (ontology + journeys + local slice) → factory (setup, Linear, structure, waves). Setup is **not** on the path to the clip. `prototype` is not a phase. A wrong product story reopens `shape` on the journeys table, then `journeys` — still `/next`, no new skill.
 
 Build runs in **waves**. Wave 0 is schema plus deterministic seed data; feature waves
 follow, at most five agents at once, one per feature folder, and anything touching shared
@@ -94,7 +95,7 @@ surface runs alone. The first slice is the one mandatory stop — they look at i
 rest is unleashed. `build` carries the isolate / hoist / prove / ship rules; there is no
 separate skill for them.
 
-No `docs/product/state.yaml` means no product. Boilerplate may be edited. This repo is in that state.
+No `docs/product/state.yaml` means no engagement. Boilerplate may be edited. This repo is in that state.
 
 ## Harness
 

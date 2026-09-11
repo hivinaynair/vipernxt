@@ -24,9 +24,9 @@ import { db } from "./client.js";
  * - **Idempotent.** Running twice leaves the same rows. Upsert on the fixed id.
  * - **Domain vocabulary.** Names come from `docs/product/ontology.md`, not from
  *   convenience. See that file's Vocabulary section.
- * - **Invented people only.** Never seed a real person's record — the salvage
- *   inbox holds photographs of registers with real names, and none of them
- *   belong here.
+ * - **Anonymized eval-set cases, never a real name.** Wave 0 seeds the last-N
+ *   real cases with names and ids replaced. The salvage inbox holds photographs
+ *   of registers with real names; none of them belong here.
  *
  * ## Seat users
  *
@@ -51,7 +51,7 @@ export async function seed(): Promise<void> {
   // Tables land in wave 0, before any feature ticket. Insert them here in
   // dependency order, upserting on the fixed id so a re-run is a no-op.
   //
-  //   await db.insert(devotees).values(DEVOTEES)
-  //     .onConflictDoUpdate({ target: devotees.id, set: { ... } });
+  //   await db.insert(orders).values(ORDERS)
+  //     .onConflictDoUpdate({ target: orders.id, set: { ... } });
   void db;
 }

@@ -3,8 +3,8 @@ name: customize
 description: >-
   Names this clone and applies the keep/strip answers — product name, package
   scope, apps, Clerk, Workflows, metadata, database. Invoked by /next after the
-  design doc is approved and before setup, or when the user asks to customize,
-  or the root package is still vipernxt.
+  design doc is approved, or when the user asks to customize, or the root
+  package is still vipernxt. Setup waits until they accept the clip.
 ---
 
 # customize
@@ -13,12 +13,12 @@ Rename and strip this clone. One question at a time. Apply only what they
 answered. Do not invent a product or a UI kit.
 
 `/next` runs this after `shape` is done. They should not have to type
-`/customize`. `setup.sh` provisions under the name you write here — always
-before setup. Shape may have already recorded keep/strip in the design doc —
-honour those answers; do not re-ask them.
+`/customize`. Honour keep/strip already recorded in the design doc; ask only
+what the doc left open.
 
 When the last question is applied, set `clone.customized: done` in
-`docs/product/state.yaml` if that file exists.
+`docs/product/state.yaml` if that file exists. Do not run `setup.sh` from here
+while `clone.setup` is `deferred` — `/next` builds the first local clip next.
 
 ## Hard rules
 
@@ -27,7 +27,7 @@ When the last question is applied, set `clone.customized: done` in
 - **One question per message.** Wait. Then apply that answer. Then the next.
 - **Write the name first.** Question 1 writes `PRODUCT` to `.env.playbook` so
   setup cannot provision under `vipernxt`.
-- **Do not start setup.sh from this skill.** Point at it when you stop.
+- **Do not start setup.sh from this skill.** `/next` runs the local clip next.
 - **Renames go through the script, not by hand** — see below.
 - After edits: `bun install`, `bun run check-types`, `bun run check-boundaries`.
 
@@ -114,5 +114,6 @@ Billing is not in the tree. Do not add it.
 
 Read the summary back: name, scope, what was kept, what was stripped.
 
-Then stop. Next is [setup](../setup/SKILL.md) — `./.agents/skills/setup/setup.sh`
-— which reads `PRODUCT` from `.env.playbook`.
+Then stop. `/next` continues the clip on `.env.local` (ontology, spine, wave 0,
+first slice). Run [setup](../setup/SKILL.md) only after they accept that slice
+(`clone.setup` flips to `pending`), or if they ask for a hosted preview.

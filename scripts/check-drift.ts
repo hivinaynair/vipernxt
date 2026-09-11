@@ -23,8 +23,11 @@ type Held = {
 };
 type State = {
   phases?: Record<string, Phase>;
-  clone?: { customized?: string };
+  clone?: { customized?: string; tickets?: string };
   held?: Held[];
+  idea?: string;
+  idea_outdated?: boolean;
+  reframe?: string;
 };
 type Feature = { id?: string; title?: string; serves?: string[]; linear?: string };
 type Spine = { source?: string; features?: Feature[] };
@@ -84,7 +87,23 @@ if (existsSync("package.json")) {
   }
 }
 
-// 5. Each spine against the design doc it claims to view, and its features.
+// 5. Idea paragraph superseded by a decision but not rewritten.
+if (state.idea_outdated === true) {
+  findings.push(
+    "idea_outdated is true — rewrite docs/product/state.yaml `idea:` to match closed decisions, then clear the flag",
+  );
+}
+
+// 5b. Shape done without a confirmed reframe.
+const shape = Object.values(state.phases ?? {}).find((p) => p.name === "shape");
+if (shape?.status === "done") {
+  const reframe = (state.reframe ?? "").trim();
+  if (!reframe) {
+    findings.push("phase shape is done but `reframe` is empty — U5 is the exit test");
+  }
+}
+
+// 6. Each spine against the design doc it claims to view, and its features.
 const spines = [...new Bun.Glob("docs/journeys/*.yaml").scanSync(".")];
 for (const path of spines) {
   let spine: Spine;
@@ -104,7 +123,12 @@ for (const path of spines) {
     if (!f.serves || f.serves.length === 0) {
       findings.push(`${path}: feature ${f.id} serves no steps`);
     }
-    if (linearPhase?.status === "in-progress" && !f.linear) {
+    if (
+      linearPhase?.status === "in-progress" &&
+      state.clone?.tickets !== "deferred" &&
+      state.clone?.tickets !== "pending" &&
+      !f.linear
+    ) {
       findings.push(`${path}: feature ${f.id} has no Linear issue`);
     }
   }

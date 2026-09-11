@@ -14,6 +14,7 @@
 type Held = {
   id?: string;
   kind?: "gather" | "decide";
+  who?: "fde" | "site";
   phase?: string | number;
   raised?: string;
   what?: string;
@@ -26,9 +27,10 @@ type Phase = { name?: string; status?: string; artifact?: string; optional?: boo
 
 type State = {
   product?: string;
+  engagement?: { site?: string };
   phase?: string | number;
   phases?: Record<string, Phase>;
-  clone?: { customized?: string };
+  clone?: { customized?: string; setup?: string; tickets?: string };
   held?: Held[];
   ui_writes?: "allow" | "deny";
 };
@@ -42,7 +44,7 @@ const statePath = arg("state", "docs/product/state.yaml");
 
 const file = Bun.file(statePath);
 if (!(await file.exists())) {
-  console.log("No product is being shaped here.");
+  console.log("No engagement is running here.");
   process.exit(0);
 }
 
@@ -81,12 +83,22 @@ const open = held
   });
 
 if (open.length > 0) {
-  out.push("**Waiting on you**");
-  for (const h of open) {
+  const onYou = open.filter((h) => h.who !== "site");
+  const onSite = open.filter((h) => h.who === "site");
+  const line = (h: Held) => {
     const where = h.detail ? ` — ${h.detail}` : "";
-    out.push(`- ${h.what ?? h.id ?? "(unnamed)"}${age(h.raised)}${where}`);
+    return `- ${h.what ?? h.id ?? "(unnamed)"}${age(h.raised)}${where}`;
+  };
+  if (onYou.length > 0) {
+    out.push("**Waiting on you**");
+    for (const h of onYou) out.push(line(h));
+    out.push("");
   }
-  out.push("");
+  if (onSite.length > 0) {
+    out.push("**Waiting on the site**");
+    for (const h of onSite) out.push(line(h));
+    out.push("");
+  }
 }
 
 // Where we are.
@@ -98,6 +110,7 @@ const upcoming = phases.find(([, p]) => p.status === "pending" && !p.optional);
 if (phases.length > 0) {
   out.push("**Where we are**");
   const bits: string[] = [];
+  if (state.engagement?.site) bits.push(`site: ${state.engagement.site}`);
   if (done.length > 0) bits.push(`done: ${done.join(", ")}`);
   if (now) bits.push(`now: ${now[1].name}${now[1].status === "blocked" ? " (blocked)" : ""}`);
   if (upcoming) bits.push(`next: ${upcoming[1].name}`);

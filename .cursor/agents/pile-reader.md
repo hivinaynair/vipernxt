@@ -20,7 +20,7 @@ An image cannot be cited by line, so the transcript is what makes every later ph
 to point at a fact. Return the page as text:
 
 - Field names and labels **exactly as written**, in the original language, untranslated.
-  If the form says *seva*, the transcript says *seva*.
+  If the form says *pick ticket*, the transcript says *pick ticket*.
 - Every filled-in value, including the ones that look like mistakes.
 - Crossings-out, corrections, and anything handwritten in a margin — these are the most
   valuable marks on the page. Someone worked around the system there.

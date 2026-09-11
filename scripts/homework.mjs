@@ -2,8 +2,8 @@
 // Turns a field-research homework file into a .docx someone can actually type into,
 // and reads the filled copy back out as markdown.
 //
-//   node scripts/homework.mjs build docs/product/homework/02-temple-visit.md
-//   node scripts/homework.mjs read  ~/Downloads/02-temple-visit.docx
+//   node scripts/homework.mjs build docs/product/homework/02-site-visit.md
+//   node scripts/homework.mjs read  ~/Downloads/02-site-visit.docx
 //
 // The markdown stays the source of truth. The .docx is a render of it, so the homework
 // is edited in one place and never diverges from the file state.yaml points at.
@@ -157,6 +157,8 @@ function build(mdPath) {
     }
   };
 
+  let skipClosed = false;
+
   for (const raw of md.split("\n")) {
     const line = raw.trim();
 
@@ -168,9 +170,21 @@ function build(mdPath) {
     const h = line.match(/^(#{1,3})\s+(.*)$/);
     if (h) {
       flushProse();
-      items.push({ type: `h${h[1].length}`, text: plain(h[2]) });
+      const level = h[1].length;
+      const text = plain(h[2]);
+      // Markdown is the source of truth; Closed/Settled stays in the .md
+      // and must not reprint on the form they take on site.
+      if (level === 2 && /^(closed|settled)$/i.test(text)) {
+        skipClosed = true;
+        continue;
+      }
+      if (level <= 2) skipClosed = false;
+      if (skipClosed) continue;
+      items.push({ type: `h${level}`, text });
       continue;
     }
+
+    if (skipClosed) continue;
 
     const tick = line.match(/^[-*]\s+\[[ xX]?\]\s+(.*)$/);
     if (tick) {

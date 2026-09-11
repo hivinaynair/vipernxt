@@ -12,7 +12,31 @@ description: >-
 The one phase no agent can do. Your job is to make the trip worth taking, and to make what
 comes back usable.
 
-Two modes: **prepare** the homework, and **absorb** what returns.
+Two jobs: **prepare** the homework, and **absorb** what returns.
+
+## Pick the field mode first
+
+Trip is not the default. Write `mode:` on the field phase.
+
+| Mode | When | Do |
+|---|---|---|
+| **on-site** | They are at the counter this session | Homework md is a live checklist. Fill as they talk. Absorb the same day. Skip the `.docx` round-trip. |
+| **pile** | salvage-inbox already holds the photos/forms | Absorb. Hold `who: site` only for gaps salvage listed. |
+| **trip** | They will go later, and the pile cannot answer | Prepare the `.docx`, they leave, absorb when they return. |
+
+Always capture the **last 10 real cases** (or a week of the job) into the eval set —
+anonymized, cited. If the SoR already stores expert-labelled history, that *is* the set.
+That set is what wave 0 seeds and what the first slice is scored against. Watch the
+person who does the job, not only the buyer. Operational context (judgment, workarounds,
+the laminated card) is a separate finding from entity names.
+
+**If they are about to change the SoR** (upgrade, migrate, new vendor): the homework's
+first page is baseline numbers, this week. Hours per job, re-keys, chase rounds, days of
+delay. After the change those numbers mix forever. This outranks every other ask.
+
+Also capture, when it would change the build: where the data may live (this machine /
+this network / may leave); which banks or channels the vendor's paid feature actually
+covers. "The upgrade does bank feeds" is not a fact until you know *their* banks.
 
 ---
 
@@ -102,7 +126,7 @@ Finish with the **open questions from earlier phases** this trip should settle.
 A markdown file in a repo is not a form. Run:
 
 ```
-node scripts/homework.mjs build docs/product/homework/02-temple-visit.md
+node scripts/homework.mjs build docs/product/homework/02-site-visit.md
 ```
 
 It renders a `.docx` with every question and capture as a row with an empty box beside
@@ -147,7 +171,7 @@ They come back with photos, scribbled notes, voice memos, a PDF of a receipt, du
 Read the filled document back with:
 
 ```
-node scripts/homework.mjs read docs/product/intake/02-temple-visit.docx
+node scripts/homework.mjs read docs/product/intake/02-site-visit.docx
 ```
 
 It prints each question with the answer underneath and a count — `14/22 answered`. That

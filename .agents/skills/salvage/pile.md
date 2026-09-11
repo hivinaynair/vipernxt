@@ -18,6 +18,7 @@ have" returns nothing. A checklist returns a folder:
 > - [ ] Screenshots of the old software — every screen, including the ugly ones
 > - [ ] Anything printed that gets handed to a customer
 > - [ ] **Anything taped to a wall or clipped to the counter**, and anything laminated
+> - [ ] The last ten real cases (or a week of the job), even messy
 > - [ ] Wireframes or sketches, if any exist
 >
 > Say "nothing" for any line that genuinely does not exist — that is a finding too.
