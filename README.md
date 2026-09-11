@@ -421,8 +421,7 @@ add them when a product actually asks.
 | `packages/db` | Drizzle + Neon. Server-only. Schema empty until a product needs tables |
 | `e2e/web` | Playwright |
 | `docs/` | Design doc, journeys, research — after `/next` |
-| `.agents/skills/` | The playbook. `.cursor/skills/` and `.claude/skills/` symlink here |
-| `.agents/agents/` | Parallel jobs. Cursor adapters in `.cursor/agents/` pin Grok; other hosts spawn a sibling |
+| `.agents/skills/` | The playbook (phases and child jobs). `.cursor/skills/` and `.claude/skills/` symlink here. Cursor Task adapters in `.cursor/agents/` pin Grok |
 
 ## Commands
 

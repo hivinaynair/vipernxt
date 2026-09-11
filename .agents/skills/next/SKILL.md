@@ -192,8 +192,8 @@ deterministic, fixed ids, frozen dates. Empty tables make both the review and
 Feature folders may not import each other, so agents in different folders cannot collide.
 Everything else is shared surface — `src/app`, `src/shared`, `packages/*`, the schema, any
 `package.json`. **A slice touching shared surface runs alone.** Spawn those agents per
-[`.agents/agents/README.md`](../../agents/README.md) (factory slices). Serial if this
-harness cannot start a sibling; do not skip the wave.
+**Start a child** below (factory slices). Serial if this harness cannot start a sibling;
+do not skip the wave.
 
 Group the waves when `linear-sync` publishes the spine, so the order is visible to them
 rather than living in this session.
@@ -269,15 +269,24 @@ the site has not confirmed, unless they accepted the gap as an assumption.
 Phase 1 can run in parallel with 2. **Never idle while a `gather` item is open.**
 
 Phases 0 and 1 are wide and human-free: dispatch independent investigations in parallel,
-one per source or feature area, and reconcile. Jobs live in `.agents/agents/`. How to
-start a child: [`.agents/agents/README.md`](../../agents/README.md). Cursor adapters
-(Grok 4.6, Task types) live in `.cursor/agents/` and point at those jobs — they are
-not a second copy of the job.
+one per source or feature area, and reconcile. Child jobs are skills (`salvage-miner`,
+`pile-reader`, `domain-researcher`, `spine-checker`, `ui-gate-auditor`) — Pi, Claude Code,
+and Cursor all scan `.agents/skills/<name>/SKILL.md`. Cursor Task adapters in
+`.cursor/agents/` pin Grok 4.6 and point at those skills; they are not a second copy
+of the job.
 
-If this harness cannot start a sibling, run the jobs **serially in this session**.
-Skipping them because you are not on Cursor is a defect.
+### Start a child
 
-Children do not inherit skills. Pass `.agents/skills/<name>/SKILL.md` in the prompt.
+| This harness | Do this |
+|---|---|
+| **Cursor** | Task tool. `subagent_type` matches `.cursor/agents/<name>.md` (Grok 4.6, not Gemini). |
+| **Pi** | New process (a Herdr pane if you have one). The job is already in the catalog — `/skill:salvage-miner` (or whichever). Name the one source. |
+| **Claude Code** | Subagent or second session. Same `/skill:<name>`. |
+| **Anything else** | Sibling process, or **serially in this session**. |
+
+Skipping the jobs because you are not on Cursor is a defect. Serial is allowed.
+
+Factory slices: same table. The skill is `build` plus the slice — no named child job per feature. At most five, one `src/features/<slug>/` each. Shared surface runs alone. Wave 0 is never parallel with feature slices.
 
 ## Every run
 

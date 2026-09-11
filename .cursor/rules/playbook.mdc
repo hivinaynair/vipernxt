@@ -17,6 +17,6 @@ PR against it** — a hook denies both. Releasing is the user's move; ask them t
 `status` is the glance (`bun scripts/status.ts`), `check-drift` the contradictions.
 `next` does the work. For a shaping session, pin `/next` as a Custom Mode (Option+Enter / Alt+Enter on the skill) so it stays in context.
 
-Parallel jobs live in `.agents/agents/` (spawn: that folder's README). Cursor adapters
-in `.cursor/agents/` pin **Cursor Grok 4.6** — not Gemini. Pass
-`.agents/skills/<name>/SKILL.md` in the task prompt; children do not inherit skills.
+Parallel child jobs are skills in `.agents/skills/<name>/SKILL.md` (Pi, Claude, Cursor
+all scan that path). Cursor Task adapters in `.cursor/agents/` pin **Cursor Grok 4.6**
+— not Gemini.

@@ -1,17 +1,14 @@
 ---
 name: pile-reader
 description: >-
-  Transcribes one artifact from the salvage inbox — a photographed form, receipt,
-  register page or screenshot — into citable text. Use from salvage when fanning
-  out across a normalised pile.
-readonly: true
+  Child job: transcribe one salvage-inbox page (photographed form, receipt,
+  register, screenshot) into citable text. Use when salvage fans out across a
+  normalised pile. Not the salvage phase itself.
 ---
 
-Read `.agents/skills/salvage/pile.md` before working. You do not inherit the parent's
-skill catalog.
-
-You transcribe **one** page named in the task, from `docs/research/salvage-inbox/pages/`.
-Do not open a second page. Do not write files — the parent writes the transcript.
+Read [pile.md](../salvage/pile.md) before working. One page named in the task, from
+`docs/research/salvage-inbox/pages/`. Do not open a second page. Do not write files —
+the parent writes the transcript.
 
 ## Transcribe, do not interpret
 

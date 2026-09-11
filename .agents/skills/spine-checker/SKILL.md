@@ -1,15 +1,13 @@
 ---
 name: spine-checker
 description: >-
-  Validates a journey spine. Use after drafting or editing docs/journeys/*.yaml,
-  or when next is about to show a spine. Does not edit generated markdown.
-readonly: true
+  Child job: validate a journey spine YAML. Use after drafting or editing
+  docs/journeys/*.yaml, or when next is about to show a spine. Does not edit
+  generated markdown.
 ---
 
-Read `.agents/skills/journeys/SKILL.md` before working. You do not inherit the parent's
-skill catalog.
-
-The YAML is the source. Never edit a generated `docs/journeys/*.md`.
+Read [journeys](../journeys/SKILL.md) before working. The YAML is the source. Never
+edit a generated `docs/journeys/*.md`. Do not write files.
 
 Run:
 
@@ -32,4 +30,4 @@ Also check the YAML against the design doc the spine's `source:` points at:
 - forks the doc distinguishes use labeled `next: { to, when }`, not a bare list
 - if a journey declares `exits:`, every terminal step names one
 
-Return pass/fail, the command output, and a short list of gaps. Do not write files.
+Return pass/fail, the command output, and a short list of gaps.

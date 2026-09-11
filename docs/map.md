@@ -38,10 +38,9 @@ is a view of this file — not a second spec.
 | `e2e/web` | Playwright. Import `test`/`expect` from that app’s `playwright.setup`. |
 | `test/` | `bun test` preload only. Suites are colocated `*.test.ts(x)`. |
 | `docs/` | Product artifacts after `/next`. This map. Research notes. |
-| `.agents/skills/` | Playbook + vendor skills. Source of truth. Vendored from [saas-playbook](https://github.com/hivinaynair/saas-playbook). |
-| `.agents/agents/` | Parallel jobs (host-agnostic). Spawn: [README](../.agents/agents/README.md). |
+| `.agents/skills/` | Playbook + vendor skills. Source of truth. Vendored from [saas-playbook](https://github.com/hivinaynair/saas-playbook). Child jobs (`salvage-miner`, …) live here too — that is the path Pi and Claude Code scan. |
 | `.cursor/skills/`, `.claude/skills/` | Symlinks to `.agents/skills/` so Cursor and Claude Code both see them. |
-| `.cursor/agents/` | Cursor adapters (Grok 4.6, Task). Point at `.agents/agents/`; do not duplicate the job. |
+| `.cursor/agents/` | Cursor Task adapters (Grok 4.6). Point at `.agents/skills/<name>/SKILL.md`; do not duplicate the job. |
 | `.cursor/hooks/` | UI gate + session digest. |
 | `.cursor/rules/` | Always-on playbook rule; feature, shadcn, testing, next-dev-loop. |
 
@@ -74,6 +73,11 @@ Type `/next`. It reads `docs/product/state.yaml` and does every step that is not
 | `status` | Read-only glance. Runs `scripts/status.ts` + `check-drift.ts`. |
 | `artifacts` | House rules for anything under `docs/product`, `docs/plans`, `docs/research`, `docs/journeys`. |
 | `salvage` | Mine prior art. Incumbent first, then the market; facts ≠ menu parity. |
+| `salvage-miner` | Child: one prior-art source. Facts, not structure. |
+| `pile-reader` | Child: one inbox page → citable transcript. |
+| `domain-researcher` | Child: one research thread. Parent files the note. |
+| `spine-checker` | Child: validate `docs/journeys/*.yaml`. |
+| `ui-gate-auditor` | Child: report gated-path edits. Does not fix. |
 | `field-kit` | Homework only they can fill; photo-first; prune Closed; gap-pass before shape. |
 | `shape` | Interview → design doc. Canvas is a view of that doc. |
 | `ontology` | Domain entities before schema or spine. |
@@ -105,13 +109,13 @@ No `docs/product/state.yaml` means no engagement. Boilerplate may be edited. Thi
 | UI gate | [`.cursor/hooks/playbook.ts`](../.cursor/hooks/playbook.ts) `gate` | Denies Write/StrReplace/Delete under `apps/*/src/app` and `apps/*/src/features` until `shape` is `done` (or `ui_writes: allow`). Fail-closed. Missing state file = boilerplate, allowed. |
 | Branch gate | same file, `branch` | `beforeShellExecution`. Denies `git push` to `main`, `gh pr create --base main`, and `--force` without `--force-with-lease`. Releasing is the user's move. |
 | Session digest | same file, `session` | Runs `scripts/status.ts` and injects it. Cloud chats do not run `sessionStart`; the playbook rule still applies. |
-| `salvage-miner` | [`.agents/agents/salvage-miner.md`](../.agents/agents/salvage-miner.md) | One prior-art source. Facts, not structure. |
-| `pile-reader` | [`.agents/agents/pile-reader.md`](../.agents/agents/pile-reader.md) | One inbox page → citable transcript. Verbatim, untranslated. |
-| `domain-researcher` | [`.agents/agents/domain-researcher.md`](../.agents/agents/domain-researcher.md) | One research thread. Parent files the note. |
-| `spine-checker` | [`.agents/agents/spine-checker.md`](../.agents/agents/spine-checker.md) | Validates `docs/journeys/*.yaml`. |
-| `ui-gate-auditor` | [`.agents/agents/ui-gate-auditor.md`](../.agents/agents/ui-gate-auditor.md) | Reports gated-path edits. Does not fix. |
+| `salvage-miner` | [`.agents/skills/salvage-miner/SKILL.md`](../.agents/skills/salvage-miner/SKILL.md) | One prior-art source. Facts, not structure. |
+| `pile-reader` | [`.agents/skills/pile-reader/SKILL.md`](../.agents/skills/pile-reader/SKILL.md) | One inbox page → citable transcript. Verbatim, untranslated. |
+| `domain-researcher` | [`.agents/skills/domain-researcher/SKILL.md`](../.agents/skills/domain-researcher/SKILL.md) | One research thread. Parent files the note. |
+| `spine-checker` | [`.agents/skills/spine-checker/SKILL.md`](../.agents/skills/spine-checker/SKILL.md) | Validates `docs/journeys/*.yaml`. |
+| `ui-gate-auditor` | [`.agents/skills/ui-gate-auditor/SKILL.md`](../.agents/skills/ui-gate-auditor/SKILL.md) | Reports gated-path edits. Does not fix. |
 
-Children do not inherit skills. Pass `.agents/skills/<name>/SKILL.md` in the prompt. How to start them depends on the harness — [`.agents/agents/README.md`](../.agents/agents/README.md). On Cursor, adapters in `.cursor/agents/` pin Grok 4.6; do not send playbook work to Gemini.
+These are skills, so Pi and Claude Code list them. How to start a sibling: `next` skill, **Start a child**. On Cursor, adapters in `.cursor/agents/` pin Grok 4.6; do not send playbook work to Gemini.
 
 Rules: [`.cursor/rules/playbook.mdc`](../.cursor/rules/playbook.mdc) (always), `next-features` (feature folders + ontology names), `db` (wave 0, deterministic seed), `shadcn`, `testing`, `next-dev-loop`.
 

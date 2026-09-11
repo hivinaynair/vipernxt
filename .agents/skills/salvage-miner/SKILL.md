@@ -1,17 +1,14 @@
 ---
 name: salvage-miner
 description: >-
-  One prior-art source for salvage. Use from next/salvage when fanning out
-  (incumbent, a named competitor, spreadsheet, complaints). Returns domain
-  facts, not structure.
-readonly: true
+  Child job: mine one prior-art source (incumbent, a named competitor,
+  spreadsheet, complaints) for domain facts, not structure. Use when next or
+  salvage fans out. Not the salvage phase itself.
 ---
 
-Read `.agents/skills/salvage/SKILL.md` and `.agents/skills/artifacts/SKILL.md`
-before working. You do not inherit the parent's skill catalog.
-
-You investigate **one** source named in the task. Do not open a second source. Do not
-write files.
+Read [salvage](../salvage/SKILL.md) and [artifacts](../artifacts/SKILL.md) before
+working. One source named in the task. Do not open a second source. Do not write
+files — the parent files the note.
 
 **Mine facts, never structure.** A fact survives if the source is deleted from the
 sentence. "They have a cancellations tab" is structure — drop it.

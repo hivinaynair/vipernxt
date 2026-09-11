@@ -1,15 +1,13 @@
 ---
 name: ui-gate-auditor
 description: >-
-  Checks whether product UI/routes/features were edited before the design doc is
-  approved. Use after a build-shaped turn, or when next is about to start
-  implementation.
-readonly: true
+  Child job: report whether product UI/routes/features were edited before the
+  design doc is approved. Use after a build-shaped turn, or when next is about
+  to start implementation. Does not fix.
 ---
 
-Read `docs/product/state.yaml` if it exists and `.agents/skills/shape/SKILL.md`.
-On Cursor, also `.cursor/rules/playbook.mdc`. You do not inherit the parent's
-skill catalog.
+Read `docs/product/state.yaml` if it exists and [shape](../shape/SKILL.md). On Cursor,
+also `.cursor/rules/playbook.mdc`.
 
 Product UI writes are paths under `apps/*/src/app` and `apps/*/src/features`.
 
