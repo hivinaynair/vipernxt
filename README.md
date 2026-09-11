@@ -35,8 +35,7 @@ reframe exists. Procedure: [docs/playbook/fde-loop.md](docs/playbook/fde-loop.md
 
 ## Who this is not for
 
-- You want a demo app to restyle. `apps/web` is leftover starter copy on
-  purpose — there is no product here until you make one.
+- You want a demo app to restyle. There is no app in this kit until compose.
 - You want to pick a new stack per site. Change [docs/kit/recipe.yaml](docs/kit/recipe.yaml)
   in this kit; clones compose from it. A site does not invent Prisma or NextAuth.
 - You want to start coding immediately. Until the design doc is approved **and**
@@ -416,9 +415,8 @@ package patch versions differ. `--apply` refuses on this kit.
 | Region | `NEON_REGION` at setup | a per-region template |
 
 `customize` composes what the design doc named. Nothing adds a second option
-"just in case". Billing and Clerk org UI wait until a product asks. This repo
-still ships a reference `apps/web` until compose runs the CLIs — do not strip
-that tree on every clone as the long-term motion.
+"just in case". Billing and Clerk org UI wait until a product asks. This kit
+does not ship Next — compose after U5.
 
 ---
 
@@ -426,11 +424,10 @@ that tree on every clone as the long-term motion.
 
 | Path | Role |
 |---|---|
-| `apps/web` | Routes in `src/app`, domains in `src/features/*`, app-local in `src/shared` |
-| `packages/ui` | shadcn (`@repo/ui`). `bun run ui:add -- <component>` |
-| `packages/db` | Drizzle + Neon. Server-only. Schema empty until a product needs tables |
-| `e2e/web` | Playwright |
-| `docs/kit/` | Stack recipe. Compose reads this. |
+| `apps/` | Empty until compose. Then `web` with `src/app` / `src/features` / `src/shared` |
+| `packages/` | Empty until compose. Then `ui` (shadcn) and `db` (Drizzle + Neon) |
+| `e2e/` | Empty until compose |
+| `docs/kit/` | Stack recipe + overlays. Compose reads this. |
 | `docs/` | Design doc, journeys, research — after `/next` |
 | `.agents/skills/` | The playbook (phases and child jobs). `.cursor/skills/` and `.claude/skills/` symlink here. Cursor Task adapters in `.cursor/agents/` pin Grok |
 
