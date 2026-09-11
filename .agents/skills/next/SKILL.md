@@ -154,8 +154,10 @@ Running a six-phase pipeline over "add a column" is a failure, not thoroughness.
 | 6 | Build | `plan` then `build` in waves; cite journey IDs; `prototype` when a component is open | you |
 
 The week-one path is [fde-loop.md](../../../docs/playbook/fde-loop.md). Understand
-(U1–U5) before shape. Seed data **is** the eval set (last 10 real cases). The first
-slice is the one mandatory stop. Setup, Linear, and structure (5a) wait until they
+(U1–U5) before shape. Seed data **is** the eval set (last 10 real cases), and
+`bun scripts/eval.ts` is what turns it into a number. Show that number when you
+show them the slice — "it works" is not what they asked for; "it would have caught
+six of the ten" is. The first slice is the one mandatory stop. Setup, Linear, and structure (5a) wait until they
 accept the clip.
 
 `prototype` is not a phase — reach for it mid-build whenever a component's shape is

@@ -64,6 +64,12 @@ is *your* process; regenerate a conflicted lockfile rather than hand-merging.
    bun run check-types && bun run check-boundaries && bun run check-tokens && bun run check-journeys && bun test
    ```
 
+4. Then score it: `bun scripts/eval.ts`. The bar above says the code does what
+   the spine specified; the score says whether the product would have caught
+   what actually went wrong. A slice can be green and score 2/10 — that is a
+   finding for the checkpoint, not a merge blocker, so the score never gates
+   the PR. Put it in the PR body.
+
    `check-journeys` accepts real IDs. Do not pass `--complete` on a slice that
    left later served steps unbuilt. The last slice of the clip does:
 

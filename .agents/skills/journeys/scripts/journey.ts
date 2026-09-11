@@ -472,7 +472,8 @@ if (import.meta.main) {
     // checker's own fixtures (J1.S1 in journey-ids.test.ts) are not citations.
     const testGlob = new Bun.Glob("**/*.{test,spec}.{ts,tsx}");
     const texts: string[] = [];
-    for (const dir of ["apps", "packages"]) {
+    // e2e holds the Playwright specs -- the only reason .spec is in the glob.
+    for (const dir of ["apps", "packages", "e2e"]) {
       try {
         for await (const path of testGlob.scan(dir)) {
           if (path.includes("node_modules")) continue;

@@ -56,3 +56,7 @@ docs/research/salvage-inbox/pages/*.jpg
 docs/research/salvage-inbox/pages/*.jpeg
 docs/research/salvage-inbox/pages/*.png
 docs/research/salvage-inbox/pages/*.webp
+# Transcripts and exported tables carry the same real names the photographs do.
+docs/research/salvage-inbox/pages/*.md
+docs/research/salvage-inbox/pages/*.csv
+docs/research/salvage-inbox/pages/*.tsv

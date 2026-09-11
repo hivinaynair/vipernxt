@@ -2,22 +2,85 @@
 
 **Sit with a site. Leave with a clip that moves a number — then a factory.**
 
-ViperNxt is two things in one repository:
+## What this does for you
 
-1. **An FDE playbook** — agent skills that run an engagement: salvage the pile,
+You have a customer with a problem, and you are about to build them software.
+This repo is the procedure for that first week — written so an agent can run
+most of it — plus the stack it builds on.
+
+Clone it, type `/next`, name the site and what they use today. It stops for you
+four times. Everything else it does alone.
+
+**What it is best at is stopping you building the wrong thing.** Before it
+designs anything it reads whatever the job runs on today and prices the
+incumbent, because the most expensive week is the one spent rebuilding a feature
+your customer already pays for.
+
+<details>
+<summary>A worked example — one engagement, start to first screen</summary>
+
+A test run of this kit, against an invented but realistic customer: a compliance
+manager at a fintech, drowning in a SOC 2 audit. The obvious build was a tracker
+for the auditor's request list.
+
+- **Phase 0 killed that idea.** Salvage checked the incumbent before designing
+  anything: the customer already paid $27k/yr for Vanta, and Vanta ships that
+  tracker. So do Drata and Secureframe. Building it would have been a week spent
+  rebuilding something already bought.
+- **What survived was smaller and real.** Of their last ten evidence requests,
+  six came back from the auditor, and four of those six for the same reason: the
+  file was right but described the wrong *period*. Nobody checked before sending.
+- **The clip became a pre-flight check** — not a tracker. One screen that reads a
+  file and says "this describes September; they asked for June, ending 06-30",
+  and names the rows that disagree.
+- **Scored, not asserted.** Replaying their ten real cases: 4 of 10 handled, 6
+  explicitly out of the first slice with reasons. That number is what you show
+  them — not "it works".
+
+The point is the first bullet. Nothing in the interview would have surfaced it;
+the customer asked for the tracker.
+
+</details>
+
+## What you have, and when
+
+| After | You have |
+|---|---|
+| an hour | their pile read and cited, the incumbent named and priced, and a short list of what only they can tell you |
+| a day or two | one paragraph you confirmed: the outcome number, whose pain it is, and why the obvious build is wrong |
+| a day after that | a named clone, a composed stack, the domain model in their vocabulary, and an ID'd journey spine |
+| the end of the week | one journey working on real seeded data **on your laptop**, scored against their last ten real cases |
+| after you accept it | infrastructure, tickets, and parallel slices |
+
+Nothing before the last row needs a GitHub repo, a Neon account, a Vercel
+project, or a credit card. The first slice runs on a local database the kit
+starts for you.
+
+## What it will not do
+
+- **Turn an idea into an MVP over a weekend.** Product UI is locked by a hook
+  until you confirm the reframe. That is the point, not a bug.
+- **Decide what the product is.** It drafts; you confirm. Four hard stops.
+- **Let you pick a stack per customer.** Change
+  [docs/kit/recipe.yaml](docs/kit/recipe.yaml) once; clones compose from it.
+- **Ship auth on day one.** Seats and login wait until after you accept the clip,
+  alongside the rest of the infrastructure.
+
+---
+
+## How it is built
+
+Two things in one repository:
+
+1. **An FDE playbook** — agent skills that run the engagement: salvage the pile,
    watch the work, reframe the request, seed an eval set, ship one slice, then
    (only then) the factory.
 2. **A stack recipe** — [docs/kit/recipe.yaml](docs/kit/recipe.yaml). After U5,
-   compose downloads the latest Next.js / Clerk / Neon / shadcn / Eve within
-   pinned majors and applies kit overlays (feature folders, `@/env`, shadcn in
-   `packages/ui`). There is no second template repo to clone and strip.
+   compose scaffolds Next.js within pinned majors and applies kit overlays
+   (feature folders, `@/env`, shadcn in `packages/ui`, Drizzle + Neon). There is
+   no second template repo to clone and strip.
 
-You clone it, type `/next`, and name a **site** plus what they use today. It
-does the rest, stopping only when it needs something it cannot get for itself —
-a decision that is yours, or a fact that exists only at the counter.
-
-This is not "idea in, weekend MVP out." Product UI stays locked until the
-reframe exists. Procedure: [docs/playbook/fde-loop.md](docs/playbook/fde-loop.md).
+Procedure: [docs/playbook/fde-loop.md](docs/playbook/fde-loop.md).
 
 **Requires** [Bun](https://bun.sh) `1.4.x`. Anything else fails on install.
 
@@ -67,8 +130,10 @@ reframe exists. Procedure: [docs/playbook/fde-loop.md](docs/playbook/fde-loop.md
                   (not product UI)
   C  clip         compose from the recipe → ontology + spine → wave 0
                   seeds the eval set → one journey, working
+                  on a local database. no accounts, no keys, no spend.
        │
-       ▼  ✋ YOU LOOK AT IT. the only mandatory stop in the build.
+       ▼  ✋ YOU LOOK AT IT, and at its score against the ten real cases.
+       │     the only mandatory stop in the build.
        │
   F  factory      setup, Linear, parallel slices — only after they accept
        │
@@ -243,6 +308,7 @@ what is happening, not so you can drive them manually.
 |---|---|---|
 | `next` | The router. Works out what happens now and does it. | You type this |
 | `status` | A read-only glance: where things stand, what you owe. | You type this |
+| `eval` | Not a skill — `bun scripts/eval.ts`. Scores a slice against the last ten real cases. | At the checkpoint |
 | `salvage` | Mines prior art for facts — old repos, spreadsheets, photographs of forms. | Phase 0 |
 | `field-kit` | Writes your homework, then absorbs what you bring back. | Phase 2 |
 | `shape` | The interview. One question at a time → the design doc. | Phase 3 |
@@ -392,9 +458,30 @@ An agent saying "implemented, tests pass" is the failure that compounds across
 forty tickets. So Playwright captures traces and screenshots on success, not
 only on failure, and every PR carries proof.
 
-For screens behind login, `agent-browser` only accepts a URL — so there is a
-preview-only route that makes the signed-in state reachable by URL. It 404s in
-production, requires a secret, and signs in seeded users only.
+Tests and the score answer different questions, and the slice needs both. Tests
+say the code does what the spine specified. `bun scripts/eval.ts` replays the
+customer's **last ten real cases** and says whether the product would have caught
+what actually went wrong:
+
+```
+  pass  PBC-14  IAM list was current-state, 4 users deprovisioned before 6/30
+  skip  PBC-33  BCP test had never been performed
+        A missing control, not a defective artifact. Out of scope by kind.
+
+score: 4 of 10 real cases handled — 4 attempted, 6 out of this slice
+```
+
+A slice can be fully green and score 2 of 10. That is a finding for the
+checkpoint, not a merge blocker, so the score never gates a PR — it is what you
+show them instead of "it works". Cases live in `*.eval.ts` beside the code, and
+one the slice does not cover is `skip:` **with a reason**; a skip that quietly
+disappears reads as a pass.
+
+The first slice runs without auth, so its screens are reachable by URL and
+screenshot cleanly. Once seats land after the clip, screens behind login need a
+preview-only route that makes the signed-in state reachable by URL — 404 in
+production, secret-gated, seeded users only. **That route is not in the kit
+yet**; `PREVIEW_LOGIN_SECRET` and `SEED_USERS` are the hooks waiting for it.
 
 ### The stack is a recipe
 
@@ -443,16 +530,25 @@ bun install
 bun run dev
 bun run check-types && bun run check-boundaries && bun run check-tokens && bun run check-journeys && bun test
 bun run status && bun run check-drift
+bun scripts/eval.ts                       # score the slice against the last 10 real cases
 bun scripts/compose.mjs --add web
 bun run ui:add -- button
-bun run db generate && bun run db migrate && bun run db:seed
+bun run db generate && bun run db seed    # seed depends on migrate
 ```
 
 Lefthook runs Biome, boundaries, and affected typechecks on every commit.
 
 Env: copy `apps/web/.env.example` → `apps/web/.env.local`. Import `env` from
-`@/env`, never `process.env`. Neon needs `DATABASE_URL` (pooled) and
-`DATABASE_URL_UNPOOLED` (direct, for migrations).
+`@/env`, never `process.env`.
+
+**You do not need a database to start.** With `DATABASE_URL` unset, `packages/db`
+runs on PGlite — Postgres compiled to WASM, writing to `packages/db/.pglite/`,
+no daemon and no account. It refuses that fallback under `NODE_ENV=production`,
+so a deploy missing the variable fails loudly instead of serving an empty one.
+Clerk runs keyless in `next dev` the same way.
+
+Point it at Neon when you are ready: `DATABASE_URL` (pooled, for the app) and
+`DATABASE_URL_UNPOOLED` (direct, for `db push` / `db studio`).
 
 ## Branches
 

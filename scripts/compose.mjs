@@ -149,8 +149,14 @@ export function generateWebEnv({ auth, db, analytics, email, files }) {
     server.push("    DATABASE_URL_UNPOOLED: z.url().optional(),");
   }
   if (auth) {
-    server.push("    CLERK_SECRET_KEY: z.string().min(1),");
-    client.push("    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().min(1),");
+    // Optional for the same reason DATABASE_URL is: Clerk runs keyless in
+    // `next dev`, and /next defers keys until they accept the clip. Required
+    // here, the first page that obeys the env-module rule ("import env from
+    // @/env, never process.env") 500s on a product with no auth in it yet.
+    // Both keys, not just the secret — keyless means neither is set.
+    server.push("    /** Unset in development: `next dev` runs Clerk keyless. */");
+    server.push("    CLERK_SECRET_KEY: z.string().min(1).optional(),");
+    client.push("    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().min(1).optional(),");
     runtime.push(
       "    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,",
     );
