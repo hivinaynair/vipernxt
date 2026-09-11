@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Normalises a salvage dump so an agent can actually read it.
 //
-//   node scripts/salvage-inbox.mjs <source-dir-or-files...> [--inbox <dir>] [--rotate <deg>]
+//   node scripts/salvage-inbox.mjs <source-dir-or-files-or-zip...> [--inbox <dir>] [--rotate <deg>]
 //
 // HEIC/PDF/oversized images break agent sessions outright, so nothing is read
 // until it is a JPEG under the vision limits. Originals are never touched.
@@ -14,7 +14,16 @@
 // copied to raw/ and listed as not rendered — export a JPEG.
 
 import { execFileSync } from "node:child_process";
-import { copyFileSync, mkdirSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import {
+  copyFileSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
 import { basename, extname, join, resolve } from "node:path";
 
 const LONG_EDGE = 2000; // above this the many-image dimension cap starts rejecting
@@ -48,6 +57,32 @@ const pages = join(inbox, "pages");
 mkdirSync(raw, { recursive: true });
 mkdirSync(pages, { recursive: true });
 
+const SKIP_DIR = new Set(["raw", "pages", "__macosx"]);
+const unzipped = [];
+
+const listDir = (p) =>
+  readdirSync(p)
+    .filter((f) => !f.startsWith(".") && !SKIP_DIR.has(f.toLowerCase()) && f !== "INVENTORY.md")
+    .map((f) => join(p, f));
+
+const expand = (p) => {
+  if (statSync(p).isDirectory()) return listDir(p).flatMap(expand);
+  if (extname(p).toLowerCase() === ".zip") {
+    copyFileSync(p, join(raw, basename(p)));
+    const dir = mkdtempSync(join(tmpdir(), "pile-zip-"));
+    unzipped.push(dir);
+    try {
+      execFileSync("unzip", ["-q", "-o", p, "-d", dir], { stdio: "ignore" });
+    } catch {
+      return [];
+    }
+    return listDir(dir).flatMap(expand);
+  }
+  return [p];
+};
+
+const files = inputs.flatMap(expand);
+
 const IMAGE = new Set([
   ".heic",
   ".heif",
@@ -73,14 +108,6 @@ const TEXT = new Set([
   ".xls",
   ".docx",
 ]);
-
-const files = inputs.flatMap((p) =>
-  statSync(p).isDirectory()
-    ? readdirSync(p)
-        .filter((f) => !f.startsWith(".") && f !== "raw" && f !== "pages" && f !== "INVENTORY.md")
-        .map((f) => join(p, f))
-    : [p],
-);
 
 const sh = (cmd, cmdArgs) => execFileSync(cmd, cmdArgs, { stdio: ["ignore", "pipe", "pipe"] });
 
@@ -179,5 +206,6 @@ goes to \`field-kit\` as an open question, it does not get papered over.
 `;
 
 writeFileSync(join(inbox, "INVENTORY.md"), inventory);
+for (const dir of unzipped) rmSync(dir, { recursive: true, force: true });
 console.log(`${rows.length} page(s) → ${pages}`);
 console.log(`inventory → ${join(inbox, "INVENTORY.md")}`);

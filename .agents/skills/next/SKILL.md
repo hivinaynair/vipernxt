@@ -308,12 +308,15 @@ Ask **one** message, not an interview:
 
 Say this, almost verbatim:
 
-> Drop whatever you already have — photos, screenshots, a filled form, a CSV, last ten cases. Don't rename anything. "Nothing" on a line is a finding.
+> Drop whatever you already have — photos, screenshots, a filled form, a CSV, last ten cases. Don't rename. "Nothing" on a line is a finding.
 >
-> - **This machine:** `docs/research/salvage-inbox/`
-> - **This chat (cloud):** attach the files here. I will copy them into that folder.
+> 1. **This machine:** `docs/research/salvage-inbox/`
+> 2. **Cloud, already processed:** send `INVENTORY.md` and the `.transcript.md` files — not the photos.
+> 3. **Cloud, originals:** attach **one zip** of the folder. I will unpack it.
 
-Then run `node scripts/salvage-inbox.mjs` on whatever landed. Do not ask them to scp, open the VM desktop, or commit the photos. `raw/` and the page JPEGs stay gitignored.
+A Cloud Agent cannot see their Finder. Do not ask them to scp, open the VM desktop, attach forty files, or commit photos. Drive/Dropbox/Notion links are not the pile — auth and PII in a second cloud. Understand with originals belongs on a laptop; cloud mines transcripts.
+
+Then run `node scripts/salvage-inbox.mjs` on whatever landed (zips included). `raw/` and page JPEGs stay gitignored.
 
 Checklist: [salvage/pile.md](../salvage/pile.md).
 

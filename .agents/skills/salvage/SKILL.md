@@ -101,10 +101,9 @@ reconcile. Do not read six sources serially in one context.
 Most of the time there is no repo. There is a folder of photographs, a spreadsheet
 someone exported, screenshots of a desktop application, a wireframe drawn last month.
 
-**Ask for the pile before reading anything, and ask physically** — "send me anything you
-have" returns nothing; a folder path plus a checklist returns a dump. In a cloud chat
-they attach files; you copy them into `docs/research/salvage-inbox/`. Do not start mining
-a half-empty inbox.
+**Ask for the pile before reading anything, and ask physically** — name
+`docs/research/salvage-inbox/`. Cloud: transcripts if they already normalised,
+else one zip. Do not start mining a half-empty inbox.
 
 Read [pile.md](pile.md) for the checklist, the normaliser, and what each kind of artifact
 is worth. Do not improvise those from memory — the transcription rule in particular is

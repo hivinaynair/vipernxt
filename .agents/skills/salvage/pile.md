@@ -7,18 +7,20 @@ Most of the time there is no repo. There is a folder of photographs, a spreadshe
 someone exported, screenshots of a desktop application, a wireframe drawn last month.
 
 **Ask for the pile before reading anything, and ask physically.** "Send me anything you
-have" returns nothing. A checklist plus a **location** returns a folder. In chat, say
-`docs/research/salvage-inbox/` out loud.
+have" returns nothing. Name the folder. Prefer, in this order:
 
-**Cloud / this chat.** They cannot drop files onto the agent's disk. **Attach them to
-the message.** You copy attachments into `docs/research/salvage-inbox/` (or pass their
-saved paths to `salvage-inbox.mjs`) and normalise. Do not tell them to scp, to open the
-VM desktop, or to commit the photos. `raw/` and page JPEGs are gitignored.
+1. **This machine** — drop into `docs/research/salvage-inbox/`.
+2. **Cloud, already processed** — they ran the normaliser on a laptop; they send
+   `INVENTORY.md` and `pages/*.transcript.md` only. You mine text. Originals never
+   leave their disk.
+3. **Cloud, originals** — attach **one zip**. You run `salvage-inbox.mjs` on it.
+   Not forty chat attachments. Not scp. Not the VM desktop. Not a Drive link.
 
 > Drop whatever already exists. Any format, don't rename anything.
 >
-> **This machine:** `docs/research/salvage-inbox/`
-> **This chat:** attach the files here — I will put them in that folder.
+> 1. **This machine:** `docs/research/salvage-inbox/`
+> 2. **Already processed:** `INVENTORY.md` + transcripts, not photos
+> 3. **Cloud originals:** one zip of the folder
 >
 > - [ ] Photos of whatever they use today — the spreadsheet on screen, the register, the whiteboard
 > - [ ] One **filled-in** copy of every form or receipt — filled in, not blank

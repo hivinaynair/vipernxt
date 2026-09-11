@@ -174,16 +174,16 @@ register, a wireframe you drew last month, an exported CSV, an email thread.
 
 **Do not rename anything. Any format is fine.**
 
-**This machine (Codex/Cursor on a checkout you can see):** drop the files in
-`docs/research/salvage-inbox/`, then:
+**This machine:** drop the files in `docs/research/salvage-inbox/`, then:
 
 ```bash
 node scripts/salvage-inbox.mjs docs/research/salvage-inbox
 ```
 
-**This chat (Cloud Agent, or any host whose disk you cannot see):** attach the
-files to the message. The agent copies them into that folder and runs the same
-script. Do not scp. Do not try to open the VM's Finder.
+**Cloud:** a Cloud Agent cannot see that folder. Prefer they run the command above
+on a laptop and send only `INVENTORY.md` plus the `.transcript.md` files. If the
+originals have to travel, attach **one zip** of the folder — not forty photos in
+the thread, not a Drive link, not the VM desktop.
 
 That copies originals to `raw/`, writes readable JPEGs to `pages/`, and
 generates an `INVENTORY.md` with a line per page for you to caption. It exists
