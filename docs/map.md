@@ -39,8 +39,9 @@ is a view of this file — not a second spec.
 | `test/` | `bun test` preload only. Suites are colocated `*.test.ts(x)`. |
 | `docs/` | Product artifacts after `/next`. This map. Research notes. |
 | `.agents/skills/` | Playbook + vendor skills. Source of truth. Vendored from [saas-playbook](https://github.com/hivinaynair/saas-playbook). |
+| `.agents/agents/` | Parallel jobs (host-agnostic). Spawn: [README](../.agents/agents/README.md). |
 | `.cursor/skills/`, `.claude/skills/` | Symlinks to `.agents/skills/` so Cursor and Claude Code both see them. |
-| `.cursor/agents/` | Playbook subagents. Cursor Grok 4.6 only. |
+| `.cursor/agents/` | Cursor adapters (Grok 4.6, Task). Point at `.agents/agents/`; do not duplicate the job. |
 | `.cursor/hooks/` | UI gate + session digest. |
 | `.cursor/rules/` | Always-on playbook rule; feature, shadcn, testing, next-dev-loop. |
 
@@ -104,13 +105,13 @@ No `docs/product/state.yaml` means no engagement. Boilerplate may be edited. Thi
 | UI gate | [`.cursor/hooks/playbook.ts`](../.cursor/hooks/playbook.ts) `gate` | Denies Write/StrReplace/Delete under `apps/*/src/app` and `apps/*/src/features` until `shape` is `done` (or `ui_writes: allow`). Fail-closed. Missing state file = boilerplate, allowed. |
 | Branch gate | same file, `branch` | `beforeShellExecution`. Denies `git push` to `main`, `gh pr create --base main`, and `--force` without `--force-with-lease`. Releasing is the user's move. |
 | Session digest | same file, `session` | Runs `scripts/status.ts` and injects it. Cloud chats do not run `sessionStart`; the playbook rule still applies. |
-| `salvage-miner` | [`.cursor/agents/salvage-miner.md`](../.cursor/agents/salvage-miner.md) | One prior-art source. Facts, not structure. |
-| `pile-reader` | [`.cursor/agents/pile-reader.md`](../.cursor/agents/pile-reader.md) | One inbox page → citable transcript. Verbatim, untranslated. |
-| `domain-researcher` | [`.cursor/agents/domain-researcher.md`](../.cursor/agents/domain-researcher.md) | One research thread. Parent files the note. |
-| `spine-checker` | [`.cursor/agents/spine-checker.md`](../.cursor/agents/spine-checker.md) | Validates `docs/journeys/*.yaml`. |
-| `ui-gate-auditor` | [`.cursor/agents/ui-gate-auditor.md`](../.cursor/agents/ui-gate-auditor.md) | Reports gated-path edits. Does not fix. |
+| `salvage-miner` | [`.agents/agents/salvage-miner.md`](../.agents/agents/salvage-miner.md) | One prior-art source. Facts, not structure. |
+| `pile-reader` | [`.agents/agents/pile-reader.md`](../.agents/agents/pile-reader.md) | One inbox page → citable transcript. Verbatim, untranslated. |
+| `domain-researcher` | [`.agents/agents/domain-researcher.md`](../.agents/agents/domain-researcher.md) | One research thread. Parent files the note. |
+| `spine-checker` | [`.agents/agents/spine-checker.md`](../.agents/agents/spine-checker.md) | Validates `docs/journeys/*.yaml`. |
+| `ui-gate-auditor` | [`.agents/agents/ui-gate-auditor.md`](../.agents/agents/ui-gate-auditor.md) | Reports gated-path edits. Does not fix. |
 
-Subagents do not inherit skills. Pass `.agents/skills/<name>/SKILL.md` in the task prompt. Do not send playbook work to Gemini.
+Children do not inherit skills. Pass `.agents/skills/<name>/SKILL.md` in the prompt. How to start them depends on the harness — [`.agents/agents/README.md`](../.agents/agents/README.md). On Cursor, adapters in `.cursor/agents/` pin Grok 4.6; do not send playbook work to Gemini.
 
 Rules: [`.cursor/rules/playbook.mdc`](../.cursor/rules/playbook.mdc) (always), `next-features` (feature folders + ontology names), `db` (wave 0, deterministic seed), `shadcn`, `testing`, `next-dev-loop`.
 

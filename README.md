@@ -422,6 +422,7 @@ add them when a product actually asks.
 | `e2e/web` | Playwright |
 | `docs/` | Design doc, journeys, research — after `/next` |
 | `.agents/skills/` | The playbook. `.cursor/skills/` and `.claude/skills/` symlink here |
+| `.agents/agents/` | Parallel jobs. Cursor adapters in `.cursor/agents/` pin Grok; other hosts spawn a sibling |
 
 ## Commands
 

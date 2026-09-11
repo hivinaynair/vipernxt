@@ -73,5 +73,7 @@ Until `shape` is `done`, do not edit product UI, routes, or features
 file means no engagement yet — the boilerplate may be edited. Live sites belong
 on a throwaway clone, not in this kit.
 
-Parallel salvage/research on Cursor uses `.cursor/agents/` on **Cursor Grok 4.6**. Do not
-fan that work out to Gemini.
+Parallel jobs live in [`.agents/agents/`](.agents/agents/). Spawn per that README — Cursor
+Task, a Pi pane, a Claude session, or serially in this one. Skipping because the harness
+is not Cursor is a defect. On Cursor, [`.cursor/agents/`](.cursor/agents/) pins **Cursor
+Grok 4.6**; do not fan playbook work to Gemini.

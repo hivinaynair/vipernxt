@@ -53,6 +53,8 @@ Do not plan a screen for a script step. Do not plan an agent for a human-only st
 
 `who: site` on gathers only the counter can answer. Keep researching while those are open. Mode: **on-site** (live checklist) / **pile** (absorb inbox) / **trip** (`.docx`). Trip is not the default.
 
+Parallel miners are jobs in `.agents/agents/`, not a Cursor feature. Spawn per that README. If this harness cannot start a sibling, run them serially. Do not skip them.
+
 ## R — Reframe (shape)
 
 The design-doc **claim is the reframe**, not the feature they asked for. The **clip** is the smallest path that would move the U2 number. v1 is that clip. "Earn the right to do more" — do not spine the department.

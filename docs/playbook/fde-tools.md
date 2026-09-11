@@ -7,6 +7,7 @@ Do not add a vendor because a 2026 stack blog named it. Add one when a dry-run p
 | When | Open this | Not this |
 |---|---|---|
 | New engagement | `/next` → pile at `docs/research/salvage-inbox/` (or attach in cloud) | A kickoff deck, a Typeform, a Notion PRD as source of truth |
+| Parallel job | `.agents/agents/<name>.md` in a sibling (Cursor Task, Pi pane, serial here) | Skipping miners because this isn't Cursor; a second copy of the job in `.cursor/agents/` |
 | What they use today | Folder on disk, or cloud: transcripts / one zip | Forty files in chat, a Drive link, their idea paragraph |
 | Market after U1 | Pricing, changelog, 2–3★ of 2–3 named competitors | A feature matrix / scraping their menu into a backlog |
 | Last 10 cases | `docs/research/eval-set.md` (anonymized) | Invented seed people |
