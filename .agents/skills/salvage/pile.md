@@ -7,10 +7,18 @@ Most of the time there is no repo. There is a folder of photographs, a spreadshe
 someone exported, screenshots of a desktop application, a wireframe drawn last month.
 
 **Ask for the pile before reading anything, and ask physically.** "Send me anything you
-have" returns nothing. A checklist returns a folder:
+have" returns nothing. A checklist plus a **location** returns a folder. In chat, say
+`docs/research/salvage-inbox/` out loud.
 
-> Drop whatever already exists into `docs/research/salvage-inbox/` — any format, don't
-> rename anything:
+**Cloud / this chat.** They cannot drop files onto the agent's disk. **Attach them to
+the message.** You copy attachments into `docs/research/salvage-inbox/` (or pass their
+saved paths to `salvage-inbox.mjs`) and normalise. Do not tell them to scp, to open the
+VM desktop, or to commit the photos. `raw/` and page JPEGs are gitignored.
+
+> Drop whatever already exists. Any format, don't rename anything.
+>
+> **This machine:** `docs/research/salvage-inbox/`
+> **This chat:** attach the files here — I will put them in that folder.
 >
 > - [ ] Photos of whatever they use today — the spreadsheet on screen, the register, the whiteboard
 > - [ ] One **filled-in** copy of every form or receipt — filled in, not blank
@@ -67,4 +75,4 @@ facts/structure rule harder to hold, not easier.
 **What is missing is a finding.** "No photograph of what the customer walks away with"
 goes to `field-kit` as an open question. Never quietly fill the gap.
 
-**Keep `raw/` out of version control.** Photographs of a register hold real names.
+**Keep `raw/` and page images out of version control.** Photographs of a register hold real names. Transcripts and `INVENTORY.md` captions are what later phases cite.

@@ -49,3 +49,7 @@ lefthook-local.yml
 
 # Salvage originals — photographs of registers and receipts hold real names
 docs/research/salvage-inbox/raw/
+docs/research/salvage-inbox/pages/*.jpg
+docs/research/salvage-inbox/pages/*.jpeg
+docs/research/salvage-inbox/pages/*.png
+docs/research/salvage-inbox/pages/*.webp

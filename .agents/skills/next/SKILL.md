@@ -304,7 +304,18 @@ clone:
 Ask **one** message, not an interview:
 
 1. **Which site**, and **what they use today** (incumbent name, or paper / spreadsheet / WhatsApp).
-2. **Drop the pile** into `docs/research/salvage-inbox/` — the checklist in [salvage/pile.md](../salvage/pile.md). "Nothing" on a line is a finding.
+2. **Drop the pile.** Name the folder. Cloud cannot write there from Finder.
+
+Say this, almost verbatim:
+
+> Drop whatever you already have — photos, screenshots, a filled form, a CSV, last ten cases. Don't rename anything. "Nothing" on a line is a finding.
+>
+> - **This machine:** `docs/research/salvage-inbox/`
+> - **This chat (cloud):** attach the files here. I will copy them into that folder.
+
+Then run `node scripts/salvage-inbox.mjs` on whatever landed. Do not ask them to scp, open the VM desktop, or commit the photos. `raw/` and the page JPEGs stay gitignored.
+
+Checklist: [salvage/pile.md](../salvage/pile.md).
 
 An idea paragraph is optional and is a **claim**, recorded under `idea:`. Do not start
 shaping. `shape` owns that, after salvage has read the pile.

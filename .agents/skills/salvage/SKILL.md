@@ -102,8 +102,9 @@ Most of the time there is no repo. There is a folder of photographs, a spreadshe
 someone exported, screenshots of a desktop application, a wireframe drawn last month.
 
 **Ask for the pile before reading anything, and ask physically** — "send me anything you
-have" returns nothing; a checklist returns a folder. That request is one held item,
-`kind: gather`. Do not start mining a half-empty inbox.
+have" returns nothing; a folder path plus a checklist returns a dump. In a cloud chat
+they attach files; you copy them into `docs/research/salvage-inbox/`. Do not start mining
+a half-empty inbox.
 
 Read [pile.md](pile.md) for the checklist, the normaliser, and what each kind of artifact
 is worth. Do not improvise those from memory — the transcription rule in particular is

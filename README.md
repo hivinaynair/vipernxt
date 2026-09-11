@@ -172,13 +172,20 @@ a script that makes what you drop in actually readable by an agent.
 Scribbled notes, a spreadsheet, screenshots of the old software, photographs of a
 register, a wireframe you drew last month, an exported CSV, an email thread.
 
-**Do not rename anything. Any format is fine.** Then normalise it:
+**Do not rename anything. Any format is fine.**
+
+**This machine (Codex/Cursor on a checkout you can see):** drop the files in
+`docs/research/salvage-inbox/`, then:
 
 ```bash
-node scripts/salvage-inbox.mjs ~/Desktop/counter-photos
+node scripts/salvage-inbox.mjs docs/research/salvage-inbox
 ```
 
-That copies your originals to `raw/`, writes readable JPEGs to `pages/`, and
+**This chat (Cloud Agent, or any host whose disk you cannot see):** attach the
+files to the message. The agent copies them into that folder and runs the same
+script. Do not scp. Do not try to open the VM's Finder.
+
+That copies originals to `raw/`, writes readable JPEGs to `pages/`, and
 generates an `INVENTORY.md` with a line per page for you to caption. It exists
 because an iPhone photo is HEIC — which an agent cannot open at all — and a 4K
 screenshot is too large to read. If the text comes out sideways, re-run with
@@ -198,8 +205,9 @@ What is worth digging out:
 Saying "we don't have that" is a real answer — the absence is itself a finding.
 Say it rather than leaving a blank.
 
-> `raw/` is gitignored. Photographs of a register hold real names, and they are
-> not going into version control.
+> `raw/` and the page JPEGs are gitignored. Photographs of a register hold real
+> names, and they are not going into version control — especially not from a
+> cloud agent PR.
 
 ### What comes back from the field → `docs/product/intake/`
 

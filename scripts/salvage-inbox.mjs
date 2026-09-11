@@ -10,7 +10,8 @@
 //   <inbox>/pages/   normalised JPEGs, <= 2000px long edge, one per page for PDFs
 //   <inbox>/INVENTORY.md   one line per page, with a blank caption for the human
 //
-// macOS only for now: sips and qlmanage ship with the OS, so there is nothing to install.
+// macOS: sips. Linux (cloud agents): ffmpeg. HEIC that neither can read is
+// copied to raw/ and listed as not rendered — export a JPEG.
 
 import { execFileSync } from "node:child_process";
 import { copyFileSync, mkdirSync, readdirSync, statSync, writeFileSync } from "node:fs";
@@ -76,17 +77,40 @@ const TEXT = new Set([
 const files = inputs.flatMap((p) =>
   statSync(p).isDirectory()
     ? readdirSync(p)
-        .filter((f) => !f.startsWith("."))
+        .filter((f) => !f.startsWith(".") && f !== "raw" && f !== "pages" && f !== "INVENTORY.md")
         .map((f) => join(p, f))
     : [p],
 );
 
 const sh = (cmd, cmdArgs) => execFileSync(cmd, cmdArgs, { stdio: ["ignore", "pipe", "pipe"] });
 
+const has = (bin) => {
+  try {
+    execFileSync("which", [bin], { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 const toJpeg = (src, out) => {
-  const opts = ["-s", "format", "jpeg", "-Z", String(LONG_EDGE)];
-  if (rotate) opts.push("-r", String(rotate));
-  sh("sips", [...opts, src, "--out", out]);
+  if (has("sips")) {
+    const opts = ["-s", "format", "jpeg", "-Z", String(LONG_EDGE)];
+    if (rotate) opts.push("-r", String(rotate));
+    sh("sips", [...opts, src, "--out", out]);
+    return out;
+  }
+  if (!has("ffmpeg")) {
+    throw new Error("need sips (macOS) or ffmpeg (Linux) to render images");
+  }
+  const filters = [];
+  if (rotate === 90) filters.push("transpose=1");
+  if (rotate === 180) filters.push("transpose=1,transpose=1");
+  if (rotate === 270) filters.push("transpose=2");
+  filters.push(
+    `scale='min(${LONG_EDGE}\\,iw)':'min(${LONG_EDGE}\\,ih)':force_original_aspect_ratio=decrease`,
+  );
+  sh("ffmpeg", ["-y", "-i", src, "-vf", filters.join(","), "-q:v", "3", out]);
   return out;
 };
 
@@ -98,8 +122,16 @@ for (const src of files) {
 
   if (IMAGE.has(ext)) {
     const out = join(pages, `${stem}.jpg`);
-    toJpeg(src, out);
-    rows.push({ page: basename(out), from: basename(src), kind: "image" });
+    try {
+      toJpeg(src, out);
+      rows.push({ page: basename(out), from: basename(src), kind: "image" });
+    } catch {
+      rows.push({
+        page: "—",
+        from: basename(src),
+        kind: "image NOT RENDERED — export as JPEG",
+      });
+    }
   } else if (ext === ".pdf") {
     // qlmanage renders page 1 only; pdftoppm does every page when poppler is present.
     try {
