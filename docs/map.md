@@ -143,6 +143,9 @@ Declared merge bar ([`AGENTS.md`](../AGENTS.md)):
 bun run check-types && bun run check-boundaries && bun run check-tokens && bun run check-journeys && bun test
 ```
 
+`check-journeys` in that bar checks citations are real spine IDs. Whole-spine
+completeness is `bun run check-journeys -- --complete` (last slice / clip done).
+
 CI: [`.github/workflows/check.yml`](../.github/workflows/check.yml) on PRs and on `staging`/`main`. [`.github/workflows/migrate.yml`](../.github/workflows/migrate.yml) applies Drizzle on push to those branches. No journal yet = skip.
 
 ## Still open

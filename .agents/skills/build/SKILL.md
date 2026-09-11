@@ -56,11 +56,19 @@ is *your* process; regenerate a conflicted lockfile rather than hand-merging.
 
 1. Implement only this slice, in `apps/*/src/features/<slug>/`. Do not import
    another feature.
-2. Tests name the step: `it("J1.S3: …")`.
+2. Tests name the step: `it("J1.S3: …")`. Cite the steps this slice landed.
+   Later `features.serves` steps stay uncited until they are built.
 3. Merge bar before you offer a PR:
 
    ```sh
    bun run check-types && bun run check-boundaries && bun run check-tokens && bun run check-journeys && bun test
+   ```
+
+   `check-journeys` accepts real IDs. Do not pass `--complete` on a slice that
+   left later served steps unbuilt. The last slice of the clip does:
+
+   ```sh
+   bun run check-journeys -- --complete
    ```
 
 ## Hoisting
