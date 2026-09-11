@@ -1,4 +1,6 @@
 import { describe, expect, it } from "bun:test";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { nextEdges, render, validateSpine } from "./journey.ts";
 
 const base = {
@@ -224,5 +226,16 @@ describe("render", () => {
     });
     expect(md).toContain("| Step | Bucket |");
     expect(md).toContain("| `J1.S1` Propose | judgment |");
+  });
+});
+
+describe("kit examples", () => {
+  it("replace and wrap examples validate", () => {
+    const dir = join(import.meta.dir, "../.agents/skills/journeys");
+    for (const name of ["example.yaml", "example-wrap.yaml"]) {
+      const spine = Bun.YAML.parse(readFileSync(join(dir, name), "utf8"));
+      const { errors } = validateSpine(spine as Parameters<typeof validateSpine>[0]);
+      expect(errors, name).toEqual([]);
+    }
   });
 });

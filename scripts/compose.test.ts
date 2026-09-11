@@ -35,6 +35,7 @@ describe("compose", () => {
     expect(r.out).toContain("create-next-app@latest");
     expect(r.out).toContain("shadcn@latest");
     expect(r.out).toContain("eve@latest");
+    expect(r.out).toContain("--cwd packages/db");
     expect(r.out).toContain("aws-eu-central-1");
     expect(r.out).toContain("aws-ap-southeast-1");
     expect(r.out).toContain("feature-folders");
@@ -48,6 +49,7 @@ describe("compose", () => {
     expect(r.out).toContain("create-next-app@latest");
     expect(r.out).toContain("shadcn@latest");
     expect(r.out).toContain("@clerk/nextjs");
+    expect(r.out).toContain("--cwd apps/web");
     expect(r.out).not.toContain("eve@latest");
   });
 

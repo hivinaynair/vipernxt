@@ -1,9 +1,9 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 // Turns a field-research homework file into a .docx someone can actually type into,
 // and reads the filled copy back out as markdown.
 //
-//   node scripts/homework.mjs build docs/product/homework/02-site-visit.md
-//   node scripts/homework.mjs read  ~/Downloads/02-site-visit.docx
+//   bun scripts/homework.mjs build docs/product/homework/02-site-visit.md
+//   bun scripts/homework.mjs read  ~/Downloads/02-site-visit.docx
 //
 // The markdown stays the source of truth. The .docx is a render of it, so the homework
 // is edited in one place and never diverges from the file state.yaml points at.

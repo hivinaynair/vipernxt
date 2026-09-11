@@ -130,6 +130,23 @@ if (existsSync(RECIPE) && state.surfaces && state.surfaces.length > 0) {
   }
 }
 
+const COMPOSED = "docs/kit/composed.yaml";
+if (state.clone?.composed === "done" && existsSync(COMPOSED) && state.surfaces?.length) {
+  try {
+    const composed = Bun.YAML.parse(readFileSync(COMPOSED, "utf8")) as {
+      surfaces?: string[];
+    };
+    const have = new Set(composed.surfaces ?? []);
+    for (const s of state.surfaces) {
+      if (!have.has(s)) {
+        findings.push(`state.surfaces includes ${s} which is not in ${COMPOSED}`);
+      }
+    }
+  } catch {
+    // malformed composed.yaml is compose's job
+  }
+}
+
 // 6. Each spine against the design doc it claims to view, and its features.
 const spines = [...new Bun.Glob("docs/journeys/*.yaml").scanSync(".")];
 for (const path of spines) {

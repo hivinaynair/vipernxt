@@ -105,6 +105,7 @@ if (open.length > 0) {
 
 // Where we are.
 const phases = Object.entries(state.phases ?? {});
+const phaseOf = (name: string) => phases.find(([, p]) => p.name === name)?.[1];
 const done = phases.filter(([, p]) => p.status === "done").map(([, p]) => p.name ?? "");
 const now = phases.find(([, p]) => p.status === "in-progress" || p.status === "blocked");
 const upcoming = phases.find(([, p]) => p.status === "pending" && !p.optional);
@@ -119,11 +120,15 @@ if (phases.length > 0) {
   if (now) bits.push(`now: ${now[1].name}${now[1].status === "blocked" ? " (blocked)" : ""}`);
   if (upcoming) bits.push(`next: ${upcoming[1].name}`);
   out.push(bits.join(" · "));
-  if (
-    state.clone?.customized === "pending" &&
-    phases.find(([, p]) => p.name === "shape")?.status === "done"
-  ) {
+  if (state.clone?.customized === "pending" && phaseOf("shape")?.status === "done") {
     out.push("`/next` names the clone next.");
+  }
+  if (
+    state.clone?.customized === "done" &&
+    state.clone?.composed === "pending" &&
+    phaseOf("shape")?.status === "done"
+  ) {
+    out.push("`/next` composes the stack next — empty-path CLIs, then `--apply`.");
   }
   out.push("");
 }
@@ -137,7 +142,7 @@ if (deferred.length > 0) {
 }
 
 // The UI gate, only while it is closed.
-const shapeDone = phases.find(([, p]) => p.name === "shape")?.[1]?.status === "done";
+const shapeDone = phaseOf("shape")?.status === "done";
 const gated = state.ui_writes === "deny" || (state.ui_writes !== "allow" && !shapeDone);
 if (gated) {
   out.push("**Do not**");
