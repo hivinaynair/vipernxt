@@ -52,35 +52,100 @@ function objectBlock(lines) {
  *
  * Exported for the test; returns the keys it added.
  */
-export function withAppScripts(pkg) {
+export function withAppScripts(pkg, { scope = "@repo", surfaces = [], dbMajor = "^1.0.0-beta.22" } = {}) {
   const added = [];
   const scripts = { ...(pkg.scripts ?? {}) };
   if (!scripts["check-types"]) {
     scripts["check-types"] = "tsc --noEmit";
     added.push("check-types");
   }
-  return { pkg: { ...pkg, scripts }, added };
+
+  // create-next-app has no idea the composed workspace packages exist, so
+  // nothing in the app could import them.
+  const deps = { ...(pkg.dependencies ?? {}) };
+  const want = {};
+  if (surfaces.includes("ui")) want[`${scope}/ui`] = "workspace:*";
+  if (surfaces.includes("db")) {
+    want[`${scope}/db`] = "workspace:*";
+    want["server-only"] = "^0.0.1";
+    // Any query in the app needs the operators (eq, asc, sql) alongside the
+    // tables it imports from the db package.
+    want["drizzle-orm"] = dbMajor;
+  }
+  for (const [name, range] of Object.entries(want)) {
+    if (!deps[name]) {
+      deps[name] = range;
+      added.push(name);
+    }
+  }
+
+  return { pkg: { ...pkg, scripts, dependencies: deps }, added };
 }
 
-function ensureAppScripts(appDir) {
+/**
+ * PGlite ships a wasm binary it reads off disk. Bundled by Turbopack, its
+ * loader hands Node's fs a URL where a path is wanted and every query fails at
+ * runtime -- after the build succeeds, which is the worst place to find it.
+ *
+ * Exported for the test.
+ */
+export function withServerExternals(source) {
+  if (source.includes("@electric-sql/pglite")) return source;
+  const marker = "const nextConfig: NextConfig = {";
+  if (!source.includes(marker)) return source;
+  return source.replace(
+    marker,
+    `${marker}\n  /** PGlite reads its wasm off disk; bundling it breaks every query. */\n  serverExternalPackages: ["@electric-sql/pglite"],`,
+  );
+}
+
+/** The scope the clone was renamed to, read off a composed package. */
+function workspaceScope(root) {
+  for (const rel of ["packages/db/package.json", "packages/ui/package.json"]) {
+    const p = join(root, rel);
+    if (!existsSync(p)) continue;
+    const name = JSON.parse(readFileSync(p, "utf8")).name ?? "";
+    if (name.startsWith("@")) return name.split("/")[0];
+  }
+  return "@repo";
+}
+
+function ensureAppScripts(appDir, opts) {
   const pkgPath = join(appDir, "package.json");
   if (!existsSync(pkgPath)) {
     process.stderr.write(`warn: ${pkgPath} not found — run the empty-path CLI before --apply.\n`);
     return;
   }
   const before = JSON.parse(readFileSync(pkgPath, "utf8"));
-  const { pkg, added } = withAppScripts(before);
-  if (!added.length) return;
-  writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
-  process.stdout.write(`scripts ${pkgPath.replace(`${cwd}/`, "")} + ${added.join(", ")}\n`);
+  const { pkg: patched, added } = withAppScripts(before, opts);
+  if (added.length) {
+    writeFileSync(pkgPath, `${JSON.stringify(patched, null, 2)}\n`);
+    process.stdout.write(`package ${pkgPath.replace(`${cwd}/`, "")} + ${added.join(", ")}\n`);
+  }
+
+  if (opts?.surfaces?.includes("db")) {
+    const cfgPath = join(appDir, "next.config.ts");
+    if (existsSync(cfgPath)) {
+      const src = readFileSync(cfgPath, "utf8");
+      const out = withServerExternals(src);
+      if (out !== src) {
+        writeFileSync(cfgPath, out);
+        process.stdout.write(`config ${cfgPath.replace(`${cwd}/`, "")} + serverExternalPackages\n`);
+      }
+    }
+  }
 }
 
-function generateWebEnv({ auth, db, analytics, email, files }) {
+export function generateWebEnv({ auth, db, analytics, email, files }) {
   const server = [];
   const client = [];
   const runtime = [];
   if (db) {
-    server.push("    DATABASE_URL: z.url(),");
+    // Optional so the first slice runs before anyone has provisioned Neon.
+    // packages/db falls back to PGlite when it is unset, and refuses to do so
+    // when NODE_ENV=production — so a deploy missing this still fails loudly.
+    server.push("    /** Unset in development: packages/db falls back to local PGlite. */");
+    server.push("    DATABASE_URL: z.url().optional(),");
     server.push("    DATABASE_URL_UNPOOLED: z.url().optional(),");
   }
   if (auth) {
@@ -379,7 +444,10 @@ if (selected.includes("web")) {
 }
 
 if (selected.includes("web")) {
-  ensureAppScripts(join(cwd, catalog.web?.path ?? "apps/web"));
+  ensureAppScripts(join(cwd, catalog.web?.path ?? "apps/web"), {
+    scope: workspaceScope(cwd),
+    surfaces: selected,
+  });
 }
 
 setCloneFlag(cwd, "composed", "done");

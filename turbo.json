@@ -27,6 +27,12 @@
       "envMode": "loose",
       "passThroughEnv": ["DATABASE_URL", "DATABASE_URL_UNPOOLED"]
     },
+    "db:seed": {
+      "cache": false,
+      "envMode": "loose",
+      "dependsOn": ["db:migrate"],
+      "passThroughEnv": ["DATABASE_URL", "DATABASE_URL_UNPOOLED"]
+    },
     "db:push": {
       "cache": false,
       "envMode": "loose",

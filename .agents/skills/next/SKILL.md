@@ -172,10 +172,20 @@ open. Compose from [docs/kit/recipe.yaml](../../../docs/kit/recipe.yaml) —
 `--apply`. Do not free-hand a Next tree. They do not
 type `/customize`. Do not run `setup.sh` under the boilerplate name.
 
-**Setup is not on the path to the clip.** Use `.env.local` if keys already exist. If
-database or auth keys are missing, that is one `who: fde` gather — not the nine-step
-provision. GitHub, Vercel, Linear wait until they accept the slice (`clone.setup` /
-`clone.tickets` leave `deferred`).
+**Setup is not on the path to the clip.** Use `.env.local` if keys already exist.
+**Missing database keys are not a reason to stop.** With `DATABASE_URL` unset,
+`packages/db` runs on PGlite — Postgres compiled to WASM, writing to
+`packages/db/.pglite/`, no daemon and no provisioning. Generate and migrate against it:
+
+```sh
+bun run db generate && bun run db migrate && bun --cwd packages/db run db:seed
+```
+
+Clerk runs keyless in `next dev`. So build wave 0 and the first slice on the fallback
+and let them look at it. Only a key they alone hold — a third-party API the clip
+genuinely calls — is a `who: fde` gather, and even then it is one gather, not the
+nine-step provision. GitHub, Vercel, Neon and Linear wait until they accept the slice
+(`clone.setup` / `clone.tickets` leave `deferred`).
 
 ## The factory
 

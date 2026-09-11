@@ -1,3 +1,3 @@
-export { db } from "./client.js";
-export * from "./schema.js";
-export { SEED_NOW, SEED_USERS, seed, seedDate } from "./seed.js";
+export { db } from "./client";
+export * from "./schema";
+export { SEED_NOW, SEED_USERS, seed, seedDate } from "./seed";

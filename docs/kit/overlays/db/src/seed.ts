@@ -1,6 +1,6 @@
 import "server-only";
 
-import { db } from "./client.js";
+import { db } from "./client";
 
 /**
  * Deterministic seed data.

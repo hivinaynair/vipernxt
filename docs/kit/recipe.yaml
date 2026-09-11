@@ -59,13 +59,11 @@ surfaces:
     host: neon
     orm: drizzle
     serverOnly: true
-    # No official monorepo CLI. Overlay copies the kit's packages/db skeleton
-    # and `bun add`s drizzle-orm / pg / server-only at latest within majors.
-    command: bun add
-    args:
-      - drizzle-orm
-      - pg
-      - server-only
+    # No scaffold command and no `bun add`. The overlay's package.json already
+    # declares every dependency at a pinned version. `bun add drizzle-orm`
+    # resolved `latest` instead and rewrote the pin to the 0.45 line, while
+    # drizzle-kit stayed on 1.x from devDependencies — so every fresh clone got
+    # a drizzle-kit that could not load drizzle-orm. `bun install` is enough.
   agent:
     path: apps/agent
     command: bunx eve@latest

@@ -253,7 +253,7 @@ describe("withAppScripts", () => {
       name: "web",
       scripts: { dev: "next dev", build: "next build", lint: "biome check" },
     });
-    expect(added).toEqual(["check-types"]);
+    expect(added).toContain("check-types");
     expect(pkg.scripts["check-types"]).toBe("tsc --noEmit");
     expect(pkg.scripts.dev).toBe("next dev");
     expect(pkg.name).toBe("web");
@@ -285,5 +285,91 @@ describe("surface deps", () => {
     expect(out).toContain("@t3-oss/env-nextjs zod");
     expect(out).not.toContain("@clerk/nextjs");
     expect(out).not.toMatch(/bun add --cwd apps\/web workflow/);
+  });
+});
+
+describe("generateWebEnv", () => {
+  test("DATABASE_URL is optional so the first slice runs before Neon exists", async () => {
+    const { generateWebEnv } = await import("./compose.mjs");
+    const out = generateWebEnv({ auth: true, db: true });
+    expect(out).toContain("DATABASE_URL: z.url().optional()");
+    // Required would make a keyless dev run impossible; packages/db refuses the
+    // PGlite fallback under NODE_ENV=production, so a deploy still fails loudly.
+    expect(out).not.toMatch(/DATABASE_URL: z\.url\(\),/);
+  });
+
+  test("no db surface means no DATABASE_URL at all", async () => {
+    const { generateWebEnv } = await import("./compose.mjs");
+    const out = generateWebEnv({ auth: true, db: false });
+    expect(out).not.toContain("DATABASE_URL");
+  });
+});
+
+describe("db surface", () => {
+  test("installs the PGlite fallback alongside the Neon driver", () => {
+    const out = execFileSync("bun", [script, "--add", "db"], { encoding: "utf8" });
+    expect(out).toContain(
+      "bun add --cwd packages/db drizzle-orm pg server-only @electric-sql/pglite",
+    );
+  });
+});
+
+describe("app wiring", () => {
+  test("depends on the workspace packages compose just created", async () => {
+    const { withAppScripts } = await import("./compose.mjs");
+    const { pkg } = withAppScripts({ name: "web" }, { scope: "@acme", surfaces: ["web", "ui", "db"] });
+    expect(pkg.dependencies["@acme/ui"]).toBe("workspace:*");
+    expect(pkg.dependencies["@acme/db"]).toBe("workspace:*");
+    expect(pkg.dependencies["server-only"]).toBe("^0.0.1");
+    // Queries in the app need the operators, not just the tables.
+    expect(pkg.dependencies["drizzle-orm"]).toBeTruthy();
+  });
+
+  test("no db surface means no db dependency", async () => {
+    const { withAppScripts } = await import("./compose.mjs");
+    const { pkg } = withAppScripts({ name: "web" }, { scope: "@acme", surfaces: ["web", "ui"] });
+    expect(pkg.dependencies["@acme/db"]).toBeUndefined();
+    expect(pkg.dependencies["server-only"]).toBeUndefined();
+  });
+
+  test("never clobbers a version the CLI already chose", async () => {
+    const { withAppScripts } = await import("./compose.mjs");
+    const { pkg } = withAppScripts(
+      { name: "web", dependencies: { "server-only": "0.0.1-custom" } },
+      { scope: "@acme", surfaces: ["db"] },
+    );
+    expect(pkg.dependencies["server-only"]).toBe("0.0.1-custom");
+  });
+});
+
+describe("withServerExternals", () => {
+  const config = [
+    'import type { NextConfig } from "next";',
+    "",
+    "const nextConfig: NextConfig = {",
+    "  reactCompiler: true,",
+    "};",
+    "",
+    "export default nextConfig;",
+  ].join("\n");
+
+  test("marks PGlite external so its wasm is not bundled", async () => {
+    const { withServerExternals } = await import("./compose.mjs");
+    const out = withServerExternals(config);
+    expect(out).toContain('serverExternalPackages: ["@electric-sql/pglite"]');
+    // Whatever create-next-app chose stays.
+    expect(out).toContain("reactCompiler: true");
+  });
+
+  test("is idempotent", async () => {
+    const { withServerExternals } = await import("./compose.mjs");
+    const once = withServerExternals(config);
+    expect(withServerExternals(once)).toBe(once);
+  });
+
+  test("leaves an unrecognised config alone rather than corrupting it", async () => {
+    const { withServerExternals } = await import("./compose.mjs");
+    const odd = "export default { reactCompiler: true };";
+    expect(withServerExternals(odd)).toBe(odd);
   });
 });

@@ -48,6 +48,9 @@ yarn-error.log*
 lefthook-local.yml
 
 # Salvage originals — photographs of registers and receipts hold real names
+# Local dev database (PGlite fallback when DATABASE_URL is unset)
+packages/db/.pglite/
+
 docs/research/salvage-inbox/raw/
 docs/research/salvage-inbox/pages/*.jpg
 docs/research/salvage-inbox/pages/*.jpeg

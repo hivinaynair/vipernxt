@@ -12,13 +12,14 @@ const commands = {
   migrate: "db:migrate",
   push: "db:push",
   studio: "db:studio",
+  seed: "db:seed",
 };
 
 const command = process.argv[2];
 const task = command ? commands[command] : undefined;
 
 if (!task) {
-  console.error("Usage: bun run db <generate|migrate|push|studio>");
+  console.error("Usage: bun run db <generate|migrate|push|studio|seed>");
   process.exit(1);
 }
 
