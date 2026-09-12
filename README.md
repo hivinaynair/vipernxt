@@ -1,6 +1,6 @@
 # ViperNxt
 
-**An agent playbook and a stack, for building software with one real customer.**
+**An agent playbook and a stack, for building software for real customers.**
 
 It starts where the work is: somebody told you they have a problem. A person,
 who said it, whose name you can write down. From there it reads what they
@@ -178,7 +178,7 @@ beats uncited. `--complete` is what acceptance runs.
 
 ```mermaid
 flowchart TD
-    W0["<b>wave 0</b> — schema + anonymized seed<br/>every table lands before any feature ticket"]
+    W0["<b>wave 0</b> — schema + the ten real cases, seeded<br/>lands before any feature ticket"]
     W0 --> A1["agent · features/a"]
     W0 --> A2["agent · features/b"]
     W0 --> A3["agent · features/c"]
@@ -198,6 +198,23 @@ Wave 0 first is what makes parallel building safe — migrations are done, so no
 two agents fight over the database. Features live in `src/features/<slug>/` and
 cannot import each other, so agents in different folders physically cannot
 collide. Anything touching routes, `shared/`, packages or schema runs alone.
+
+**Seeding is the schema test.** You cannot know every field up front, so wave 0
+does not try: it lands the tables the first slice's steps actually touch, then
+loads **the ten real cases into them**. A case that will not fit is a model that
+is wrong, and you find that out on day one rather than at ticket forty. In
+practice it is the awkward ones that teach you — a payment that arrived with no
+bill needs a state nobody drew; an invoice that arrived twice needs an identity
+nobody defined. Ten real rows surface both faster than any amount of modelling.
+
+Fields are not invented either. They come off artifacts that already exist — and
+a **filled-in** form beats a blank one, because a column everyone leaves empty is
+a field to drop and something written in the margin is a field that is missing.
+Then every field has to trace to a journey step that shows or captures it; one
+that does not is a field you made up.
+
+Migrations are additive, so later waves add. Adding a column is cheap; reshaping
+around a case you never seeded is not.
 
 Journey-level feedback goes back to the spine, never absorbed quietly into a
 diff — otherwise code and plan drift and everything after inherits it.

@@ -220,13 +220,25 @@ surface, launched together and merged before the next one starts.
 
 | Wave | Contains |
 |---|---|
-| 0 | Schema and seed data. Every table the ontology names, landed before any feature slice |
+| 0 | Schema and seed data. The tables the first slice's steps touch, landed before any feature slice, with the eval set seeded into them |
 | 1..n | Feature slices, at most **five agents at once**, one per feature folder |
 
 Wave 0 is what makes the rest safe. If all migrations land first, feature slices never
 write one, and parallel merges cannot collide on the database. Seed data ships with it —
 deterministic, fixed ids, frozen dates. Empty tables make both the review and
 `before-and-after` worthless.
+
+**Wave 0 is a lock, not an oracle.** It does not have to predict the whole domain; it has
+to stop two agents migrating at once. So land what the first slice's steps touch, not
+every table the ontology names — speculative tables are the ones nothing exercises, and
+the ones you get wrong.
+
+**Seeding the eval set is the schema test.** Load the ten real cases before any feature
+slice starts. A case that will not fit is a model that is wrong, and the awkward cases are
+the informative ones — the payment with no bill needs a state nobody drew, the document
+that arrived twice needs an identity nobody defined. Hold an item if a case cannot be
+represented; do not widen a column to make it fit quietly. Migrations are additive, so
+later waves add.
 
 Feature folders may not import each other, so agents in different folders cannot collide.
 Everything else is shared surface — `src/app`, `src/shared`, `packages/*`, the schema, any
