@@ -26,7 +26,7 @@ A document nobody reads cost more than it was worth.
 nothing and runs no phase.
 
 The engagement order is [docs/playbook/fde-loop.md](../../../docs/playbook/fde-loop.md)
-(understand → reframe → probe → clip → factory). Why: [docs/research/fde-workflow.md](../../../docs/research/fde-workflow.md).
+(understand → reframe → clip → factory → generalize). Why: [docs/research/fde-workflow.md](../../../docs/research/fde-workflow.md).
 **Do not mark `shape` done, and do not write product UI, until U5 exists** — a reframe
 they confirmed: outcome number, who has the pain, the real problem, and one sentence
 why the obvious build is wrong.
@@ -139,34 +139,25 @@ site, a pile, or "what they use today" is an **engagement** — do not ask.
 
 Running a six-phase pipeline over "add a column" is a failure, not thoroughness.
 
-### An idea with no site
+### No customer, no project
 
-Someone describes a product and names no customer. This is **not** an engagement
-yet, and calling it one is how the loop gets run against nobody.
+Someone describes a product and names nobody who has the problem. This is **not
+an engagement**, and calling it one is how the loop gets run against nobody.
 
-Set `size: idea`. Then:
+There is no route for it. Say so plainly and hold one `gather`, `who: fde`:
 
-- **Phase 0 runs** as a category scan — who already sells this, at what price, what
-  the current paid version does. Cite it like any salvage.
-- **Phase 1 may run.**
-- **Phases 2 onward do not open.** There is no site, so there is no homework, no
-  last-ten-cases, and therefore no eval set. Without an eval set the first slice
-  cannot be scored, which is the whole checkpoint. Do not shape. Do not write a
-  design doc. `check-drift` fails if you do.
-- Hold **one** `gather`, `who: fde`: who is the customer, and what do they use
-  today. Finding them is the FDE's job, not a product decision.
+> Who told you they have this problem, and what do they use today?
 
-There are exactly two ways out:
+Not a market, not a persona, not a segment — **a person, who said it, whose name
+you can write down.** Salvage may run as a category scan while you go and find
+them; nothing past it opens. `check-drift` fails on any site phase that is not
+`pending` while `engagement.site` is empty.
 
-| Exit | Do this |
-|---|---|
-| They name a site | Set `size: engagement`, record `engagement.site` and `replacing`, ask for the pile. The phases open. |
-| There is no customer yet, or the category already sells it | Record `outcome:` with the reason and stop. |
-
-**Stopping is a real result.** If seven vendors already ship the idea, saying so is
-the finding — the same call salvage makes when the incumbent already ships the
-feature they asked for. An engagement parked with a reason is honest; one left
-`blocked` forever looks like it is waiting on a slow customer.
+**Stopping is a real result.** If the category already sells this, or there is
+nobody to name, record `outcome:` with the reason and stop. That is the same call
+salvage makes when the incumbent already ships the feature they asked for. An
+engagement parked with a reason is honest; one left `blocked` forever looks like
+it is waiting on a slow customer.
 
 ## Phases
 
@@ -182,6 +173,7 @@ feature they asked for. An engagement parked with a reason is honest; one left
 | 5b | Visual direction | `design-system` | them, optional, any time |
 | 4.5 | Publish to Linear | `linear-sync` | you — **after** they accept the first slice |
 | 6 | Build | `plan` then `build` in waves; cite journey IDs; `prototype` when a component is open | you |
+| 7 | Generalize | optional, and only after a site is live — [fde-loop.md](../../../docs/playbook/fde-loop.md) G1–G4. Does this become a product? | you, then three sites |
 
 The week-one path is [fde-loop.md](../../../docs/playbook/fde-loop.md). Understand
 (U1–U5) before shape. Seed data **is** the eval set (last 10 real cases), and

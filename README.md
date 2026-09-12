@@ -50,18 +50,20 @@ the customer asked for the tracker.
 
 ```mermaid
 flowchart TD
-    IN["a site + what they use today"] --> N["/next"]
-    N --> U["<b>U — understand</b><br/>salvage the pile · incumbent gate<br/>watch the work · last 10 cases → eval set"]
+    IN["somebody told you<br/>they have a problem"] --> N["/next"]
+    N --> U["<b>U — understand</b><br/>salvage the pile · incumbent gate · watch the work<br/>last 10 cases → eval set · count the baseline"]
     U --> G1{{"✋ they confirm the reframe"}}
     G1 --> R["<b>R — reframe</b><br/>the claim <i>is</i> the design doc"]
-    R --> P["<b>P — probe</b> (optional)<br/>replay the eval set, count the baseline"]
-    P --> C["<b>C — clip</b><br/>compose → ontology + spine → wave 0<br/>one journey working, on a local database"]
+    R --> C["<b>C — clip</b> · the one slice that moves the number<br/>compose → ontology + spine → wave 0<br/>one journey working, on a local database"]
     C --> G2{{"✋ you look at it,<br/>and at its score"}}
-    G2 --> F["<b>F — factory</b><br/>setup · Linear · parallel slices"]
+    G2 --> F["<b>F — factory</b> · the rest, built in parallel<br/>setup · Linear · parallel slices"]
     F --> REL["review PRs → staging → main"]
+    REL --> G3{{"✋ does this become<br/>a product?"}}
+    G3 --> G["<b>G — generalize</b> · optional<br/>three sites, same pain, somebody paid"]
 
     style G1 fill:#fde68a,stroke:#b45309,color:#000
     style G2 fill:#fde68a,stroke:#b45309,color:#000
+    style G3 fill:#fde68a,stroke:#b45309,color:#000
 ```
 
 | After | You have |
@@ -71,6 +73,7 @@ flowchart TD
 | a day after that | a named clone, a composed stack, the domain model in their vocabulary, an ID'd journey spine |
 | end of the week | one journey working on real seeded data **on your laptop**, scored against their last ten cases |
 | after you accept it | infrastructure, tickets, parallel slices |
+| later, if you want | the question of whether this becomes a product — asked with a live site behind you, not a guess up front |
 
 Nothing before the last row needs a GitHub repo, a Neon account, a Vercel
 project, or a credit card. Procedure:
@@ -92,8 +95,37 @@ Gather stops need real-world material — drop it per
 [docs/inbox.md](docs/inbox.md). While you are out, the agent keeps researching
 whatever does not depend on you.
 
-**It will not** turn an idea into a weekend MVP, decide what the product is, let
-you pick a stack per customer, or ship auth on day one.
+**It will not** start from an idea nobody has asked for, decide what the product
+is, let you pick a stack per customer, or ship auth on day one.
+
+**You need a person, not an idea.** Somebody who told you they have this problem,
+whose name you can write down. No name and nothing past the category scan opens —
+`check-drift` enforces it. That is the point: the fastest way to waste a year is
+to build something well for a customer who does not exist.
+
+## One customer first. A product only if it earns it.
+
+Every engagement is built for one customer. **G — generalize** is the question
+you are allowed to ask once that customer is actually using the thing: does this
+become a product?
+
+There is no flag for it, and you do not declare it up front — that would be a
+guess about the future, and the loop refuses those everywhere else. You enter G
+when you want to, with a working site behind you.
+
+It exists to prevent one specific year-long mistake: the clip works at one site,
+you generalize from a sample of one, and a year later two people use it. The site
+was not wrong. **The sample was.**
+
+| | What it asks |
+|---|---|
+| G1 | Is this site typical? A design partner excited about technology is the tail of the distribution, not the middle |
+| G2 | The same pain, named independently, at three sites — **at least one of them boring** |
+| G3 | Price evidence, not enthusiasm: a deposit, an LOI, or a cheaper thing they already cancelled. "Nice to have" is a no |
+| G4 | What in the code was theirs, and what generalizes? |
+
+If it fails, record why and stop. **One tool for one customer is a finished
+product, not a failed SaaS.**
 
 ## The journey spine
 

@@ -6,9 +6,8 @@ committed, because cloud agents get a fresh clone and nothing else.
 ```yaml
 product: acme
 started: 2026-09-11
-size: engagement           # engagement (default) | idea | new-feature | small-change
+size: engagement           # engagement (default) | new-feature | small-change
                            # new-product is an alias of engagement
-                           # idea = a claim with no site; phases 2+ stay shut
 
 engagement:
   site: North depot
@@ -139,10 +138,12 @@ vs **Waiting on the site**. "Go and find a customer" is `kind: gather`, `who: fd
 it is a fact about the real world and finding it is the FDE's job. There is no third
 persona.
 
-**`size: idea`.** A claim with no site. Phase 0 may run as a category scan; phases 2
-and later stay `pending` and `shape` may not be `done`. `check-drift` fails on an idea
-that has been shaped, because a design doc written against nobody is the failure the
-whole loop exists to prevent. Leaving `size:` blank is not the same thing — set it.
+**`engagement.site` is the entry condition.** Somebody named told you they have the
+problem. Without it, phase 0 may run as a category scan and nothing past it opens:
+`check-drift` fails on any of `field`, `shape`, `journeys`, `build` that is not
+`pending` while the site is empty, because no customer means no last-ten-cases, which
+means no eval set, which means there is nothing to score a slice against. A design doc
+written against nobody is the failure the whole loop exists to prevent.
 
 **`outcome:`.** Set only when the engagement stops for good: `parked` (no customer, or
 not now) or `buy-instead` (the category already sells it). Always with a `why`. An
@@ -155,5 +156,5 @@ If `idea:` contradicts it, rewrite `idea:` or set `idea_outdated: true`.
 **`ui_writes`.** Optional. When omitted, a Cursor hook denies writes under
 `apps/*/src/app` and `apps/*/src/features` until `shape` is `done`. Set
 `ui_writes: allow` to open that tree early, or `ui_writes: deny` to keep it closed
-after shape. No state file = boilerplate, not gated. A **probe** (eval replay,
-baseline count) is not product UI — keep it out of those trees.
+after shape. No state file = boilerplate, not gated. An **instrument** (eval replay,
+baseline count — U4) is not product UI — keep it out of those trees.

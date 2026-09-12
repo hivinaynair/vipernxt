@@ -130,22 +130,12 @@ const upcoming = phases.find(([, p]) => p.status === "pending" && !p.optional);
 if (phases.length > 0) {
   out.push("**Where we are**");
   const bits: string[] = [];
-  if (state.size === "idea") {
-    bits.push("idea — no site named, so this is not an engagement yet");
-  }
   if (state.engagement?.site) bits.push(`site: ${state.engagement.site}`);
   if (state.clip?.kind) bits.push(`clip: ${state.clip.kind}`);
   if (state.surfaces?.length) bits.push(`surfaces: ${state.surfaces.join(", ")}`);
   if (done.length > 0) bits.push(`done: ${done.join(", ")}`);
   if (now) bits.push(`now: ${now[1].name}${now[1].status === "blocked" ? " (blocked)" : ""}`);
-  // On the idea route phases 2+ are shut, so naming one as "next" tells the
-  // agent to run the very step the route forbids. The next move is the exit.
-  const SITE_PHASES = new Set(["field", "shape", "journeys", "build"]);
-  if (state.size === "idea" && SITE_PHASES.has(upcoming?.[1].name ?? "")) {
-    bits.push("next: name a site, or record `outcome:` and stop");
-  } else if (upcoming) {
-    bits.push(`next: ${upcoming[1].name}`);
-  }
+  if (upcoming) bits.push(`next: ${upcoming[1].name}`);
   out.push(bits.join(" · "));
   if (state.clone?.customized === "pending" && phaseOf("shape")?.status === "done") {
     out.push("`/next` names the clone next.");

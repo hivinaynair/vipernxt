@@ -40,7 +40,7 @@ type Spine = { source?: string; features?: Feature[] };
 const STATE = "docs/product/state.yaml";
 const RECIPE = "docs/kit/recipe.yaml";
 const CLIP_KINDS = new Set(["replace", "wrap"]);
-const SIZES = new Set(["engagement", "new-product", "idea", "new-feature", "small-change"]);
+const SIZES = new Set(["engagement", "new-product", "new-feature", "small-change"]);
 const OUTCOME_KINDS = new Set(["parked", "buy-instead"]);
 /** Phases that need a site: there is no homework and no eval set without one. */
 const SITE_PHASES = new Set(["field", "shape", "journeys", "build"]);
@@ -107,31 +107,26 @@ if (state.idea_outdated === true) {
 
 const shapePhase = Object.values(state.phases ?? {}).find((p) => p.name === "shape");
 
-// 5a. Sizing, and the idea route. A design doc written against nobody is the
-// failure the whole loop exists to prevent, so this is a hard drift.
+// 5a. Sizing. A design doc written against nobody is the failure the whole loop
+// exists to prevent, so this is a hard drift.
 if (state.size !== undefined && !SIZES.has(state.size)) {
-  findings.push(
-    `size is "${state.size}" — use ${[...SIZES].join(", ")}`,
-  );
+  findings.push(`size is "${state.size}" — use ${[...SIZES].join(", ")}`);
 }
-// The failure this guards, stated without relying on `size` being filled in:
-// a confirmed claim needs a confirmed customer. Shape is where that is decided.
+// The entry condition, enforced directly rather than through a mode: somebody
+// named told you they have a problem. Without a site there is no homework, no
+// last-ten-cases and therefore no eval set, so there is nothing to score a slice
+// against — every phase below depends on one existing.
 if (shapePhase?.status === "done" && !(state.engagement?.site ?? "").trim()) {
   findings.push(
     "phase shape is done but no engagement.site is named — a design doc confirmed by nobody is not confirmed",
   );
 }
-if (state.size === "idea") {
-  if (state.engagement?.site) {
-    findings.push(
-      `size is idea but engagement.site is "${state.engagement.site}" — that is an engagement`,
-    );
-  }
+if (!(state.engagement?.site ?? "").trim()) {
   for (const [key, phase] of Object.entries(state.phases ?? {})) {
     if (!SITE_PHASES.has(phase.name ?? "")) continue;
     if (phase.status && phase.status !== "pending") {
       findings.push(
-        `size is idea but phase ${key} (${phase.name}) is ${phase.status} — no site means no eval set, so there is nothing to score a slice against`,
+        `phase ${key} (${phase.name}) is ${phase.status} but no engagement.site is named — no customer means no eval set, so there is nothing to score a slice against`,
       );
     }
   }
