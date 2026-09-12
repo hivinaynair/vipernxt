@@ -521,9 +521,9 @@ does not ship Next — compose after U5.
 
 | Path | Role |
 |---|---|
-| `apps/` | Empty until compose. Then `web` with `src/app` / `src/features` / `src/shared` |
-| `packages/` | Empty until compose. Then `ui` (shadcn) and `db` (Drizzle + Neon) |
-| `e2e/` | Empty until compose |
+| `apps/` | Not in the tree until compose. Then `web` with `src/app` / `src/features` / `src/shared` |
+| `packages/` | Not in the tree until compose. Then `ui` (shadcn) and `db` (Drizzle + Neon) |
+| `e2e/` | Not in the tree until compose |
 | `docs/kit/` | Stack recipe + overlays. Compose reads this. |
 | `docs/` | Design doc, journeys, research — after `/next` |
 | `.agents/skills/` | The playbook (phases and child jobs). `.cursor/skills/` and `.claude/skills/` symlink here. Cursor Task adapters in `.cursor/agents/` pin Grok |
