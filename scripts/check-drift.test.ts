@@ -67,13 +67,15 @@ describe("check-drift", () => {
     mkdirSync(join(dir, "docs/plans"), { recursive: true });
     writeFileSync(
       join(dir, "docs/product/state.yaml"),
-      `product: demo\nengagement:\n  site: North depot\nclone:\n  tickets: deferred\nphases:\n  6: { name: build, status: in-progress }\n`,
+      `product: demo\nengagement:\n  site: North depot\n  baseline: "6 days"\neval_set: docs/research/eval-set.md\nclone:\n  tickets: deferred\nphases:\n  6: { name: build, status: in-progress }\n`,
     );
     writeFileSync(
       join(dir, "docs/journeys/demo.yaml"),
       `source: docs/plans/demo-design.md\nfeatures:\n  - id: F1\n    title: Clip\n    serves: [J1.S1]\n`,
     );
     writeFileSync(join(dir, "docs/plans/demo-design.md"), "# demo\n");
+    mkdirSync(join(dir, "docs/research"), { recursive: true });
+    writeFileSync(join(dir, "docs/research/eval-set.md"), "# cases\n");
     writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "demo" }));
     const r = run(dir);
     expect(r.code).toBe(0);
@@ -146,6 +148,37 @@ describe("the entry condition", () => {
       `product: demo\nphases:\n  0: { name: salvage, status: blocked }\n  1: { name: research, status: done }\n  3: { name: shape, status: pending }\n`,
     );
     expect(r.out).not.toContain("no engagement.site is named");
+  });
+
+  test("a placeholder reframe does not count as confirmed", () => {
+    const r = state(
+      `product: demo\nengagement:\n  site: North depot\nreframe: PENDING — not written yet\nphases:\n  3: { name: shape, status: done }\n`,
+    );
+    expect(r.code).toBe(1);
+    expect(r.out).toContain("reads as a placeholder");
+  });
+
+  test("build without an eval set has nothing to score against", () => {
+    const r = state(
+      `product: demo\nengagement:\n  site: North depot\n  baseline: "6 days"\nphases:\n  6: { name: build, status: in-progress }\n`,
+    );
+    expect(r.code).toBe(1);
+    expect(r.out).toContain("no eval_set is named");
+  });
+
+  test("build before the spine is expanded is drift", () => {
+    const r = state(
+      `product: demo\nengagement:\n  site: North depot\n  baseline: "6 days"\neval_set: docs/product/state.yaml\nphases:\n  4: { name: journeys, status: pending }\n  6: { name: build, status: in-progress }\n`,
+    );
+    expect(r.code).toBe(1);
+    expect(r.out).toContain("earlier phase 4 (journeys) is still pending");
+  });
+
+  test("structure after the first slice is not out of order", () => {
+    const r = state(
+      `product: demo\nengagement:\n  site: North depot\n  baseline: "6 days"\neval_set: docs/product/state.yaml\nphases:\n  5a: { name: structure, status: pending }\n  6: { name: build, status: in-progress }\n`,
+    );
+    expect(r.out).not.toContain("structure");
   });
 
   test("idea is no longer a size", () => {

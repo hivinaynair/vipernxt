@@ -25,7 +25,8 @@ type State = {
   size?: string;
   phases?: Record<string, Phase>;
   clone?: { customized?: string; tickets?: string; composed?: string };
-  engagement?: { site?: string };
+  engagement?: { site?: string; baseline?: string };
+  eval_set?: string;
   outcome?: { kind?: string; why?: string };
   held?: Held[];
   idea?: string;
@@ -107,6 +108,64 @@ if (state.idea_outdated === true) {
 
 const shapePhase = Object.values(state.phases ?? {}).find((p) => p.name === "shape");
 
+const started = (p?: Phase) => p?.status !== undefined && p.status !== "pending";
+const namedPhase = (n: string) => Object.entries(state.phases ?? {}).find(([, p]) => p.name === n);
+
+// 5b. A reframe nobody has written yet. `shape: done` opens the UI gate, so a
+// placeholder here is the difference between "they confirmed it" and "we left a
+// note to ourselves" — and the gate cannot tell them apart by length alone.
+const PLACEHOLDER = /\b(pending|tbd|todo|tba|xxx|fixme|placeholder)\b/i;
+if (shapePhase?.status === "done" && PLACEHOLDER.test(state.reframe ?? "")) {
+  findings.push(
+    "phase shape is done but `reframe:` still reads as a placeholder — the UI gate opens on this field, so it has to be the paragraph they confirmed",
+  );
+}
+
+// 5c. Build without the eval set is the documented exit test ("Build may start
+// when the eval set exists and wave 0 can seed it") — it was never enforced, so
+// a slice could be built with nothing to score it against.
+const buildPhase = namedPhase("build")?.[1];
+if (started(buildPhase)) {
+  const path = (state.eval_set ?? "").trim();
+  if (!path) {
+    findings.push(
+      `phase build is ${buildPhase?.status} but no eval_set is named — there is nothing to score the slice against`,
+    );
+  } else if (!existsSync(path)) {
+    findings.push(
+      `phase build is ${buildPhase?.status} but eval_set ${path} does not exist — wave 0 cannot seed it`,
+    );
+  }
+  if (!existsSync("docs/journeys")) {
+    findings.push(
+      "phase build is in progress but there is no docs/journeys spine — a slice with no step to cite is the thing the spine exists to prevent",
+    );
+  }
+  if (!(state.engagement?.baseline ?? "").trim() || state.engagement?.baseline === "unknown") {
+    findings.push(
+      "phase build is in progress but engagement.baseline is unknown — the checkpoint scores the clip against a before-number, and some baselines expire when the site changes system",
+    );
+  }
+}
+
+// 5d. Phases running out of order. Only the core chain is ordered: `structure`
+// (5a) and `linear` (4.5) are deliberately after the first slice, and `visual`
+// is optional, so a numeric comparison would flag all three wrongly.
+const CHAIN = ["salvage", "research", "field", "shape", "journeys", "build"];
+for (const [key, phase] of Object.entries(state.phases ?? {})) {
+  const at = CHAIN.indexOf(phase.name ?? "");
+  if (at < 1 || !started(phase) || phase.optional) continue;
+  for (const [earlierKey, earlier] of Object.entries(state.phases ?? {})) {
+    const earlierAt = CHAIN.indexOf(earlier.name ?? "");
+    if (earlierAt < 0 || earlierAt >= at || earlier.optional) continue;
+    if (earlier.status === "pending") {
+      findings.push(
+        `phase ${key} (${phase.name}) is ${phase.status} but earlier phase ${earlierKey} (${earlier.name}) is still pending`,
+      );
+    }
+  }
+}
+
 // 5a. Sizing. A design doc written against nobody is the failure the whole loop
 // exists to prevent, so this is a hard drift.
 if (state.size !== undefined && !SIZES.has(state.size)) {
@@ -131,6 +190,7 @@ if (!(state.engagement?.site ?? "").trim()) {
     }
   }
 }
+
 if (state.outcome && !OUTCOME_KINDS.has(state.outcome.kind ?? "")) {
   findings.push(
     `outcome.kind is "${state.outcome.kind ?? ""}" — use ${[...OUTCOME_KINDS].join(" or ")}`,
