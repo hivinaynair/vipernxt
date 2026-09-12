@@ -1,15 +1,19 @@
 # ViperNxt
 
-**Sit with a site. Leave with a clip that moves a number — then a factory.**
+**It won't let you build for a customer who doesn't exist.**
 
-You have a customer with a problem and you are about to build them software.
-This repo is the procedure for that first week — written so an agent runs most
-of it — plus the stack it builds on.
+Somebody told you they have a problem. A person, who said it, whose name you can
+write down — that is the only way in, and `check-drift` enforces it. From there:
+read what they already have, find the smallest thing that moves their number,
+build it, show them the score. The rest in parallel, only after they accept it.
 
-**What it is best at is stopping you building the wrong thing.** Before it
-designs anything it reads whatever the job runs on today and prices the
-incumbent, because the most expensive week is the one spent rebuilding a feature
-your customer already pays for.
+This is the procedure for that first week, written so an agent runs most of it,
+plus the stack it builds on.
+
+**What it is best at is stopping you.** Before it designs anything it prices
+what they already pay for, because the most expensive week is the one spent
+rebuilding a feature your customer already buys. *"They should upgrade instead"*
+is a result this thing can produce, and so is *"don't build this."*
 
 Requires [Bun](https://bun.sh) `1.4.x`.
 
@@ -17,30 +21,32 @@ Requires [Bun](https://bun.sh) `1.4.x`.
 bun install
 ```
 
-Then type **`/next`** and name a site plus what they use today. That is the whole
-instruction — `/next` works out where you are, every time.
+Then type **`/next`** and name the person and what they use today. That is the
+whole instruction — `/next` works out where you are, every time.
 
 <details>
-<summary><b>A worked example</b> — one engagement, start to first screen</summary>
+<summary><b>The year this was built to prevent</b> — a real one</summary>
 
-A test run of this kit against an invented but realistic customer: a compliance
-manager at a fintech, drowning in a SOC 2 audit. The obvious build was a tracker
-for the auditor's request list.
+Software for driving schools. A year of work, ~1,400 commits.
 
-- **Phase 0 killed that idea.** Salvage priced the incumbent before designing
-  anything: the customer already paid $27k/yr for Vanta, and Vanta ships that
-  tracker. So do Drata and Secureframe.
-- **What survived was smaller and real.** Of their last ten evidence requests,
-  six came back from the auditor — four for the same reason: the file was right
-  but described the wrong *period*. Nobody checked before sending.
-- **The clip became a pre-flight check**, not a tracker. One screen that reads a
-  file and says "this describes September; they asked for June, ending 06-30".
-- **Scored, not asserted.** Replaying their ten real cases: 4 of 10 handled, 6
-  explicitly out of the first slice with reasons. That number is what you show
-  them — not "it works".
+Two schools asked for it and used it. Both were unusual: bigger than average,
+run by people who liked technology. Everything you would want from a design
+partner — and that is the problem. **They were the tail of the distribution, and
+the product was built for them.**
 
-The point is the first bullet. Nothing in the interview would have surfaced it;
-the customer asked for the tracker.
+Sold to the wider market, almost nobody cared. Instructor labour is cheap, the
+margins are thin, the owner is the operator, and there is no budget line for
+software. The pain was real. It just was not worth money to the people who had it.
+
+Here is the part that stings: **no vendor sold anything to driving schools**, and
+that read as open ground. It is the opposite. Others had tried and left, because
+nobody paid. One hour of asking *"why did they leave?"* would have said so.
+
+Nothing in the interviews would have surfaced it. Both customers were happy.
+
+Two gates now exist because of this — U1 asks what the pain costs per month in
+real money and why an empty category is empty, and [G](#one-customer-first-a-product-only-if-it-earns-it)
+refuses to call one customer a market.
 
 </details>
 
@@ -51,7 +57,7 @@ the customer asked for the tracker.
 ```mermaid
 flowchart TD
     IN["somebody told you<br/>they have a problem"] --> N["/next"]
-    N --> U["<b>U — understand</b><br/>salvage the pile · incumbent gate · watch the work<br/>last 10 cases → eval set · count the baseline"]
+    N --> U["<b>U — understand</b><br/>read what they already have · price the incumbent · watch the work<br/>last 10 cases → eval set · count the baseline"]
     U --> G1{{"✋ they confirm the reframe"}}
     G1 --> R["<b>R — reframe</b><br/>the claim <i>is</i> the design doc"]
     R --> C["<b>C — clip</b> · the one slice that moves the number<br/>compose → ontology + spine → wave 0<br/>one journey working, on a local database"]
@@ -59,7 +65,7 @@ flowchart TD
     G2 --> F["<b>F — factory</b> · the rest, built in parallel<br/>setup · Linear · parallel slices"]
     F --> REL["review PRs → staging → main"]
     REL --> G3{{"✋ does this become<br/>a product?"}}
-    G3 --> G["<b>G — generalize</b> · optional<br/>three sites, same pain, somebody paid"]
+    G3 --> G["<b>G — generalize</b> · optional<br/>three customers, same pain, somebody paid"]
 
     style G1 fill:#fde68a,stroke:#b45309,color:#000
     style G2 fill:#fde68a,stroke:#b45309,color:#000
@@ -68,16 +74,30 @@ flowchart TD
 
 | After | You have |
 |---|---|
-| an hour | their pile read and cited, the incumbent named and priced, a short list of what only they can tell you |
+| an hour | everything they already have, read and cited; the incumbent named and priced; a short list of what only they can tell you |
 | a day or two | one paragraph you confirmed: the outcome number, whose pain it is, why the obvious build is wrong |
 | a day after that | a named clone, a composed stack, the domain model in their vocabulary, an ID'd journey spine |
 | end of the week | one journey working on real seeded data **on your laptop**, scored against their last ten cases |
 | after you accept it | infrastructure, tickets, parallel slices |
-| later, if you want | the question of whether this becomes a product — asked with a live site behind you, not a guess up front |
+| later, if you want | the question of whether this becomes a product — asked with one customer live behind you, not guessed up front |
 
 Nothing before the last row needs a GitHub repo, a Neon account, a Vercel
 project, or a credit card. Procedure:
 [docs/playbook/fde-loop.md](docs/playbook/fde-loop.md).
+
+## What they use today is the first real signal
+
+It is the first thing `/next` asks, and it runs opposite to intuition:
+
+| What they use today | What it tells you |
+|---|---|
+| Nothing — it lives in their head | Nobody has ever paid to fix this. **Highest risk** |
+| Paper, WhatsApp, a register | Labour is the incumbent. You have to beat the cost of a cheap person, not the annoyance |
+| One piece of software | **They pay for software.** Budget proven, buyer identified. Lowest risk |
+| Several tools, bad seams | Budget proven and generous. The pain is the seams — often the best work there is |
+
+Empty ground reads as opportunity and usually means nobody paid. That is the
+whole of the driving-school story above, in one row.
 
 ## Where it stops for you
 
@@ -86,8 +106,8 @@ itself*. Four stops are left, and every one is a hard block.
 
 | # | Stop | Kind | Why it cannot be skipped |
 |---|---|---|---|
-| 1 | **Your pile** | gather | `salvage` will not start on a half-empty folder. "Upgrade the incumbent instead of building" is a valid outcome |
-| 2 | **The homework** | gather | No research tells you the clerk keeps a code sheet taped to the monitor. Until you look, the product is guesses |
+| 1 | **Everything they already have** | gather | `salvage` will not start on a half-empty folder. "They should upgrade instead of building" is a valid outcome |
+| 2 | **The homework** | gather | No research tells you the clerk keeps a code sheet taped to the monitor. Until you go and watch, the product is guesses |
 | 3 | **Approve the reframe** | decide | Until you say yes, writes to `apps/*/src/app` and `src/features` are **denied by a hook** |
 | 4 | **Look at the first slice** | decide | One journey end-to-end before forty tickets inherit a wrong domain model |
 
@@ -97,6 +117,10 @@ whatever does not depend on you.
 
 **It will not** start from an idea nobody has asked for, decide what the product
 is, let you pick a stack per customer, or ship auth on day one.
+
+Bring an idea with no customer and it will research who already sells it, then
+stop and ask you to go find the person with the problem. That is not a failure
+mode — it is the feature.
 
 **You need a person, not an idea.** Somebody who told you they have this problem,
 whose name you can write down. No name and nothing past the category scan opens —
@@ -111,21 +135,22 @@ become a product?
 
 There is no flag for it, and you do not declare it up front — that would be a
 guess about the future, and the loop refuses those everywhere else. You enter G
-when you want to, with a working site behind you.
+when you want to, with one customer already using it.
 
-It exists to prevent one specific year-long mistake: the clip works at one site,
-you generalize from a sample of one, and a year later two people use it. The site
-was not wrong. **The sample was.**
+It exists to prevent one specific year-long mistake: the thing works for one
+customer, you generalize from a sample of one, and a year later two people use
+it. The customer was not wrong. **The sample was.**
 
 | | What it asks |
 |---|---|
-| G1 | Is this site typical? A design partner excited about technology is the tail of the distribution, not the middle |
-| G2 | The same pain, named independently, at three sites — **at least one of them boring** |
+| G1 | Is this customer typical? A design partner excited about technology is the tail of the distribution, not the middle |
+| G2 | The same pain, named independently, by three customers — **at least one of them boring** |
 | G3 | Price evidence, not enthusiasm: a deposit, an LOI, or a cheaper thing they already cancelled. "Nice to have" is a no |
 | G4 | What in the code was theirs, and what generalizes? |
 
 If it fails, record why and stop. **One tool for one customer is a finished
-product, not a failed SaaS.**
+product, not a failed SaaS.** Your dad's books, one shop's counter, one clinic's
+front desk — those are done when they work, and nobody has to pretend otherwise.
 
 ## The journey spine
 
@@ -148,7 +173,7 @@ An agent cannot quietly build something nobody asked for, because there is
 nowhere to hang it. A slice that cannot name its step ID is the signal to stop
 and ask you. `bun run check-journeys` enforces the IDs are real; it does not
 require every served step to be cited — a first slice correctly leaves later
-beats uncited. `--complete` is clip acceptance.
+beats uncited. `--complete` is what acceptance runs.
 
 ## How the factory builds
 
@@ -204,7 +229,7 @@ Cases live in `*.eval.ts` beside the code; one the slice does not cover is
 - **Read before you invent.** `salvage` runs on every product — something is
   always being replaced. Mine it for **facts, never structure**: what a receipt
   must legally carry, not which pages the old app had.
-- **One vocabulary.** If the site says *pick ticket*, the code says
+- **One vocabulary.** If the customer says *pick ticket*, the code says
   `pick_ticket`. Otherwise five agents invent five translations of one word.
 - **Features cannot import each other.** `bun run check-boundaries` enforces it;
   a failure means a piece of logic earned promotion to `shared/`.
@@ -263,7 +288,7 @@ migrations only.
 
 ---
 
-Live engagements belong on a **throwaway clone**. Do not commit a site, a pile,
+Live engagements belong on a **throwaway clone**. Do not commit a customer, their files,
 or `docs/product/state.yaml` into this kit. Learnings that generalize come back
 as playbook.
 
