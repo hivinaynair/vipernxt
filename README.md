@@ -162,7 +162,7 @@ flowchart LR
     S["<b>J1.S3</b><br/>the lead confirms the pick"]
     S --> F["feature F2 serves J1.S3"]
     S --> T["Linear ticket carries J1.S3"]
-    S --> E["it(&quot;J1.S3: confirms the pick&quot;)"]
+    S --> E["a test named for J1.S3"]
     S --> P["PR body says it landed J1.S3"]
     S --> SC["screenshot filed against J1.S3"]
 
@@ -183,7 +183,9 @@ flowchart TD
     W0 --> A1["agent · features/a"]
     W0 --> A2["agent · features/b"]
     W0 --> A3["agent · features/c"]
-    A1 & A2 & A3 --> PR["one PR each → <b>staging</b><br/>merge bar · a test per cited step · screenshots"]
+    A1 --> PR["one PR each → <b>staging</b><br/>merge bar · a test per cited step · screenshots"]
+    A2 --> PR
+    A3 --> PR
     PR --> BOT["bug board reviews, can push fixes"]
     BOT --> YOU["you comment"]
     YOU -->|"this is a bug"| FIX["fixed in that PR"]
