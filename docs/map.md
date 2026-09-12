@@ -30,9 +30,9 @@ is a view of this file — not a second spec.
 
 | Path | Role |
 |---|---|
-| `apps/` | Empty until compose. Next lands at `apps/web` with `src/app` / `src/features` / `src/shared`. |
-| `packages/` | Empty until compose. Then `ui` (shadcn) and `db` (Drizzle + Neon). |
-| `e2e/` | Empty until compose. |
+| `apps/` | Not in the tree until compose. Next lands at `apps/web` with `src/app` / `src/features` / `src/shared`. |
+| `packages/` | Not in the tree until compose. Then `ui` (shadcn) and `db` (Drizzle + Neon). |
+| `e2e/` | Not in the tree until compose. |
 | `tooling/typescript-config` | Shared `tsconfig`s. |
 | `tooling/mocks` | Shared MSW handlers (`@repo/mocks`). Started from `test/setup.ts`. |
 | `tooling/dependency-cruiser` | Feature-folder import rules. `bun run check-boundaries`. |

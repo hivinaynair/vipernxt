@@ -198,10 +198,6 @@ them through symlinks. **You type `/next`.** Everything else is called for you.
 | `/next` | The router. New idea, resuming after a week, answering a question, naming a feature — all of it |
 | `/status` | Read-only glance: where things stand, what you owe |
 
-The one worth reaching for by hand is **`prototype`** — when a screen exists and
-something feels off but you cannot say what, it builds three real variants
-behind a picker. Full skill list and repo layout: [docs/map.md](docs/map.md).
-
 ## Commands
 
 ```bash
