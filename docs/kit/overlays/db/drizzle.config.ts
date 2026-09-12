@@ -13,9 +13,16 @@ config({ path: resolve(repoRoot, ".env") });
 
 const url = process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL;
 
-if (!url) {
+// `generate` only reads src/schema.ts — it never opens a connection. Requiring
+// a URL for it is what forced Neon to exist before the first slice could run.
+// `push` and `studio` do talk to Postgres, and PGlite is not reachable over the
+// wire, so those still need Neon. Local migrations go through `db:migrate`.
+const needsConnection = !process.argv.includes("generate");
+
+if (!url && needsConnection) {
   throw new Error(
-    "Set DATABASE_URL_UNPOOLED (Neon direct, no -pooler) or DATABASE_URL for drizzle-kit.",
+    "This drizzle-kit command talks to Postgres. Set DATABASE_URL_UNPOOLED (Neon direct, no -pooler) or DATABASE_URL.\n" +
+      "Working locally? `bun run db generate` then `bun run db migrate` — the PGlite fallback needs no connection string.",
   );
 }
 
@@ -23,5 +30,5 @@ export default defineConfig({
   schema: "./src/schema.ts",
   out: "./drizzle",
   dialect: "postgresql",
-  dbCredentials: { url },
+  dbCredentials: { url: url ?? "postgres://unused" },
 });

@@ -17,8 +17,9 @@ bun run check-journeys
 ```
 
 A spine that does not validate is not a spine. Report every error. Warnings: say which
-steps have no criteria. After features are cut, `check-journeys` must pass — every
-served step with criteria is named in a test title.
+steps have no criteria. `check-journeys` on a draft spine only checks that any
+existing test citations are real IDs — do not run `--complete` here; tests do
+not exist yet.
 
 Also check the YAML against the design doc the spine's `source:` points at:
 

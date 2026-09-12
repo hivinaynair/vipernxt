@@ -21,7 +21,8 @@ version agents need before touching anything.
 ## Vendors wired in
 
 Auth: Clerk · Database: Drizzle ORM + Neon · Background work: Vercel Workflows ·
-UI: shadcn/ui · Lint/format: Biome · E2E: Playwright.
+Analytics: PostHog · Email: Resend · Files: Vercel Blob · UI: shadcn/ui ·
+Lint/format: Biome · E2E: Playwright (intended; not composed yet).
 
 A new product shape decides which surfaces to compose from
 [docs/kit/recipe.yaml](docs/kit/recipe.yaml) — record the decision, do not
@@ -32,6 +33,9 @@ strip a fat tree, and do not add a vendor the recipe does not name.
 ```sh
 bun run check-types && bun run check-boundaries && bun run check-tokens && bun run check-journeys && bun test
 ```
+
+`check-journeys` fails citations that are not spine IDs. Unbuilt served steps
+do not fail a slice. When the clip is done: `bun run check-journeys -- --complete`.
 
 Branches: PRs target `staging`; `main` is production. Pushes to either run the
 migrate workflow. Branch **from** `staging` too, and rebase onto it before the

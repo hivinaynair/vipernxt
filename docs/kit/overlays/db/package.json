@@ -9,12 +9,13 @@
   "scripts": {
     "check-types": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
+    "db:migrate": "bun --conditions react-server src/migrate.run.ts",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "db:seed": "bun src/seed.run.ts"
+    "db:seed": "bun --conditions react-server src/seed.run.ts"
   },
   "dependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "@vercel/functions": "^3.9.3",
     "drizzle-orm": "^1.0.0-beta.22",
     "pg": "^8.23.0",

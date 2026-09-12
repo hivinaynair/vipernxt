@@ -133,10 +133,40 @@ site, a pile, or "what they use today" is an **engagement** — do not ask.
 | Size | Route |
 |---|---|
 | **engagement** | Site + pile. Week-one clip. The default. `new-product` is an alias. |
+| **idea** | A claim with **no site**. Category scan, then stop. See below |
 | **New feature** in a product that already has a spine | `journeys` to add the steps, then build citing those step IDs |
 | **Small change** | Nothing here. Say so and get on with it |
 
 Running a six-phase pipeline over "add a column" is a failure, not thoroughness.
+
+### An idea with no site
+
+Someone describes a product and names no customer. This is **not** an engagement
+yet, and calling it one is how the loop gets run against nobody.
+
+Set `size: idea`. Then:
+
+- **Phase 0 runs** as a category scan — who already sells this, at what price, what
+  the current paid version does. Cite it like any salvage.
+- **Phase 1 may run.**
+- **Phases 2 onward do not open.** There is no site, so there is no homework, no
+  last-ten-cases, and therefore no eval set. Without an eval set the first slice
+  cannot be scored, which is the whole checkpoint. Do not shape. Do not write a
+  design doc. `check-drift` fails if you do.
+- Hold **one** `gather`, `who: fde`: who is the customer, and what do they use
+  today. Finding them is the FDE's job, not a product decision.
+
+There are exactly two ways out:
+
+| Exit | Do this |
+|---|---|
+| They name a site | Set `size: engagement`, record `engagement.site` and `replacing`, ask for the pile. The phases open. |
+| There is no customer yet, or the category already sells it | Record `outcome:` with the reason and stop. |
+
+**Stopping is a real result.** If seven vendors already ship the idea, saying so is
+the finding — the same call salvage makes when the incumbent already ships the
+feature they asked for. An engagement parked with a reason is honest; one left
+`blocked` forever looks like it is waiting on a slow customer.
 
 ## Phases
 
@@ -154,8 +184,10 @@ Running a six-phase pipeline over "add a column" is a failure, not thoroughness.
 | 6 | Build | `plan` then `build` in waves; cite journey IDs; `prototype` when a component is open | you |
 
 The week-one path is [fde-loop.md](../../../docs/playbook/fde-loop.md). Understand
-(U1–U5) before shape. Seed data **is** the eval set (last 10 real cases). The first
-slice is the one mandatory stop. Setup, Linear, and structure (5a) wait until they
+(U1–U5) before shape. Seed data **is** the eval set (last 10 real cases), and
+`bun scripts/eval.ts` is what turns it into a number. Show that number when you
+show them the slice — "it works" is not what they asked for; "it would have caught
+six of the ten" is. The first slice is the one mandatory stop. Setup, Linear, and structure (5a) wait until they
 accept the clip.
 
 `prototype` is not a phase — reach for it mid-build whenever a component's shape is
@@ -172,10 +204,22 @@ open. Compose from [docs/kit/recipe.yaml](../../../docs/kit/recipe.yaml) —
 `--apply`. Do not free-hand a Next tree. They do not
 type `/customize`. Do not run `setup.sh` under the boilerplate name.
 
-**Setup is not on the path to the clip.** Use `.env.local` if keys already exist. If
-database or auth keys are missing, that is one `who: fde` gather — not the nine-step
-provision. GitHub, Vercel, Linear wait until they accept the slice (`clone.setup` /
-`clone.tickets` leave `deferred`).
+**Setup is not on the path to the clip.** Use `.env.local` if keys already exist.
+**Missing database keys are not a reason to stop.** With `DATABASE_URL` unset,
+`packages/db` runs on PGlite — Postgres compiled to WASM, writing to
+`packages/db/.pglite/`, no daemon and no provisioning. Generate and migrate against it:
+
+```sh
+bun run db generate && bun run db migrate && bun --cwd packages/db run db:seed
+```
+
+Clerk runs keyless in `next dev`. So build wave 0 and the first slice on the fallback
+and let them look at it. PGlite holds one connection: run the dev server **or** a db
+script, never both, and if a hard kill wedges the directory (`RuntimeError: Aborted()`)
+run `bun run db reset` rather than debugging the wasm. Only a key they alone hold — a third-party API the clip
+genuinely calls — is a `who: fde` gather, and even then it is one gather, not the
+nine-step provision. GitHub, Vercel, Neon and Linear wait until they accept the slice
+(`clone.setup` / `clone.tickets` leave `deferred`).
 
 ## The factory
 
@@ -200,6 +244,10 @@ do not skip the wave.
 
 Group the waves when `linear-sync` publishes the spine, so the order is visible to them
 rather than living in this session.
+
+Per-slice merge bar uses `bun run check-journeys` (citations must be real IDs).
+After the last wave merges, `bun run check-journeys -- --complete` before
+calling the clip done.
 
 ### Stop conditions
 

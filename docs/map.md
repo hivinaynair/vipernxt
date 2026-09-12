@@ -30,9 +30,9 @@ is a view of this file — not a second spec.
 
 | Path | Role |
 |---|---|
-| `apps/` | Empty until compose. Next lands at `apps/web` with `src/app` / `src/features` / `src/shared`. |
-| `packages/` | Empty until compose. Then `ui` (shadcn) and `db` (Drizzle + Neon). |
-| `e2e/` | Empty until compose. |
+| `apps/` | Not in the tree until compose. Next lands at `apps/web` with `src/app` / `src/features` / `src/shared`. |
+| `packages/` | Not in the tree until compose. Then `ui` (shadcn) and `db` (Drizzle + Neon). |
+| `e2e/` | Not in the tree until compose. |
 | `tooling/typescript-config` | Shared `tsconfig`s. |
 | `tooling/mocks` | Shared MSW handlers (`@repo/mocks`). Started from `test/setup.ts`. |
 | `tooling/dependency-cruiser` | Feature-folder import rules. `bun run check-boundaries`. |
@@ -60,11 +60,14 @@ within pinned majors) and the overlays. `--apply` refuses on this kit. On a name
 | Auth | Clerk (`src/proxy.ts`, `ClerkProvider`) | `--without auth` |
 | Database | Drizzle + Neon, validated via `@/env` | omit `--add db` |
 | Jobs | Vercel Workflows (`withWorkflow`) | `--without jobs` |
+| Analytics | PostHog (errors + product) | `--without analytics` |
+| Email | Resend | `--without email` |
+| Files | Vercel Blob | `--without files` |
 | UI | shadcn in `packages/ui`, Tailwind 4 | Components in `apps/web` |
 | Agents | Eve → `apps/agent` | until U5 names judgment steps |
 | Lint / format | Biome | ESLint, Prettier |
 | Unit test | `bun test` + Testing Library | Vitest, Jest |
-| E2E | Playwright | Cypress |
+| E2E | Playwright — intended, not composed yet | Cypress |
 | Region | `NEON_REGION` at setup (US / EU / Asia) | a per-region template |
 | Branches | PRs → `staging`; `main` is production | Trunk-only until you change it on purpose |
 
@@ -142,6 +145,9 @@ Declared merge bar ([`AGENTS.md`](../AGENTS.md)):
 ```sh
 bun run check-types && bun run check-boundaries && bun run check-tokens && bun run check-journeys && bun test
 ```
+
+`check-journeys` in that bar checks citations are real spine IDs. Whole-spine
+completeness is `bun run check-journeys -- --complete` (last slice / clip done).
 
 CI: [`.github/workflows/check.yml`](../.github/workflows/check.yml) on PRs and on `staging`/`main`. [`.github/workflows/migrate.yml`](../.github/workflows/migrate.yml) applies Drizzle on push to those branches. No journal yet = skip.
 

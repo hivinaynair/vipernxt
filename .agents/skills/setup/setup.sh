@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Provision a new product: GitHub repo, Neon databases, Vercel project, Linear team.
+# Provision a new product: GitHub, Neon, Vercel, Clerk, PostHog, Resend, Blob, Linear.
 # Opinionated on purpose. Idempotent — safe to re-run; it skips what already exists.
 #
 #   ./setup.sh
@@ -7,7 +7,7 @@
 set -uo pipefail
 
 BOLD=$'\033[1m'; DIM=$'\033[2m'; OK=$'\033[32m'; WARN=$'\033[33m'; OFF=$'\033[0m'
-TOTAL=7; STAGE=0
+TOTAL=10; STAGE=0
 stage() { STAGE=$((STAGE+1)); printf '\n%s[%d/%d] %s%s\n' "$BOLD" "$STAGE" "$TOTAL" "$1" "$OFF"; }
 say()  { printf '      %s\n' "$1"; }
 good() { printf '      %s✓%s %s\n' "$OK" "$OFF" "$1"; }
@@ -29,6 +29,9 @@ env_put() { # env_put FILE KEY VALUE — idempotent upsert
 stage "Checking tools"
 NEED_DB="$(bun scripts/lib/compose-need.mjs db)"
 NEED_AUTH="$(bun scripts/lib/compose-need.mjs auth)"
+NEED_ANALYTICS="$(bun scripts/lib/compose-need.mjs analytics)"
+NEED_EMAIL="$(bun scripts/lib/compose-need.mjs email)"
+NEED_FILES="$(bun scripts/lib/compose-need.mjs files)"
 missing=0
 for t in gh vercel git; do
   if have "$t"; then good "$t"; else warn "$t not found"; missing=1; fi
@@ -204,7 +207,57 @@ else
 fi
 fi
 
-# ── 5. linear ────────────────────────────────────────────────────────────────
+# ── 5. posthog ───────────────────────────────────────────────────────────────
+stage "PostHog (errors + analytics)"
+if [ "$NEED_ANALYTICS" != 1 ]; then
+  say "skipped — composed.yaml has --without analytics, or no web surface"
+else
+  say "Create a project at https://app.posthog.com (EU: https://eu.posthog.com)."
+  say "Exception autocapture is a PostHog project setting. Keys stay in $ENVFILE."
+  token="$(ask 'Project token (phc_…), or blank to skip:')"
+  if [ -n "$token" ]; then
+    env_put "$ENVFILE" NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN "$token"
+    host="$(ask 'Host [https://us.i.posthog.com]:')"
+    host="${host:-https://us.i.posthog.com}"
+    env_put "$ENVFILE" NEXT_PUBLIC_POSTHOG_HOST "$host"
+    good "PostHog keys written to $ENVFILE"
+  else
+    say "skipped — local clip works without them"
+  fi
+fi
+
+# ── 6. resend ────────────────────────────────────────────────────────────────
+stage "Resend (email)"
+if [ "$NEED_EMAIL" != 1 ]; then
+  say "skipped — composed.yaml has --without email, or no web surface"
+else
+  say "Create an API key at https://resend.com/api-keys. Do not invent a from-address here."
+  key="$(ask 'RESEND_API_KEY, or blank to skip:')"
+  if [ -n "$key" ]; then
+    env_put "$ENVFILE" RESEND_API_KEY "$key"
+    good "Resend key written to $ENVFILE"
+  else
+    say "skipped — getResend() no-ops until a key exists"
+  fi
+fi
+
+# ── 7. blob ──────────────────────────────────────────────────────────────────
+stage "Vercel Blob (files)"
+if [ "$NEED_FILES" != 1 ]; then
+  say "skipped — composed.yaml has --without files, or no web surface"
+else
+  say "Create a Blob store on the Vercel project, then paste the read-write token."
+  say "Dashboard: Storage → Blob. Do not create the store from this script."
+  blob="$(ask 'BLOB_READ_WRITE_TOKEN, or blank to skip:')"
+  if [ -n "$blob" ]; then
+    env_put "$ENVFILE" BLOB_READ_WRITE_TOKEN "$blob"
+    good "Blob token written to $ENVFILE"
+  else
+    say "skipped — putBlob() no-ops until a token exists"
+  fi
+fi
+
+# ── 8. linear ────────────────────────────────────────────────────────────────
 stage "Linear team"
 say "Linear has no CLI and its API cannot create teams."
 say "Create a team for ${PRODUCT} at https://linear.app/settings/teams"
@@ -216,7 +269,7 @@ else
   say "skipped — linear-sync will ask again later"
 fi
 
-# ── 6. done ──────────────────────────────────────────────────────────────────
+# ── 9. done ──────────────────────────────────────────────────────────────────
 stage "Summary"
 good "product: $PRODUCT"
 [ -f "$ENVFILE" ] && good "env: $ENVFILE" || warn "no env file written"

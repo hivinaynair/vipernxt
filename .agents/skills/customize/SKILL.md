@@ -2,7 +2,8 @@
 name: customize
 description: >-
   Names this clone and composes the stack from docs/kit/recipe.yaml — product
-  name, package scope, surfaces (web / agent), Clerk, Neon, Workflows. Invoked
+  name, package scope, surfaces (web / agent), Clerk, Neon, Workflows, PostHog,
+  Resend, Blob. Invoked
   by /next after the design doc is approved, or when the user asks to customize,
   or the root package is still vipernxt. Setup waits until they accept the clip.
 ---
@@ -62,7 +63,8 @@ the clone. It refuses while the root package is still `vipernxt`. **Run the
 printed empty-path CLIs first** (`create-next-app` / `shadcn init` /
 `eve init` refuse a non-empty folder), then `--apply`, then `commands (after
 --apply)` (`bun add --cwd packages/db` / `apps/web`). `--without auth`
-rewrites `apps/web/src/env.ts` so Clerk is not required. It sets
+rewrites `apps/web/src/env.ts` so Clerk is not required. `--without analytics`
+/ `email` / `files` drop PostHog, Resend, and Blob the same way. It sets
 `clone.composed: done`. This kit does not ship Next, shadcn, or Neon — do not
 copy a fat tree in to strip it.
 
@@ -119,6 +121,21 @@ env examples. Enabling orgs is a Clerk flag — do not invent org UI.
 
 Keep, or `--without jobs`? Remove the package and `withWorkflow` if not.
 
+**6b. Analytics** (if `web`)
+
+PostHog for errors and product analytics, or `--without analytics`? Keys are
+optional until setup — the local clip runs without them. Not a second Sentry.
+
+**6c. Email** (if `web`)
+
+Resend, or `--without email`? Paste `RESEND_API_KEY` at setup. Do not create
+a sending domain from this skill.
+
+**6d. Files** (if `web`)
+
+Vercel Blob, or `--without files`? Paste `BLOB_READ_WRITE_TOKEN` at setup.
+Create the store in the Vercel dashboard; do not create it from the script.
+
 **7. Default site metadata** (if `web`)
 
 Title, description, `lang` on `<html>`.
@@ -145,7 +162,7 @@ Billing is not in the tree. Do not add it.
 
 ## After the last answer
 
-Read the summary back: name, scope, surfaces, what compose will install, region.
+Read the summary back: name, scope, surfaces, which facets stayed, what compose will install, region.
 
 Then stop. `/next` continues the clip on `.env.local` (ontology, spine, wave 0,
 first slice). Run [setup](../setup/SKILL.md) only after they accept that slice

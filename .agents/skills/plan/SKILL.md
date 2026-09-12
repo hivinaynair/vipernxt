@@ -32,7 +32,10 @@ decision the spine does not settle).
    fill a gap (does this screen exist yet?). Judgment and script steps often
    have no screen — do not invent one in the spec.
 5. The first slice is scored against the eval set (`docs/research/eval-set.md`),
-   not "tests pass". Name the eval ids the slice covers.
+   not "tests pass". Name the eval ids the slice covers. The score comes from
+   `bun scripts/eval.ts`, which runs the `*.eval.ts` cases sitting beside the
+   code. A case the slice does not cover is `skip:` with a reason — never a
+   silent omission, because a skip that vanishes reads as a pass.
 
 ## Spec
 

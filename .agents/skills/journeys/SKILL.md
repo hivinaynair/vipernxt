@@ -191,9 +191,11 @@ F2 Reconciliation view — serves J1.S3, J2.S1
 
 Then [build](../build/SKILL.md) implements one slice. `/next` runs both.
 
-A test that covers a step names the ID in its title: `it("J1.S3: …")`. After
-features are cut, `bun run check-journeys` fails any served step with criteria
-that no test or spec cites.
+A test that covers a step names the ID in its title: `it("J1.S3: …")`.
+`bun run check-journeys` (the per-slice merge bar) fails citations that are not
+step IDs on the spine. It does not fail served steps this slice left unbuilt.
+`bun run check-journeys -- --complete` is clip acceptance: every served step
+with criteria is cited.
 
 ## Keeping it alive
 

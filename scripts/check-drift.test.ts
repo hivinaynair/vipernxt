@@ -122,3 +122,94 @@ describe("check-drift", () => {
     expect(r.out).toContain("composed.yaml");
   });
 });
+
+describe("the idea route", () => {
+  function state(yaml: string) {
+    dir = mkdtempSync(join(tmpdir(), "drift-"));
+    mkdirSync(join(dir, "docs/product"), { recursive: true });
+    writeFileSync(join(dir, "docs/product/state.yaml"), yaml);
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "demo" }));
+    return run(dir);
+  }
+
+  test("an idea that has been shaped is the failure the loop exists to prevent", () => {
+    const r = state(
+      `product: demo\nsize: idea\nreframe: something\nphases:\n  3: { name: shape, status: done }\n`,
+    );
+    expect(r.code).toBe(1);
+    expect(r.out).toContain("size is idea but phase 3 (shape) is done");
+    expect(r.out).toContain("nothing to score a slice against");
+  });
+
+  test("an idea may run salvage and research", () => {
+    const r = state(
+      `product: demo\nsize: idea\nphases:\n  0: { name: salvage, status: blocked }\n  1: { name: research, status: done }\n  3: { name: shape, status: pending }\n`,
+    );
+    expect(r.out).not.toContain("size is idea but phase");
+  });
+
+  test("an idea with a site is an engagement, and says so", () => {
+    const r = state(`product: demo\nsize: idea\nengagement:\n  site: North depot\nphases: {}\n`);
+    expect(r.code).toBe(1);
+    expect(r.out).toContain("that is an engagement");
+  });
+
+  test("a design doc confirmed by nobody is drift, whatever size says", () => {
+    // The guard does not depend on `size` being filled in — that was how an
+    // idea slipped through as an engagement in the first place.
+    const r = state(
+      `product: demo\nreframe: something\nphases:\n  3: { name: shape, status: done }\n`,
+    );
+    expect(r.code).toBe(1);
+    expect(r.out).toContain("no engagement.site is named");
+  });
+
+  test("shape done with a site is clean", () => {
+    const r = state(
+      `product: demo\nsize: engagement\nreframe: something\nengagement:\n  site: North depot\nphases:\n  3: { name: shape, status: done }\n`,
+    );
+    expect(r.out).not.toContain("engagement.site is named");
+  });
+
+  test("a misspelled size is caught", () => {
+    const r = state(`product: demo\nsize: engagment\nphases: {}\n`);
+    expect(r.code).toBe(1);
+    expect(r.out).toContain('size is "engagment"');
+  });
+
+  test("engagement is still clean", () => {
+    const r = state(`product: demo\nsize: engagement\nphases: {}\n`);
+    expect(r.out).not.toContain("size is");
+  });
+});
+
+describe("outcome", () => {
+  function state(yaml: string) {
+    dir = mkdtempSync(join(tmpdir(), "drift-"));
+    mkdirSync(join(dir, "docs/product"), { recursive: true });
+    writeFileSync(join(dir, "docs/product/state.yaml"), yaml);
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "demo" }));
+    return run(dir);
+  }
+
+  test("a stopped engagement must say why", () => {
+    const r = state(`product: demo\nsize: idea\noutcome:\n  kind: parked\nphases: {}\n`);
+    expect(r.code).toBe(1);
+    expect(r.out).toContain("must say why it stopped");
+  });
+
+  test("an invented outcome kind is caught", () => {
+    const r = state(
+      `product: demo\nsize: idea\noutcome:\n  kind: abandoned\n  why: no customer\nphases: {}\n`,
+    );
+    expect(r.code).toBe(1);
+    expect(r.out).toContain('outcome.kind is "abandoned"');
+  });
+
+  test("parked with a reason is clean", () => {
+    const r = state(
+      `product: demo\nsize: idea\noutcome:\n  kind: parked\n  why: seven vendors ship this\nphases: {}\n`,
+    );
+    expect(r.out).not.toContain("outcome");
+  });
+});
