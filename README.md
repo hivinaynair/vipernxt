@@ -1,6 +1,7 @@
 # ViperNxt
 
-**Sit with a site. Leave with a clip that moves a number — then a factory.**
+**Sit where the work happens. Leave with one slice that moves a real number —
+then build the rest in parallel.**
 
 You have a customer with a problem and you are about to build them software.
 This repo is the procedure for that first week — written so an agent runs most
@@ -17,8 +18,9 @@ Requires [Bun](https://bun.sh) `1.4.x`.
 bun install
 ```
 
-Then type **`/next`** and name a site plus what they use today. That is the whole
-instruction — `/next` works out where you are, every time.
+Then type **`/next`** and name the customer — the actual place the work happens —
+plus what they use today. That is the whole instruction; `/next` works out where
+you are, every time.
 
 <details>
 <summary><b>A worked example</b> — one engagement, start to first screen</summary>
@@ -50,14 +52,14 @@ the customer asked for the tracker.
 
 ```mermaid
 flowchart TD
-    IN["a site + what they use today"] --> N["/next"]
+    IN["a customer + what they use today"] --> N["/next"]
     N --> U["<b>U — understand</b><br/>salvage the pile · incumbent gate<br/>watch the work · last 10 cases → eval set"]
     U --> G1{{"✋ they confirm the reframe"}}
     G1 --> R["<b>R — reframe</b><br/>the claim <i>is</i> the design doc"]
     R --> P["<b>P — probe</b> (optional)<br/>replay the eval set, count the baseline"]
-    P --> C["<b>C — clip</b><br/>compose → ontology + spine → wave 0<br/>one journey working, on a local database"]
+    P --> C["<b>C — clip</b> · the one slice that moves the number<br/>compose → ontology + spine → wave 0<br/>one journey working, on a local database"]
     C --> G2{{"✋ you look at it,<br/>and at its score"}}
-    G2 --> F["<b>F — factory</b><br/>setup · Linear · parallel slices"]
+    G2 --> F["<b>F — factory</b> · the rest, built in parallel<br/>setup · Linear · parallel slices"]
     F --> REL["review PRs → staging → main"]
 
     style G1 fill:#fde68a,stroke:#b45309,color:#000
@@ -66,7 +68,7 @@ flowchart TD
 
 | After | You have |
 |---|---|
-| an hour | their pile read and cited, the incumbent named and priced, a short list of what only they can tell you |
+| an hour | their pile — everything they already have — read and cited, the incumbent named and priced, a short list of what only they can tell you |
 | a day or two | one paragraph you confirmed: the outcome number, whose pain it is, why the obvious build is wrong |
 | a day after that | a named clone, a composed stack, the domain model in their vocabulary, an ID'd journey spine |
 | end of the week | one journey working on real seeded data **on your laptop**, scored against their last ten cases |
