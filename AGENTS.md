@@ -52,8 +52,16 @@ other, so agents in different `src/features/<slug>/` cannot collide. Everything
 else is shared surface — `src/app`, `src/shared`, `packages/*`, the schema, any
 `package.json` — and **a slice touching shared surface runs alone**.
 
-Schema and seed data land first, in wave 0, before any feature slice. Feature
-slices never write a migration.
+Schema, route shells and seed data land first, in wave 0, before any feature
+slice. Feature slices never write a migration, and never create a page — every
+feature needs a route, so a slice that makes its own takes the `src/app` lock
+and stalls the other four. `bun scripts/journey.ts routes <spine.yaml>` prints
+the shells wave 0 owes from the spine.
+
+Work in your own worktree, not the shared checkout: with roughly a quarter of
+agent pull requests hitting merge conflicts, isolation has to be structural
+rather than each agent checking whether anyone else looks busy. At most one
+shared-surface slice runs at a time, scheduled by the wave.
 
 `docs/product/ontology.md` holds the canonical domain terms. They are the only
 names allowed in tables, types, components, routes and UI copy — a rejected

@@ -220,13 +220,20 @@ surface, launched together and merged before the next one starts.
 
 | Wave | Contains |
 |---|---|
-| 0 | Schema and seed data. The tables the first slice's steps touch, landed before any feature slice, with the eval set seeded into them |
+| 0 | Schema, **route shells**, and seed data. The tables the first slice's steps touch, one placeholder page per screen (`bun scripts/journey.ts routes <spine.yaml>`), and the eval set seeded in — all before any feature slice |
 | 1..n | Feature slices, at most **five agents at once**, one per feature folder |
 
 Wave 0 is what makes the rest safe. If all migrations land first, feature slices never
 write one, and parallel merges cannot collide on the database. Seed data ships with it —
 deterministic, fixed ids, frozen dates. Empty tables make both the review and
 `before-and-after` worthless.
+
+**Route shells belong to wave 0.** `src/app` is shared surface and a slice
+touching shared surface runs alone — but every feature needs a route, so if
+feature slices create their own pages the factory serialises on `src/app` and
+five agents is fiction. Land one placeholder page per screen in wave 0;
+`journey.ts routes` prints them from the spine, including which features share a
+screen. Feature slices then only ever touch their own folder.
 
 **Wave 0 is a lock, not an oracle.** It does not have to predict the whole domain; it has
 to stop two agents migrating at once. So land what the first slice's steps touch, not

@@ -64,9 +64,24 @@ Criteria: the EARS on those steps (not restated).
 - Only exclusions not already in the design doc.
 ```
 
-One slice when the feature is one dependency-free path. Several slices only when
-order matters or one agent context cannot hold the whole thing. First slice is
-always the walking skeleton through the served steps.
+**Split by default.** One slice only when the feature is genuinely one
+dependency-free path through a small number of steps; otherwise cut it. The
+first slice is always the walking skeleton through the served steps.
+
+This used to read the other way — one slice unless order forced a split, or the
+context would not hold it — which biased large. DORA 2025 found AI adoption
+raises delivery throughput *and* instability together, and that working in small
+batches is what converts the first into product performance rather than rework.
+It also named the trap: teams abandon small batches precisely because generating
+code got cheap. An agent that can hold the whole feature in context is exactly
+the condition under which the slice gets too big.
+[factory-throughput.md](../../../docs/research/factory-throughput.md) F3.
+
+The bound is step IDs, not line counts. A slice serving more than about three
+steps is usually two slices; say which steps each one lands. If a slice cannot
+be cut below that without shipping something broken, that is the signal a
+feature flag would be earning its place — hold an item and say so rather than
+merging the bigger slice quietly.
 
 Show a multi-slice list and wait for one confirmation. A single slice: write it
 and continue.

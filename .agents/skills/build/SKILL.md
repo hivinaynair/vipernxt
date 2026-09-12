@@ -38,16 +38,29 @@ and say what you could not verify. The merge bar is the gate, not a cloud.
 
 One slice, one branch, one agent; up to five at once.
 
-1. `git fetch origin`, then **scope check**: `gh pr list` and `gh pr diff <n>
-   --name-only`. If another slice is editing the files you need, stop and say
-   so. Do not race it.
+1. `git fetch origin`, then **work in a worktree of your own**. Not the shared
+   checkout, and not a scope check — isolation is structural or it is not
+   isolation.
+
+   This replaced an advisory check (`gh pr list`, `gh pr diff --name-only`, stop
+   if another slice is editing your files). That is optimistic concurrency with
+   a window between the check and the write, run independently by five agents.
+   27.67% of agent pull requests hit merge conflicts across 142k PRs
+   ([factory-throughput.md](../../../docs/research/factory-throughput.md) F2);
+   five judgement calls do not survive that rate.
 2. Branch from `staging` — never `main`. One branch per slice, not per file.
 3. **Rebase onto latest `staging` before the merge bar**, not just at branch
    time. Five parallel agents means your base went stale while you worked.
 
 `AGENTS.md` has the parallel rules: a slice touching shared surface runs alone.
-Schema is not your job — tables land in wave 0. If your slice needs a column
-that does not exist, stop and hand back.
+**At most one shared-surface slice is in flight at a time** — that is the wave's
+job to schedule, not yours to detect. If your slice needs shared surface and one
+is already running, hand back rather than starting.
+
+Schema is not your job — tables land in wave 0, and so do route shells
+(`bun scripts/journey.ts routes <spine.yaml>`). If your slice needs a column or
+a page that does not exist, stop and hand back. Creating the page yourself puts
+you in `src/app`, which takes the shared lock and stalls the other four.
 
 Worktrees isolate files, not ports, databases or lockfiles. Confirm a dev server
 is *your* process; regenerate a conflicted lockfile rather than hand-merging.
