@@ -2,6 +2,7 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { execFileSync } from "node:child_process";
 import {
+  copyFileSync,
   cpSync,
   existsSync,
   mkdirSync,
@@ -42,7 +43,12 @@ describe("compose", () => {
     expect(r.out).toContain("compose catalog");
     expect(r.out).toContain("create-next-app@latest");
     expect(r.out).toContain("eve@latest");
-    expect(r.out).toContain("--cwd packages/db");
+    // No `bun add` for db, deliberately: 75cfc9c removed it because `bun add
+    // drizzle-orm` resolved `latest` and rewrote the overlay's pin to the 0.45
+    // line while drizzle-kit stayed on 1.x, so every fresh clone got a
+    // drizzle-kit that could not load drizzle-orm. The overlay's package.json
+    // is the pin; `bun install` is enough.
+    expect(r.out).not.toContain("--cwd packages/db");
     expect(r.out).toContain("aws-eu-central-1");
     expect(r.out).toContain("aws-ap-southeast-1");
     expect(r.out).toContain("feature-folders");
@@ -115,8 +121,14 @@ describe("compose", () => {
     // compose record, and check-drift then reported surfaces that had gone missing.
     dir = mkdtempSync(join(tmpdir(), "compose-"));
     writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "vipernxt" }));
+    // The fixture needs the recipe: compose reads it before it checks the name,
+    // so without one this asserted the wrong refusal ("no recipe") and the name
+    // guard was never reached.
+    mkdirSync(join(dir, "docs/kit"), { recursive: true });
+    copyFileSync("docs/kit/recipe.yaml", join(dir, "docs/kit/recipe.yaml"));
     const r = run(["--cwd", dir, "--add", "web", "--apply"]);
     expect(r.code).toBe(1);
+    expect(r.out).toContain("refuses on the kit");
     expect(r.out).toContain("vipernxt");
   });
 
@@ -323,7 +335,10 @@ describe("db surface", () => {
 describe("app wiring", () => {
   test("depends on the workspace packages compose just created", async () => {
     const { withAppScripts } = await import("./compose.mjs");
-    const { pkg } = withAppScripts({ name: "web" }, { scope: "@acme", surfaces: ["web", "ui", "db"] });
+    const { pkg } = withAppScripts(
+      { name: "web" },
+      { scope: "@acme", surfaces: ["web", "ui", "db"] },
+    );
     expect(pkg.dependencies["@acme/ui"]).toBe("workspace:*");
     expect(pkg.dependencies["@acme/db"]).toBe("workspace:*");
     expect(pkg.dependencies["server-only"]).toBe("^0.0.1");
