@@ -1,19 +1,18 @@
 # ViperNxt
 
-**It won't let you build for a customer who doesn't exist.**
+**An agent playbook and a stack, for building software with one real customer.**
 
-Somebody told you they have a problem. A person, who said it, whose name you can
-write down — that is the only way in, and `check-drift` enforces it. From there:
-read what they already have, find the smallest thing that moves their number,
-build it, show them the score. The rest in parallel, only after they accept it.
+It starts where the work is: somebody told you they have a problem. A person,
+who said it, whose name you can write down. From there it reads what they
+already have, prices what they already pay for, finds the smallest thing that
+moves their number, builds it, and scores it against ten real cases before you
+show them.
 
-This is the procedure for that first week, written so an agent runs most of it,
-plus the stack it builds on.
+Two pieces, one repo — the skills that run the week, and the stack they compose.
 
-**What it is best at is stopping you.** Before it designs anything it prices
-what they already pay for, because the most expensive week is the one spent
-rebuilding a feature your customer already buys. *"They should upgrade instead"*
-is a result this thing can produce, and so is *"don't build this."*
+There is no route in from an idea with no customer; `check-drift` enforces that.
+And because it prices the incumbent before designing anything, *"they should
+upgrade instead"* is a result it can produce, and so is *"don't build this."*
 
 Requires [Bun](https://bun.sh) `1.4.x`.
 
