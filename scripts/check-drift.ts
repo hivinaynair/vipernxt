@@ -36,7 +36,9 @@ type State = {
   surfaces?: string[];
 };
 type Feature = { id?: string; title?: string; serves?: string[]; linear?: string };
-type Spine = { source?: string; features?: Feature[] };
+type Step = { id?: string };
+type Journey = { id?: string; title?: string; steps?: Step[] };
+type Spine = { source?: string; features?: Feature[]; journeys?: Journey[] };
 
 const STATE = "docs/product/state.yaml";
 const RECIPE = "docs/kit/recipe.yaml";
@@ -260,6 +262,26 @@ for (const path of spines) {
 
   if (spine.source && !existsSync(spine.source)) {
     findings.push(`${path} points at ${spine.source}, which does not exist`);
+  }
+
+  // A clip that pivots leaves the eval set measuring the product it used to be.
+  // Every gate still reports green, and the checkpoint shows them a score for
+  // something nobody built. fde-loop F already says a slice must "say which eval
+  // cases it covers"; this is that rule, enforced.
+  if (started(buildPhase)) {
+    const cited = new Set<string>();
+    for (const file of new Bun.Glob("{apps,packages,e2e}/**/*.eval.ts").scanSync(".")) {
+      for (const m of readFileSync(file, "utf8").matchAll(/\bJ\d+\.S\d+[a-z]?\b/g)) {
+        cited.add(m[0]);
+      }
+    }
+    for (const j of spine.journeys ?? []) {
+      const steps = (j.steps ?? []).map((st) => st.id).filter(Boolean) as string[];
+      if (steps.length === 0 || steps.some((id) => cited.has(id))) continue;
+      findings.push(
+        `${path}: journey ${j.id} (${j.title}) is on the spine but no eval case cites any of its steps — the score measures a different clip`,
+      );
+    }
   }
 
   const features = spine.features ?? [];

@@ -181,6 +181,30 @@ describe("the entry condition", () => {
     expect(r.out).not.toContain("structure");
   });
 
+  test("a pivoted clip whose eval set was not re-derived is drift", () => {
+    const r = state(
+      `product: demo\nengagement:\n  site: North depot\n  baseline: "6 days"\neval_set: docs/product/state.yaml\nclone:\n  tickets: deferred\nphases:\n  6: { name: build, status: in-progress }\n`,
+    );
+    mkdirSync(join(dir, "docs/journeys"), { recursive: true });
+    mkdirSync(join(dir, "docs/plans"), { recursive: true });
+    mkdirSync(join(dir, "packages/eval"), { recursive: true });
+    writeFileSync(join(dir, "docs/plans/d.md"), "# d\n");
+    writeFileSync(
+      join(dir, "docs/journeys/s.yaml"),
+      `source: docs/plans/d.md\njourneys:\n  - id: J1\n    title: Old clip\n    steps:\n      - id: J1.S1\n  - id: J3\n    title: New clip\n    steps:\n      - id: J3.S1\nfeatures:\n  - id: F1\n    title: F\n    serves: [J1.S1, J3.S1]\n`,
+    );
+    writeFileSync(
+      join(dir, "packages/eval/a.eval.ts"),
+      'const c = ["J1.S1"];\nexport default c;\n',
+    );
+    const r2 = run(dir);
+    expect(r2.code).toBe(1);
+    expect(r2.out).toContain("journey J3 (New clip)");
+    expect(r2.out).toContain("measures a different clip");
+    expect(r2.out).not.toContain("journey J1");
+    void r;
+  });
+
   test("idea is no longer a size", () => {
     const r = state(`product: demo\nsize: idea\nphases: {}\n`);
     expect(r.code).toBe(1);
