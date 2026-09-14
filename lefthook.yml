@@ -20,4 +20,4 @@ pre-commit:
 
     check-types:
       glob: "*.{ts,tsx}"
-      run: TURBO_UI=0 bunx turbo run check-types --filter='...[HEAD]'
+      run: bun run check-factory-types && TURBO_UI=0 bunx turbo run check-types --filter='...[HEAD]'

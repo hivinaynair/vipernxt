@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "id": "approved-product-v1",
+  "base": "staging",
+  "approval": "H_FACTORY",
+  "specFiles": [
+    "docs/plans/product-design.md",
+    "docs/journeys/product.yaml",
+    "docs/plans/feature-plan.md"
+  ],
+  "worker": {
+    "kind": "codex"
+  },
+  "limits": {
+    "attempts": 2,
+    "jobSeconds": 1200,
+    "runSeconds": 7200
+  },
+  "setup": [["bun", "install", "--frozen-lockfile"]],
+  "jobs": [
+    {
+      "id": "F1-S1",
+      "title": "Implement the approved feature slice",
+      "instructions": "Implement the cited feature plan and acceptance criteria, without expanding scope.",
+      "steps": ["J1.S1"],
+      "dependsOn": [],
+      "paths": ["apps/web/src/features/example"],
+      "checks": [["bun", "run", "check-types"], ["bun", "test"]],
+      "requiresBrowser": true,
+      "browser": ["bun", "scripts/factory/browser.ts"],
+      "review": ["bun", "scripts/factory/review.ts"]
+    }
+  ],
+  "combinedChecks": [
+    ["bun", "run", "check-types"],
+    ["bun", "run", "check-boundaries"],
+    ["bun", "run", "check-tokens"],
+    ["bun", "run", "check-journeys"],
+    ["bun", "run", "build"],
+    ["bun", "test"]
+  ]
+}

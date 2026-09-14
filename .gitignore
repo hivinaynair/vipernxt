@@ -60,3 +60,6 @@ docs/research/salvage-inbox/pages/*.webp
 docs/research/salvage-inbox/pages/*.md
 docs/research/salvage-inbox/pages/*.csv
 docs/research/salvage-inbox/pages/*.tsv
+
+# Local supervisor ledger, logs and isolated product worktrees
+.factory/

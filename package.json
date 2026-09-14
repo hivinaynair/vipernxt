@@ -6,7 +6,7 @@
     "dev": "turbo run dev",
     "format-and-lint": "biome check .",
     "format-and-lint:fix": "biome check . --write",
-    "check-types": "turbo run check-types",
+    "check-types": "bun run check-factory-types && turbo run check-types",
     "test": "bun test",
     "e2e": "turbo run e2e",
     "check-boundaries": "bun scripts/check-boundaries.mjs",
@@ -22,7 +22,9 @@
     "db:seed": "turbo run db:seed --filter=@repo/db",
     "db:studio": "turbo run db:studio --filter=@repo/db",
     "preinstall": "bunx only-allow@1.2.2 bun",
-    "prepare": "lefthook install"
+    "prepare": "lefthook install",
+    "factory": "bun scripts/factory.ts",
+    "check-factory-types": "tsc --noEmit --strict --skipLibCheck --target ESNext --module ESNext --moduleResolution Bundler --types bun scripts/factory.ts scripts/factory/core.ts scripts/factory/attempt.ts scripts/factory/review.ts scripts/factory/browser.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.8",

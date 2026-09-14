@@ -1,6 +1,6 @@
 # Unattended product factory
 
-The target is an approved product built and verified on staging without repeated human prompts. The user reviews the resulting product and starts a new change cycle. This document is an implementation design, not a claim that ViperNxt already has a persistent supervisor. Today its skills describe and execute work within an active agent session; they cannot wake themselves after that session stops.
+The target is an approved product built and verified on staging without repeated human prompts. The user reviews the resulting product and starts a new change cycle. The [serial local supervisor](factory-runtime.md) now implements the first execution stage. This document describes the wider target architecture; remote delivery, tracker projection and parallel scheduling require their own adapters and validation.
 
 ## Entry and completion
 

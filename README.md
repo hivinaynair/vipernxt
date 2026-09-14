@@ -313,3 +313,7 @@ as playbook.
 Internal map: [docs/map.md](docs/map.md) · Agent constraints:
 [AGENTS.md](AGENTS.md) · Playbook source:
 [saas-playbook](https://github.com/hivinaynair/saas-playbook)
+
+### Unattended execution
+
+After approving the first slice, `/next` can prepare and launch the [local serial factory](docs/playbook/factory-runtime.md). `bun run factory` exposes prepare/start/run/status/cancel commands. [Validation and current limits](docs/playbook/factory-validation.md) distinguish local completion from verified deployment.

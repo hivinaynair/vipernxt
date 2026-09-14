@@ -38,3 +38,5 @@ Final clip: `bun run check-journeys -- --complete`, combined-product browser jou
 If remote delivery is authorized, open the PR against staging; cite step IDs, eval IDs, tested commit and evidence. Use a body file/structured argument for multiline text. A reviewer push invalidates prior evidence: rerun against the current head. Integration is serial and the merged combination must be tested. Production promotion follows the configured release policy.
 
 Return completed, needs-input or blocked with concrete evidence. Two failed repair/check rounds, recurring same-theme fixes, or an unsettled product decision return to `/next` for diagnosis; do not continue an unlimited rewrite loop. Do not call an unmerged/unverified branch a finished product.
+
+When launched by the factory, the attempt contract owns file scope and verification. Implement only that slice and return; the supervisor owns commits, review, integration and delivery. Do not open a competing PR or independently publish.
