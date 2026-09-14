@@ -20,4 +20,11 @@ pre-commit:
 
     check-types:
       glob: "*.{ts,tsx}"
-      run: bun run check-factory-types && TURBO_UI=0 bunx turbo run check-types --filter='...[HEAD]'
+      run: |
+        set -e
+        bun run check-factory-types
+        if git rev-parse --verify HEAD >/dev/null 2>&1; then
+          TURBO_UI=0 bunx turbo run check-types --filter='...[HEAD]'
+        else
+          TURBO_UI=0 bunx turbo run check-types
+        fi

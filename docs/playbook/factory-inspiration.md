@@ -1,6 +1,6 @@
 # Build the Cursor adapter first; keep product decisions and acceptance portable
 
-Research checked 2026-09-14. This is our design choice for a solo company, not a claim that the three products implement identical systems.
+Research checked 2026-09-14. This is our design choice for a solo company, not a claim that the referenced projects implement identical systems.
 
 ## What to borrow
 
@@ -13,6 +13,14 @@ Research checked 2026-09-14. This is our design choice for a solo company, not a
 | [Symphony introduction](https://openai.com/index/open-source-codex-orchestration-symphony/) | Manage work and review outcomes instead of supervising every agent action | Queue authorized slices, inspect exceptions and review a working milestone with evidence. |
 
 For one person, prioritize reproducible setup, small tickets, reliable verification and bounded repair. Measure accepted slices, repair attempts, elapsed time, review findings and provider spend when available. Lines generated and agent count are poor measures of product progress. Keep worker context to the current ticket, cited specs, relevant code and the last failure. Do not attach the entire discovery conversation to each run.
+
+## Sandcastle: execution boundaries and reusable environments
+
+[Sandcastle](https://github.com/mattpocock/sandcastle) separates agent providers from sandbox providers, supports explicit branch strategies and lifecycle hooks, and returns structured run results. Borrow that boundary: the ticket should describe work; the execution adapter should own environment setup, cancellation and result collection. Keep installation scripts reusable and preserve failed workspaces for diagnosis.
+
+Its separate idle and post-completion timeouts address different failure modes. That is useful future hardening for our local CLI worker; our current cloud adapter uses a wall-clock deadline and terminal API state. Do not treat a completion phrase as product acceptance. Structured-output repair should target the malformed report rather than rerunning implementation. The current factory blocks uncertain remote work and bounds ordinary repair; richer format-only repair is not implemented yet.
+
+We do not need to install Sandcastle to use Cursor's hosted environments. Adopt a sandbox library when we need to run another CLI in infrastructure we manage. This keeps the first cloud path small.
 
 ## Local decisions, cloud implementation
 

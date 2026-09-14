@@ -3,7 +3,13 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { git, hash, read, save } from "./core";
 
-export type CursorConfig = { repository: string };
+export type CursorConfig = { repository: string; gitTransport?: "https" | "ssh" };
+function gitRepository(config: CursorConfig) {
+  const repo = repository(config.repository);
+  return config.gitTransport === "ssh"
+    ? `${repo.replace("https://github.com/", "git@github.com:")}.git`
+    : repo;
+}
 type Run = {
   id: string;
   agentId: string;
@@ -181,12 +187,18 @@ export async function implementWithCursor(options: {
   const client = new CursorClient(process.env.CURSOR_API_KEY ?? "");
   // A unique immutable source ref makes local integration commits accessible to Cursor.
   const source = `refs/heads/codex/factory-input/${hash({ base: options.base, dir: options.dir }).slice(0, 24)}`;
-  await options.command(["git", "push", repo, `${options.base}:${source}`], "cloud-source");
+  await options.command(
+    ["git", "push", gitRepository(options.config), `${options.base}:${source}`],
+    "cloud-source",
+  );
   const receipt = await cursorRun({ ...options, client, repo });
   const branch = receipt.branch;
   if (!branch) throw new Error("Cloud result has no branch");
   git(options.worktree, "check-ref-format", `refs/heads/${branch}`);
-  await options.command(["git", "fetch", "--no-tags", repo, `refs/heads/${branch}`], "cloud-fetch");
+  await options.command(
+    ["git", "fetch", "--no-tags", gitRepository(options.config), `refs/heads/${branch}`],
+    "cloud-fetch",
+  );
   const commit = git(options.worktree, "rev-parse", "FETCH_HEAD^{commit}");
   git(options.worktree, "merge-base", "--is-ancestor", options.base, commit);
   receipt.commit = commit;
@@ -236,7 +248,7 @@ export async function reviewWithCursor(options: {
     [
       "git",
       "push",
-      repo,
+      gitRepository(options.config),
       `${candidate.commit}:refs/heads/codex/factory-review/${hash({ dir }).slice(0, 24)}`,
     ],
     "review-source",
@@ -258,7 +270,9 @@ export async function reviewWithCursor(options: {
   }
   save(join(options.dir, "review.json"), verdict);
   if (verdict.approved !== true || !Array.isArray(verdict.findings) || verdict.findings.length)
-    throw new Error("Independent Cursor review found defects; see review.json");
+    throw new Error(
+      `Independent Cursor review: ${JSON.stringify(verdict.findings).slice(0, 3000)}`,
+    );
 }
 
 /** Fence remote work even if local setup/checks fail before the adapter can resume it. */

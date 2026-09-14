@@ -105,7 +105,13 @@ async function command(argv: Command, label: string, input?: string) {
       current.once("error", reject);
       current.once("exit", resolve);
     });
-    if (stopping || code !== 0) throw new Error(`${label} failed (exit ${code}); see ${log}`);
+    if (stopping || code !== 0) {
+      let detail = readFileSync(log, "utf8").slice(-3000);
+      for (const [name, value] of Object.entries(process.env))
+        if (/TOKEN|KEY|SECRET|PASSWORD|DATABASE_URL/i.test(name) && value && value.length >= 6)
+          detail = detail.replaceAll(value, "[REDACTED]");
+      throw new Error(`${label} failed (exit ${code}); ${detail}`);
+    }
   } finally {
     if (group) {
       try {
@@ -152,7 +158,7 @@ try {
   } else {
     const job = req.job;
     if (!job) throw new Error("Missing job contract");
-    const prompt = `Implement this approved slice only. Do not publish, merge, or provision. Do not change acceptance/spec files or edit outside allowed paths. If requirements are missing, report the blocker. The supervisor will run independent checks and commit.\n${JSON.stringify({ job, specFiles: req.manifest.specFiles, priorFailure: req.priorError }, null, 2)}`;
+    const prompt = `Implement this approved slice only. Do not deploy, merge, provision, or open pull requests. Do not change acceptance/spec files or edit outside allowed paths. If requirements are missing, report the blocker. The supervisor owns independent checks, acceptance and integration.\n${JSON.stringify({ job, specFiles: req.manifest.specFiles, priorFailure: req.priorError }, null, 2)}`;
     writeFileSync(join(dir, "prompt.txt"), prompt, { mode: 0o600 });
     const argv =
       req.manifest.worker.kind === "codex"
@@ -172,7 +178,10 @@ try {
         : (req.manifest.worker.command ?? []);
     if (req.manifest.worker.kind === "cursor") {
       await implementWithCursor({
-        config: { repository: req.manifest.worker.repository ?? "" },
+        config: {
+          repository: req.manifest.worker.repository ?? "",
+          gitTransport: req.manifest.worker.gitTransport,
+        },
         dir,
         worktree: req.worktree,
         base: req.base,
@@ -218,7 +227,10 @@ try {
     }
     if (job.review.length === 1 && job.review[0] === "cursor-cloud") {
       await reviewWithCursor({
-        config: { repository: req.manifest.worker.repository ?? "" },
+        config: {
+          repository: req.manifest.worker.repository ?? "",
+          gitTransport: req.manifest.worker.gitTransport,
+        },
         dir,
         worktree: req.worktree,
         base: req.base,

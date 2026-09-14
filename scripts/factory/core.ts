@@ -30,6 +30,7 @@ export type Manifest = {
     command?: Command;
     executable?: string;
     repository?: string;
+    gitTransport?: "https" | "ssh";
   };
   limits: { attempts: number; jobSeconds: number; runSeconds: number };
   jobs: Job[];
@@ -103,6 +104,8 @@ export function validate(root: string, m: Manifest, sealed = true) {
     !/^https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(m.worker.repository ?? "")
   )
     throw new Error("Cursor requires an explicit GitHub repository URL");
+  if (m.worker.gitTransport && !["https", "ssh"].includes(m.worker.gitTransport))
+    throw new Error("Invalid Git transport");
   if (m.phase && !["first-slice", "product"].includes(m.phase))
     throw new Error("Invalid factory phase");
   if (m.phase === "first-slice" && (m.jobs.length !== 1 || m.delivery))

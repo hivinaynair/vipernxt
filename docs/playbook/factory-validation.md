@@ -35,3 +35,12 @@ The successful worker reported 84,023 aggregate input tokens, including 74,496 c
 This proves local execution and restart behavior, not hosted product delivery. A product still needs authentic requirements, runnable acceptance/browser commands, a compatible authenticated worker and an authorized delivery adapter. The core never merges staging or production itself. It cannot certify that an arbitrary configured command actually performs its claimed browser checks; acceptance commands and their sources must be reviewed and pinned.
 
 Runs are serial and single-host. Machine shutdown requires an explicit resume. There is no Linear projection, cross-host scheduler, automatic provisioning, or monetary hard cap in this version. Job/run time limits and attempt caps bound execution; provider billing controls must enforce actual spending limits. The runtime remains experimental until used against a real product's deployed acceptance scenarios.
+
+
+## Cursor Cloud adapter (2026-09-14)
+
+The Cursor adapter targets API v1, persists client-supplied agent IDs before dispatch, resumes the same remote run after local interruption, and blocks uncertain cancellation. Returned code is fetched into the isolated worktree and passes the same acceptance gates. A separate Cursor review sees the candidate commit. First-slice mode ends at `awaiting-review`.
+
+The factory-focused suite passes 31 tests, including 10 mocked Cursor contract cases. These cover lost launch responses, wrong repository results, terminal failures, confirmed/unconfirmed cancellation, immutable inputs, credential-safe errors and cleanup after local failure. Existing subprocess tests exercise integration, retries and supervisor recovery. Mocked HTTP tests do not establish live cloud reliability.
+
+A private Return Desk repository was prepared for a live follow-up UI slice with pinned Playwright checks. During preflight, a fresh Git repository exposed a hook assumption that HEAD already existed; the hook now runs all type checks for the first commit. GitHub's HTTPS OAuth credential lacked workflow scope; the same authorized repository was published using its working SSH key. Cursor API authentication and visibility of the new repository returned HTTP 200. Live execution results are recorded separately after the agent and acceptance stages finish.
