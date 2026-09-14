@@ -1,7 +1,15 @@
 import { Database } from "bun:sqlite";
 
 import { spawn } from "node:child_process";
-import { closeSync, existsSync, mkdirSync, openSync, unlinkSync, writeFileSync } from "node:fs";
+import {
+  closeSync,
+  existsSync,
+  mkdirSync,
+  openSync,
+  renameSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { join, resolve } from "node:path";
 import type { Request, Result } from "./factory/attempt";
 import {
@@ -19,7 +27,7 @@ import {
 
 const [action, input] = process.argv.slice(2);
 if (!action || action === "--help") {
-  console.log("Usage: bun run factory <prepare|start|run|status|cancel> [manifest.json]");
+  console.log("Usage: bun run factory <prepare|start|run|resume|status|cancel> [manifest.json]");
   process.exit(0);
 }
 const root = git(process.cwd(), "rev-parse", "--show-toplevel");
@@ -131,6 +139,27 @@ async function run() {
         jobs: Object.fromEntries(m.jobs.map((j) => [j.id, { status: "pending", attempts: [] }])),
       };
       save(ledgerPath, state);
+    }
+    if (action === "resume" && state.status === "blocked") {
+      let recovered = false;
+      for (const entry of Object.values(state.jobs)) {
+        if (entry.status !== "running") continue;
+        const attempt = lastAttempt(entry.attempts);
+        const resultPath = join(attempt.dir, "result.json");
+        if (!existsSync(resultPath) || !read<Result>(resultPath).blocked) continue;
+        const claimPath = join(attempt.dir, "claim.json");
+        if (existsSync(claimPath) && alive(read<{ pid: number }>(claimPath).pid))
+          throw new Error("Cannot resume a live attempt runner");
+        renameSync(resultPath, join(attempt.dir, `blocked-${Date.now()}.json`));
+        if (existsSync(claimPath)) unlinkSync(claimPath);
+        recovered = true;
+      }
+      if (recovered) {
+        state.status = "running";
+        delete state.error;
+        save(ledgerPath, state);
+        log("Resuming the same blocked attempt and persisted remote identities");
+      }
     }
     try {
       git(root, "rev-parse", "--verify", state.branch);
@@ -323,7 +352,7 @@ try {
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, "cancel"), "");
     console.log("Cancellation requested");
-  } else if (action === "run") {
+  } else if (action === "run" || action === "resume") {
     await run();
     if (
       !["completed-local", "awaiting-review", "delivered"].includes(read<Ledger>(ledgerPath).status)
@@ -344,7 +373,9 @@ try {
       `Supervisor dispatched (${proc.pid}); inspect factory status and ${dir}/supervisor.log`,
     );
   } else
-    throw new Error("Usage: bun run factory <prepare|run|start|status|cancel> [manifest.json]");
+    throw new Error(
+      "Usage: bun run factory <prepare|run|resume|start|status|cancel> [manifest.json]",
+    );
 } catch (error) {
   console.error(String(error));
   process.exitCode = 1;

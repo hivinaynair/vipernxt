@@ -21,8 +21,8 @@
     "db:migrate": "turbo run db:migrate --filter=@repo/db",
     "db:seed": "turbo run db:seed --filter=@repo/db",
     "db:studio": "turbo run db:studio --filter=@repo/db",
-    "preinstall": "bunx only-allow@1.2.2 bun",
-    "prepare": "lefthook install",
+    "preinstall": "bun x only-allow@1.2.2 bun",
+    "prepare": "bun scripts/install-hooks.mjs",
     "factory": "bun scripts/factory.ts",
     "check-factory-types": "tsc --noEmit --strict --skipLibCheck --target ESNext --module ESNext --moduleResolution Bundler --types bun scripts/factory.ts scripts/factory/core.ts scripts/factory/attempt.ts scripts/factory/review.ts scripts/factory/browser.ts"
   },

@@ -24,6 +24,7 @@ function fixture(
     wrongRepo?: boolean;
     cancelFails?: boolean;
     review?: boolean;
+    startingRef?: string;
   } = {},
 ) {
   const dir = mkdtempSync(join(tmpdir(), "cursor-contract-"));
@@ -53,7 +54,7 @@ function fixture(
     if (init?.method === "POST" && path === "/v1/agents") {
       const body = JSON.parse(String(init.body));
       expect(body.repos).toEqual([
-        { url: "https://github.com/test/product", startingRef: "base-sha" },
+        { url: "https://github.com/test/product", startingRef: options.startingRef ?? "base-sha" },
       ]);
       expect(body.workOnCurrentBranch).toBe(false);
       expect(body.autoCreatePR).toBe(false);
@@ -81,6 +82,7 @@ function fixture(
     prompt: "Build one slice",
     stopped: () => false,
     review: options.review,
+    startingRef: options.startingRef,
     sleep: async () => {
       state = options.failure ? "ERROR" : "FINISHED";
     },
@@ -164,4 +166,9 @@ test("a local setup failure can fence an already dispatched remote attempt", asy
   await cancelCursorAttempts(f.args.dir, f.args.client);
   expect(f.cancel()).toBe(1);
   expect(read<CloudReceipt>(join(f.args.dir, "cursor.json")).status).toBe("CANCELLED");
+});
+
+test("freshly pushed commits can be launched through their immutable branch ref", async () => {
+  const f = fixture({ startingRef: "codex/factory-input/pinned" });
+  expect((await cursorRun(f.args)).status).toBe("FINISHED");
 });

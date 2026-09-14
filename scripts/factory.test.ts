@@ -352,3 +352,33 @@ test("first-slice success waits for review instead of claiming product completio
   await waitFor(() => process.exitCode !== null);
   expect(read<Ledger>(f.ledger).status).toBe("awaiting-review");
 });
+
+test("explicit resume keeps a blocked attempt, its prompt and evidence instead of buying another attempt", async () => {
+  const f = fixture();
+  const m = read<Manifest>(f.path);
+  m.jobs = m.jobs.slice(0, 1);
+  m.jobs[0].review = check(
+    `if(!require('node:fs').existsSync(${JSON.stringify(join(f.root, "ready"))}))process.exit(1)`,
+  );
+  save(f.path, m);
+  execFileSync(process.execPath, [cli, "prepare", f.path], { cwd: f.root, stdio: "pipe" });
+  const first = start(f.root);
+  await waitFor(() => first.exitCode !== null);
+  const state = read<Ledger>(f.ledger);
+  const attempt = state.jobs.A.attempts[0];
+  const output = join(attempt.dir, "result.json");
+  save(output, { ...read<Record<string, unknown>>(output), blocked: true });
+  state.status = "blocked";
+  state.jobs.A.status = "running";
+  save(f.ledger, state);
+  writeFileSync(join(f.root, "ready"), "external blocker resolved");
+  const resumed = spawn(process.execPath, [cli, "resume", f.path], {
+    cwd: f.root,
+    stdio: "ignore",
+  });
+  children.push(resumed);
+  await waitFor(() => resumed.exitCode !== null);
+  const done = read<Ledger>(f.ledger);
+  expect(done.status).toBe("completed-local");
+  expect(done.jobs.A.attempts).toHaveLength(1);
+});

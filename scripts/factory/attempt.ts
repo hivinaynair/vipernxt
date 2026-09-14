@@ -158,7 +158,9 @@ try {
   } else {
     const job = req.job;
     if (!job) throw new Error("Missing job contract");
-    const prompt = `Implement this approved slice only. Do not deploy, merge, provision, or open pull requests. Do not change acceptance/spec files or edit outside allowed paths. If requirements are missing, report the blocker. The supervisor owns independent checks, acceptance and integration.\n${JSON.stringify({ job, specFiles: req.manifest.specFiles, priorFailure: req.priorError }, null, 2)}`;
+    const prompt = existsSync(join(dir, "prompt.txt"))
+      ? readFileSync(join(dir, "prompt.txt"), "utf8")
+      : `Implement this approved slice only. Do not deploy, merge, provision, or open pull requests. Do not change acceptance/spec files or edit outside allowed paths. If requirements are missing, report the blocker. The supervisor owns independent checks, acceptance and integration.\n${JSON.stringify({ job, specFiles: req.manifest.specFiles, priorFailure: req.priorError }, null, 2)}`;
     writeFileSync(join(dir, "prompt.txt"), prompt, { mode: 0o600 });
     const argv =
       req.manifest.worker.kind === "codex"

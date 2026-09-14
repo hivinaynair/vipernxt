@@ -63,6 +63,7 @@ export async function cursorRun(options: {
   prompt: string;
   stopped: () => boolean;
   review?: boolean;
+  startingRef?: string;
   sleep?: () => Promise<unknown>;
 }): Promise<CloudReceipt> {
   const { client, dir, base, prompt, stopped } = options;
@@ -98,10 +99,10 @@ export async function cursorRun(options: {
         const created: { agent: Agent; run: Run } = await client.request("/agents", "POST", {
           agentId: receipt.agentId,
           prompt: { text: prompt },
-          repos: [{ url: repo, startingRef: base }],
+          repos: [{ url: repo, startingRef: options.startingRef ?? base }],
           workOnCurrentBranch: false,
           autoCreatePR: false,
-          mode: options.review ? "plan" : "agent",
+          mode: "agent",
         });
         if (created.agent.id !== receipt.agentId || created.run.agentId !== receipt.agentId)
           throw new RemoteUncertain("Cursor create identity mismatch");
@@ -191,7 +192,12 @@ export async function implementWithCursor(options: {
     ["git", "push", gitRepository(options.config), `${options.base}:${source}`],
     "cloud-source",
   );
-  const receipt = await cursorRun({ ...options, client, repo });
+  const receipt = await cursorRun({
+    ...options,
+    client,
+    repo,
+    startingRef: source.replace("refs/heads/", ""),
+  });
   const branch = receipt.branch;
   if (!branch) throw new Error("Cloud result has no branch");
   git(options.worktree, "check-ref-format", `refs/heads/${branch}`);
@@ -258,6 +264,7 @@ export async function reviewWithCursor(options: {
     dir,
     repo,
     base: candidate.commit,
+    startingRef: `codex/factory-review/${hash({ dir }).slice(0, 24)}`,
     review: true,
     stopped: options.stopped,
     prompt: `Review only. Do not edit, commit, push, open PRs or merge. Inspect the diff from ${options.base} to HEAD against this contract. Do not trust the builder summary. Return ONLY JSON {"approved":boolean,"findings":string[]} with concrete correctness, security or acceptance defects. Approve only when no actionable defects remain.\n${options.instructions}`,
