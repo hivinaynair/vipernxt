@@ -1,6 +1,6 @@
 # Unattended product factory
 
-The target is an approved product built and verified on staging without repeated human prompts. The user reviews the resulting product and starts a new change cycle. The [serial local supervisor](factory-runtime.md) now implements the first execution stage. This document describes the wider target architecture; remote delivery, tracker projection and parallel scheduling require their own adapters and validation.
+The target is an approved product built and verified on staging without repeated human prompts. The user reviews the resulting product and starts a new change cycle. The [serial supervisor](factory-runtime.md) now supports local workers and a Cursor Cloud adapter, with controller-host verification. This document describes the wider target architecture; live cloud validation, remote delivery, tracker projection and parallel scheduling require their own adapters and validation.
 
 ## Entry and completion
 

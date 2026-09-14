@@ -83,6 +83,11 @@ function result(attempt: Attempt): Result | undefined {
     try {
       process.kill(-pid, "SIGKILL");
     } catch {}
+    if (m.worker.kind === "cursor" && !read<Request>(join(attempt.dir, "request.json")).delivery) {
+      unlinkSync(claim);
+      launch(attempt, read<Request>(join(attempt.dir, "request.json")));
+      return;
+    }
     return {
       ok: false,
       error: "Attempt runner exited without a result; isolated work retained",
@@ -132,7 +137,11 @@ async function run() {
     } catch {
       git(root, "update-ref", state.branch, state.integration, "0".repeat(40));
     }
-    if (["completed-local", "delivered", "cancelled", "failed"].includes(state.status)) {
+    if (
+      ["completed-local", "awaiting-review", "delivered", "cancelled", "failed"].includes(
+        state.status,
+      )
+    ) {
       console.log(JSON.stringify(state, null, 2));
       return;
     }
@@ -147,7 +156,11 @@ async function run() {
           if (job.status === "running")
             writeFileSync(join(lastAttempt(job.attempts).dir, "cancel"), "");
         if (state.delivery) writeFileSync(join(state.delivery.dir, "cancel"), "");
-        const stillRunning = (a: Attempt) => existsSync(join(a.dir, "claim.json")) && !result(a);
+        const stillRunning = (a: Attempt) => {
+          const receipt = result(a);
+          if (receipt?.blocked) throw new Error(receipt.error);
+          return existsSync(join(a.dir, "claim.json")) && !receipt;
+        };
         const running =
           Object.values(state.jobs).some(
             (j) => j.status === "running" && stillRunning(lastAttempt(j.attempts)),
@@ -172,6 +185,7 @@ async function run() {
             launch(attempt, read<Request>(join(attempt.dir, "request.json")));
           continue;
         }
+        if (done.blocked) throw new Error(done.error);
         if (done.ok) {
           if (!done.commit || git(root, "rev-parse", `${done.commit}^`) !== attempt.base)
             throw new Error("Invalid attempt commit parent");
@@ -235,7 +249,7 @@ async function run() {
           log(`${job.id} started attempt ${number}`);
         } else if (Object.values(state.jobs).every((j) => j.status === "accepted")) {
           if (!m.delivery) {
-            state.status = "completed-local";
+            state.status = m.phase === "first-slice" ? "awaiting-review" : "completed-local";
             save(ledgerPath, state);
             log("Local product complete; no deployed verification configured");
             return;
@@ -311,7 +325,9 @@ try {
     console.log("Cancellation requested");
   } else if (action === "run") {
     await run();
-    if (!["completed-local", "delivered"].includes(read<Ledger>(ledgerPath).status))
+    if (
+      !["completed-local", "awaiting-review", "delivered"].includes(read<Ledger>(ledgerPath).status)
+    )
       process.exitCode = 1;
   } else if (action === "start") {
     validate(root, m);

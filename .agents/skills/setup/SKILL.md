@@ -11,6 +11,8 @@ description: >-
 
 Input: accepted local slice, named clone, scaffold manifest and authorized cloud targets. Follow [execution contract](../CONTRACT.md). Setup creates external resources; scaffolding creates local code.
 
+For explicitly selected cloud implementation, create/link only the dedicated product GitHub repository before the first slice. Do not run full provisioning for that prerequisite; never reuse the inherited kit origin.
+
 Read the script and verify the product remote/targets before running:
 
 ```sh

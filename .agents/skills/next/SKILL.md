@@ -37,7 +37,7 @@ No state file: create it from the schema with `clone.customized` and `clone.scaf
 | 4 Journeys | `journeys` | Valid ID'd expansion of accepted beats, EARS and feature mapping |
 | Scaffold | `customize` → `scaffold` script | Chosen stack configured and verified; no cloud prerequisites for local clip |
 | 5a Structure | `design-system` | Minimal layout/state primitives before first product screens |
-| 6 First slice | `plan` → `build` | Wave 0 + one working journey, tests and eval evidence; user reviews it |
+| 6 First slice | `plan` → `build` | Wave 0 + one working journey, tests and eval evidence; Cursor Cloud preferred, user reviews it |
 | Factory | Setup, Linear, remaining planned slices | Accepted scope integrated and verified as a combined product |
 
 Research and field may overlap. Shape may draft while gaps remain, but cannot be done on unaccepted assumptions. The first design review and first working slice are product decisions; mechanically expanding approved content is not another approval gate.
@@ -59,6 +59,10 @@ When a story changes: revise the design clip/table, re-expand the same spine and
 Delegate only an independent question/source or a disjoint planned slice. Give the child the relevant skill, inputs, allowed paths, evidence question and output limit—not all project history. Use salvage-miner, pile-reader, domain-researcher, spine-checker or ui-gate-auditor as appropriate. Cursor uses matching adapters; other hosts use available subagents/sibling workers, or run serially. Missing a vendor-specific harness is not a reason to skip the job.
 
 Start with a few useful sources; expand only for a decision-changing gap. Cache source/date/decision links. Report one consolidated result. Stop a slice for an unsettled product choice, absent schema dependency, two failed verification/repair rounds, or recurring same-theme corrections; keep independent work moving.
+
+## Cloud implementation
+
+Keep discovery, design, journeys and scaffold local. Prefer Cursor Cloud for implementation using [the runtime guide](../../../docs/playbook/factory-runtime.md). Establish the explicitly chosen product GitHub repository before the first cloud slice; do not push to an inherited kit origin. Use `phase: first-slice` for one reviewed-design job, then hold its working result for acceptance. Full production provisioning can wait. Missing Cursor API access is a concrete blocker to cloud execution; offer local execution only as an explicit alternative. MCP connections do not replace the controller API key.
 
 ## Unattended handoff
 

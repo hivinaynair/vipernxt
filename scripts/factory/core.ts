@@ -24,7 +24,13 @@ export type Manifest = {
   specHash?: string;
   approval: string;
   simulation?: boolean;
-  worker: { kind: "codex" | "command"; command?: Command; executable?: string };
+  phase?: "first-slice" | "product";
+  worker: {
+    kind: "codex" | "command" | "cursor";
+    command?: Command;
+    executable?: string;
+    repository?: string;
+  };
   limits: { attempts: number; jobSeconds: number; runSeconds: number };
   jobs: Job[];
   setup?: Command[];
@@ -88,10 +94,19 @@ export function validate(root: string, m: Manifest, sealed = true) {
     if (!Number.isSafeInteger(m.limits?.[key]) || m.limits[key] < 1)
       throw new Error(`Invalid limit ${key}`);
   if (
-    !["codex", "command"].includes(m.worker?.kind) ||
+    !["codex", "command", "cursor"].includes(m.worker?.kind) ||
     (m.worker.kind === "command" && !command(m.worker.command))
   )
     throw new Error("Invalid worker adapter");
+  if (
+    m.worker.kind === "cursor" &&
+    !/^https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(m.worker.repository ?? "")
+  )
+    throw new Error("Cursor requires an explicit GitHub repository URL");
+  if (m.phase && !["first-slice", "product"].includes(m.phase))
+    throw new Error("Invalid factory phase");
+  if (m.phase === "first-slice" && (m.jobs.length !== 1 || m.delivery))
+    throw new Error("First-slice runs contain one reviewable slice and no automatic delivery");
   const ids = new Set(m.jobs.map((j) => j.id));
   if (ids.size !== m.jobs.length) throw new Error("Duplicate jobs");
   for (const job of m.jobs) {
@@ -104,6 +119,11 @@ export function validate(root: string, m: Manifest, sealed = true) {
       !job.paths.every(safePath)
     )
       throw new Error(`Invalid job ${job.id}`);
+    if (
+      job.review?.[0] === "cursor-cloud" &&
+      (job.review.length !== 1 || m.worker.kind !== "cursor")
+    )
+      throw new Error("Cursor review requires the Cursor worker configuration");
     if (!job.dependsOn || job.dependsOn.some((id) => !ids.has(id) || id === job.id))
       throw new Error(`Invalid dependency ${job.id}`);
     if (job.paths.some((p) => p.startsWith("apps/web")) && !job.requiresBrowser)
@@ -146,7 +166,7 @@ export function validate(root: string, m: Manifest, sealed = true) {
     };
     if (
       !Object.values(state.phases ?? {}).some((p) => p.name === "shape" && p.status === "done") ||
-      state.clip?.acceptance !== "accepted"
+      (m.phase !== "first-slice" && state.clip?.acceptance !== "accepted")
     )
       throw new Error("Approved design and accepted first slice required");
     const shape = Object.values(state.phases ?? {}).find((p) => p.name === "shape");
@@ -154,9 +174,12 @@ export function validate(root: string, m: Manifest, sealed = true) {
       !state.engagement?.site?.trim() ||
       !shape?.artifact ||
       !existsSync(resolve(root, shape.artifact)) ||
-      !state.clip?.evidence ||
-      !existsSync(resolve(root, state.clip.evidence)) ||
-      !state.decisions?.some((d) => d.id === state.clip?.acceptance_decision && d.answer?.trim())
+      (m.phase !== "first-slice" &&
+        (!state.clip?.evidence ||
+          !existsSync(resolve(root, state.clip.evidence)) ||
+          !state.decisions?.some(
+            (d) => d.id === state.clip?.acceptance_decision && d.answer?.trim(),
+          )))
     )
       throw new Error("Participant and first-slice approval/evidence are required");
     if (!state.decisions?.some((d) => d.id === m.approval && d.answer?.trim()))

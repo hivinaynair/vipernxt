@@ -16,7 +16,7 @@ Held items use `kind: gather | decide`, `who: fde | site`, `what`, `done_when`, 
 
 ## Gates and return contract
 
-No product UI before confirmed U5 and approved design (`shape: done`), unless the explicit `ui_writes` override applies. Never disguise assumptions as confirmations. Review the first working slice before provisioning/factory work, unless the user already authorized simulation of that review.
+No product UI before confirmed U5 and approved design (`shape: done`), unless the explicit `ui_writes` override applies. Never disguise assumptions as confirmations. Review the first working slice before full provisioning/remaining factory work. A dedicated product repository may be provisioned earlier for explicitly selected cloud implementation. The first-slice review may be simulated only when the user already authorized simulation of that review.
 
 Each skill returns a compact result: `completed | needs-input | blocked`, artifact paths, evidence, unresolved items, and next action. `/next` records it and continues. Do not repeat the result in multiple reports. Missing optional tools are disclosed; missing required acceptance evidence prevents completion.
 

@@ -39,4 +39,6 @@ If remote delivery is authorized, open the PR against staging; cite step IDs, ev
 
 Return completed, needs-input or blocked with concrete evidence. Two failed repair/check rounds, recurring same-theme fixes, or an unsettled product decision return to `/next` for diagnosis; do not continue an unlimited rewrite loop. Do not call an unmerged/unverified branch a finished product.
 
-When launched by the factory, the attempt contract owns file scope and verification. Implement only that slice and return; the supervisor owns commits, review, integration and delivery. Do not open a competing PR or independently publish.
+When Cursor Cloud is selected, `/next` dispatches this contract through the factory; local sessions prepare the handoff and inspect evidence.
+
+When launched by the factory, the attempt contract owns file scope and verification. Implement only that slice and return; Cursor may commit to its own result branch for transport; the supervisor owns acceptance, review, integration and delivery. Do not open a competing PR or independently publish.

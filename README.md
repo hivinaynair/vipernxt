@@ -317,3 +317,5 @@ Internal map: [docs/map.md](docs/map.md) · Agent constraints:
 ### Unattended execution
 
 After approving the first slice, `/next` can prepare and launch the [local serial factory](docs/playbook/factory-runtime.md). `bun run factory` exposes prepare/start/run/status/cancel commands. [Validation and current limits](docs/playbook/factory-validation.md) distinguish local completion from verified deployment.
+
+Cloud implementation: start with [Cursor Cloud](docs/playbook/factory-runtime.md), guided by [Factory and Symphony](docs/playbook/factory-inspiration.md). Discovery and design stay local; cloud coding still needs a running controller for scheduling and verification.

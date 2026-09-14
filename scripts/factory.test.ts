@@ -330,3 +330,25 @@ test("review findings fail even when the reviewer process exits zero", () => {
     }),
   ).toThrow();
 });
+
+test("first cloud slice is a bounded review gate, separate from accepted-product execution", () => {
+  const f = fixture();
+  const m = read<Manifest>(f.path);
+  m.phase = "first-slice";
+  expect(() => validate(f.root, m)).toThrow("one reviewable slice");
+  m.jobs = m.jobs.slice(0, 1);
+  expect(() => validate(f.root, m)).not.toThrow();
+  m.delivery = { command: check(""), verify: check("") };
+  expect(() => validate(f.root, m)).toThrow("no automatic delivery");
+});
+
+test("first-slice success waits for review instead of claiming product completion", async () => {
+  const f = fixture();
+  const m = read<Manifest>(f.path);
+  m.phase = "first-slice";
+  m.jobs = m.jobs.slice(0, 1);
+  save(f.path, m);
+  const process = start(f.root);
+  await waitFor(() => process.exitCode !== null);
+  expect(read<Ledger>(f.ledger).status).toBe("awaiting-review");
+});

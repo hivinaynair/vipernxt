@@ -9,7 +9,8 @@
     "docs/plans/feature-plan.md"
   ],
   "worker": {
-    "kind": "codex"
+    "kind": "cursor",
+    "repository": "https://github.com/YOUR-ACCOUNT/YOUR-PRODUCT"
   },
   "limits": {
     "attempts": 2,
@@ -28,7 +29,7 @@
       "checks": [["bun", "run", "check-types"], ["bun", "test"]],
       "requiresBrowser": true,
       "browser": ["bun", "scripts/factory/browser.ts"],
-      "review": ["bun", "scripts/factory/review.ts"]
+      "review": ["cursor-cloud"]
     }
   ],
   "combinedChecks": [

@@ -2,6 +2,12 @@ import { spawn } from "node:child_process";
 import { closeSync, existsSync, openSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { allowed, type Command, git, type Job, type Manifest, read, save } from "./core";
+import {
+  cancelCursorAttempts,
+  implementWithCursor,
+  RemoteUncertain,
+  reviewWithCursor,
+} from "./cursor";
 
 export type Request = {
   manifest: Manifest;
@@ -15,6 +21,7 @@ export type Request = {
 };
 export type Result = {
   ok: boolean;
+  blocked?: boolean;
   commit?: string;
   error?: string;
   usage?: unknown;
@@ -33,8 +40,10 @@ try {
 }
 let child: ReturnType<typeof spawn> | undefined;
 let stopping = false;
+let stoppedAt = 0;
 const stop = () => {
   stopping = true;
+  stoppedAt ||= Date.now();
   if (child?.pid) {
     try {
       process.kill(-child.pid, "SIGTERM");
@@ -47,7 +56,7 @@ const guard = setInterval(() => {
   if (Date.now() > req.deadline || existsSync(join(dir, "cancel"))) stop();
 }, 100);
 const hardGuard = setInterval(() => {
-  if (stopping) {
+  if (stopping && Date.now() - stoppedAt > (req.manifest.worker.kind === "cursor" ? 45000 : 0)) {
     try {
       process.kill(-process.pid, "SIGKILL");
     } catch {
@@ -78,6 +87,7 @@ async function command(argv: Command, label: string, input?: string) {
     };
     const current = spawn(argv[0], argv.slice(1), {
       cwd: req.worktree,
+      detached: true,
       env,
       stdio: ["pipe", fd, fd],
     });
@@ -160,7 +170,17 @@ try {
             "-",
           ]
         : (req.manifest.worker.command ?? []);
-    await command(argv, "worker", prompt);
+    if (req.manifest.worker.kind === "cursor") {
+      await implementWithCursor({
+        config: { repository: req.manifest.worker.repository ?? "" },
+        dir,
+        worktree: req.worktree,
+        base: req.base,
+        prompt: `${prompt}\nCommit your result to the Cursor-created branch. Do not open a PR or merge.`,
+        stopped: () => stopping,
+        command,
+      });
+    } else await command(argv, "worker", prompt);
     // Include worker-created commits, staged edits and untracked files; never just HEAD diff.
     git(req.worktree, "add", "-A");
     const changes = git(
@@ -196,7 +216,18 @@ try {
           "Browser receipt must identify this candidate with at least one passed scenario",
         );
     }
-    await command(job.review, "review");
+    if (job.review.length === 1 && job.review[0] === "cursor-cloud") {
+      await reviewWithCursor({
+        config: { repository: req.manifest.worker.repository ?? "" },
+        dir,
+        worktree: req.worktree,
+        base: req.base,
+        tree,
+        instructions: JSON.stringify({ job, specFiles: req.manifest.specFiles }),
+        stopped: () => stopping,
+        command,
+      });
+    } else await command(job.review, "review");
     for (const [i, check] of req.manifest.combinedChecks.entries())
       await command(check, `combined-${i}`);
     git(req.worktree, "add", "-A");
@@ -225,9 +256,18 @@ try {
     finished: Date.now(),
   } satisfies Result);
 } catch (error) {
+  let failure = error;
+  if (req.manifest.worker.kind === "cursor" && !(error instanceof RemoteUncertain)) {
+    try {
+      await cancelCursorAttempts(dir);
+    } catch (cleanupError) {
+      failure = cleanupError;
+    }
+  }
   save(join(dir, "result.json"), {
     ok: false,
-    error: String(error),
+    error: String(failure),
+    blocked: failure instanceof RemoteUncertain,
     usage: collectUsage(),
     finished: Date.now(),
   } satisfies Result);
