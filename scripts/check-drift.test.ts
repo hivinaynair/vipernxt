@@ -95,12 +95,12 @@ describe("check-drift", () => {
     expect(r.out).toContain("clip.kind");
   });
 
-  test("flags composed without surfaces", () => {
+  test("flags scaffolded without surfaces", () => {
     dir = mkdtempSync(join(tmpdir(), "drift-"));
     mkdirSync(join(dir, "docs/product"), { recursive: true });
     writeFileSync(
       join(dir, "docs/product/state.yaml"),
-      `product: demo\nclone:\n  composed: done\nphases: {}\n`,
+      `product: demo\nclone:\n  scaffolded: done\nphases: {}\n`,
     );
     writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "demo" }));
     const r = run(dir);
@@ -108,20 +108,20 @@ describe("check-drift", () => {
     expect(r.out).toContain("surfaces is empty");
   });
 
-  test("flags a surface missing from composed.yaml", () => {
+  test("flags a surface missing from scaffolded.yaml", () => {
     dir = mkdtempSync(join(tmpdir(), "drift-"));
     mkdirSync(join(dir, "docs/product"), { recursive: true });
     mkdirSync(join(dir, "docs/kit"), { recursive: true });
     writeFileSync(
       join(dir, "docs/product/state.yaml"),
-      `product: demo\nclip:\n  kind: wrap\nsurfaces: [web, agent]\nclone:\n  composed: done\nphases: {}\n`,
+      `product: demo\nclip:\n  kind: wrap\nsurfaces: [web, agent]\nclone:\n  scaffolded: done\nphases: {}\n`,
     );
-    writeFileSync(join(dir, "docs/kit/composed.yaml"), "surfaces: [web, ui]\n");
+    writeFileSync(join(dir, "docs/kit/scaffolded.yaml"), "surfaces: [web, ui]\n");
     writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "demo" }));
     const r = run(dir);
     expect(r.code).toBe(1);
     expect(r.out).toContain("agent");
-    expect(r.out).toContain("composed.yaml");
+    expect(r.out).toContain("scaffolded.yaml");
   });
 });
 
@@ -174,11 +174,12 @@ describe("the entry condition", () => {
     expect(r.out).toContain("earlier phase 4 (journeys) is still pending");
   });
 
-  test("structure after the first slice is not out of order", () => {
+  test("structure must precede the first product slice", () => {
     const r = state(
       `product: demo\nengagement:\n  site: North depot\n  baseline: "6 days"\neval_set: docs/product/state.yaml\nphases:\n  5a: { name: structure, status: pending }\n  6: { name: build, status: in-progress }\n`,
     );
-    expect(r.out).not.toContain("structure");
+    expect(r.code).toBe(1);
+    expect(r.out).toContain("earlier phase 5a (structure) is still pending");
   });
 
   test("a pivoted clip whose eval set was not re-derived is drift", () => {
@@ -266,5 +267,36 @@ describe("outcome", () => {
       `product: demo\noutcome:\n  kind: parked\n  why: seven vendors ship this\nphases: {}\n`,
     );
     expect(r.out).not.toContain("outcome");
+  });
+});
+
+describe("completion evidence", () => {
+  function fixtureState(yaml: string) {
+    dir = mkdtempSync(join(tmpdir(), "drift-"));
+    mkdirSync(join(dir, "docs/product"), { recursive: true });
+    writeFileSync(join(dir, "docs/product/state.yaml"), yaml);
+    return dir;
+  }
+  test("done without an artifact cannot pass", () => {
+    const target = fixtureState("phases:\n  0: { name: salvage, status: done }\n");
+    expect(run(target).out).toContain("has no artifact reference");
+    expect(run(target).code).toBe(1);
+  });
+  test("scaffold done requires a verified manifest", () => {
+    const target = fixtureState("clone: { scaffolded: done }\nsurfaces: [web]\n");
+    expect(run(target).out).toContain("scaffolded.yaml does not exist");
+    mkdirSync(join(target, "docs/kit"), { recursive: true });
+    writeFileSync(
+      join(target, "docs/kit/scaffolded.yaml"),
+      "surfaces: [web]\nstatus: configured\n",
+    );
+    expect(run(target).out).toContain("is not verified");
+    writeFileSync(join(target, "docs/kit/scaffolded.yaml"), "surfaces: [web]\nstatus: verified\n");
+    expect(run(target).code).toBe(0);
+  });
+  test("accepted clip requires the decision and implementation evidence", () => {
+    const target = fixtureState("clip: { acceptance: accepted }\n");
+    expect(run(target).out).toContain("no recorded acceptance decision");
+    expect(run(target).out).toContain("evidence artifact is missing");
   });
 });

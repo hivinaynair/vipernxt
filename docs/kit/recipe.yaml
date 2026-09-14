@@ -1,9 +1,9 @@
 # Stack recipe. Edit this file when the default stack changes.
-# Compose resolves package versions at scaffold time (`@latest` within
-# `majors`). The lockfile lives in the site repo, not here.
+# The Next CLI is pinned; other commands/dependencies use explicit specs below.
+# Next/React majors are checked; product lockfiles record resolved versions.
 #
 # This is not a second GitHub template. There is no fat tree to clone and
-# strip. After U5, `bun scripts/compose.mjs --add web --add db` prints the
+# strip. After U5, `bun scripts/scaffold.mjs --add web --add db` prints the
 # commands; overlays under this folder are the opinions the CLIs do not
 # encode (feature folders, `@/env`, shadcn in `packages/ui`).
 
@@ -20,10 +20,13 @@ surfaces:
   web:
     implies: [ui]
     path: apps/web
-    command: bunx create-next-app@latest
+    command: bunx create-next-app@16.3.5
     args:
       - apps/web
       - --yes
+      - --no-linter
+      - --skip-install
+      - --disable-git
       - --ts
       - --tailwind
       - --app
@@ -34,7 +37,7 @@ surfaces:
       - --turbopack
     folders: [app, features, shared]
     env: "@/env"
-    # compose --apply always writes apps/web/src/env.ts, which imports these.
+    # scaffold writes env.generated.ts, re-exported by the product env.ts.
     # They are not optional facets: without them the app does not typecheck.
     deps:
       - "@t3-oss/env-nextjs"
@@ -45,11 +48,11 @@ surfaces:
     email: resend
     files: vercel-blob
     lint: biome
-    # Intended e2e layer. Nothing scaffolds it yet, so a composed clone has no
+    # Intended e2e layer. Nothing scaffolds it yet, so a scaffolded clone has no
     # Playwright and no traces — evidence for the first slice is the merge bar,
     # bun test, and screenshots from `next dev`. Recorded so the choice is made
-    # when someone does add it, not so compose pretends it is there.
-    e2e: playwright (not composed)
+    # when someone does add it, not so scaffold pretends it is there.
+    e2e: playwright (not scaffolded)
   ui:
     path: packages/ui
     # No scaffold command. `shadcn init` is a create-a-project flow: it prompts
@@ -106,7 +109,7 @@ facets:
     args:
       - "@vercel/blob"
 
-# Filled at setup, not compose. EU / Asia is a region flag, not a template.
+# Filled at setup, not scaffold. EU / Asia is a region flag, not a template.
 setup:
   neon:
     cli: neonctl projects create

@@ -1,23 +1,38 @@
-/**
- * Applies `drizzle/` to whichever database `client.ts` picked.
- *
- * drizzle-kit talks to Postgres over the wire, so it cannot reach the PGlite
- * fallback. Run generate (offline, schema only) then this.
- */
-import { migrate as migrateNeon } from "drizzle-orm/node-postgres/migrator";
-import { migrate as migratePglite } from "drizzle-orm/pglite/migrator";
-import { db, usingDevDatabase } from "./client";
-
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { PGlite } from "@electric-sql/pglite";
+import { config } from "dotenv";
+import { drizzle as remoteDb } from "drizzle-orm/node-postgres";
+import { migrate as remoteMigrate } from "drizzle-orm/node-postgres/migrator";
+import { drizzle as localDb } from "drizzle-orm/pglite";
+import { migrate as localMigrate } from "drizzle-orm/pglite/migrator";
+import { Pool } from "pg";
+import { migrationTarget } from "./migration-target";
 
-const folder = join(dirname(fileURLToPath(import.meta.url)), "..", "drizzle");
-
-// biome-ignore lint/suspicious/noExplicitAny: one migrator per driver, same folder.
-const run = usingDevDatabase ? (migratePglite as any) : (migrateNeon as any);
-await run(db, { migrationsFolder: folder });
-
-console.log(usingDevDatabase ? "migrated (local PGlite)" : "migrated (Neon)");
-
-// See seed.run.ts: the driver holds the event loop open.
-process.exit(0);
+const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
+// Match drizzle-kit selection locally; inherited CI credentials stay authoritative.
+if (!process.env.CI || process.env.CI === "false") {
+  const repoRoot = join(packageRoot, "../..");
+  for (const directory of [join(repoRoot, "apps/web"), packageRoot, repoRoot]) {
+    for (const file of [".env.local", ".env"]) config({ path: join(directory, file), quiet: true });
+  }
+}
+const options = { migrationsFolder: join(packageRoot, "drizzle") };
+const target = migrationTarget(process.env);
+if (target.kind === "remote") {
+  const pool = new Pool({ connectionString: target.url });
+  try {
+    await remoteMigrate(remoteDb({ client: pool }), options);
+    console.log("migrated (remote Postgres)");
+  } finally {
+    await pool.end();
+  }
+} else {
+  const client = new PGlite(join(packageRoot, ".pglite"));
+  try {
+    await localMigrate(localDb({ client }), options);
+    console.log("migrated (local PGlite)");
+  } finally {
+    await client.close();
+  }
+}

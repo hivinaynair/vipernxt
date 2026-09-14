@@ -7,193 +7,28 @@ description: >-
   product, not only when there is an old repo to read.
 ---
 
-# salvage
+# Salvage prior art
 
-**Prior art is almost never absent. It is just usually not yours.**
+Input: named participant, current workflow/tool, supplied material and relevant alternatives. Output: `docs/research/salvage.md` under [artifacts](../artifacts/SKILL.md). Follow [execution contract](../CONTRACT.md).
 
-Every product replaces something. If it is not an earlier build, it is a spreadsheet, a
-WhatsApp group, a paper register, a twenty-year-old desktop application, or one person
-remembering. That thing already encodes what the job requires, and it was refined by
-people who suffer the consequences of getting it wrong.
+## Read the current job
 
-Read it before inventing anything.
+Verify what runs it today: vendor/tool name, who uses it, whether transactions actually pass through it, and what the current paid version already provides. Ask only for inaccessible site facts; find vendor capabilities yourself. Record corrections to the original premise. If an upgrade is imminent, capture baseline numbers before it changes the workflow.
 
-## First, check the premise
+Start with the incumbent, supplied prior build/pile and one or two meaningful alternatives. Inspect pricing, recent changes, support complaints and relevant 2–3-star reviews. Expand only for a decision-changing unknown. Complaints reveal hypotheses, not prevalence. Buy/upgrade can be the outcome, but compare fit, total cost and constraints rather than stopping at feature overlap.
 
-The idea paragraph is a **claim, not a fact**, and the claim most often wrong is what the
-job runs on today. "They do it on paper" usually means nobody looked at the counter.
+Mine **facts, not structure**: fields actually used, state transitions, exceptions, artifacts and workarounds. Do not copy a menu, navigation tree or feature matrix. A prior build's schema and repeated migrations can reveal domain learning. Empty/abandoned fields also count as evidence.
 
-So before mining anything, answer this yourself:
-
-> What software, if any, is already being used for this job — what is it called, who sells
-> it, what does it cost, and does every transaction go through it?
-
-Ask them only what they alone can know (what is on the machine); everything after that —
-the vendor, the price, the reviews, **what the current paid version already does** — is
-yours to find. A paid incumbent that every transaction already flows through changes
-what the product *is*: you are replacing software, not digitising paper. If the vendor
-already ships the feature they asked you to build, **recommend they buy or upgrade it**.
-That is a finding, not a failed engagement. The clip shrinks to what the vendor will
-never cover (often the layer *across* many entities, before the SoR starts).
-
-Discovering any of this in phase 3 means the design doc was drafted against a premise
-that was never true.
-
-If the premise turns out wrong, say so plainly and record the correction on the phase.
-Reopening phase 0 is normal; carrying a false premise forward is not.
-
-If they are about to upgrade or migrate that SoR, the baseline numbers are
-**time-sensitive**. After the change you cannot unmix the vendor from the clip. Hold
-that gather before anything else.
-
-## The rule
-
-**Mine for facts, never for structure.**
-
-Facts: receipt fields, real states, filings, always-empty columns, daily rituals.
-Structure: pages, nav, feature lists, unexplained menu labels.
-
-**Job facts vs menu parity.** A Masters item you cannot explain is a hypothesis, not a
-backlog item. Photograph it; ask what staff *do* on a normal day; do not invent a subsystem
-to match a label.
-
-If you catch yourself writing "the new app should have a customers page because the old one
-did" — that is structure. Stop.
-
-Follow the `artifacts` house rules for anything you write: front-load the
-finding, cite every fact, table anything parallel, respect the cap.
-
-## Sources, in order of trust
-
-**When there is an earlier build of this product** — the best case, and rare.
-The schema is the highest-value artifact in the repository: it is the domain model
-somebody converged on after real use. The git log matters too, because whatever was
-reworked repeatedly marks where the model was wrong.
-
-**The incumbent.** Whatever people use to do this job today, however unglamorous —
-a legacy application, an Excel file, a printed register. Usually the single richest
-source, because it survived contact with reality for years. Ask for screenshots or
-photographs; ask what the columns mean and which ones are always left empty.
-
-**Physical and printed artifacts** — receipts, forms, reports, the thing that gets
-handed to a customer. These carry hard requirements, often legal ones, that nobody
-thinks to mention out loud.
-
-**The market (required once U1 has a name).** Other apps selling the same job — not
-this site's incumbent, the category. Pricing page, changelog, onboarding, 2–3 star
-reviews. Dispatch one `salvage-miner` per named competitor in the same turn as the
-incumbent. If U1 is "none", scan the category anyway; that is how you find the
-incumbent they did not name.
-
-Mine: shared vocabulary, the pricing band, what the category's current paid version
-already does, the jobs they all fail at. Do not mine a feature matrix. The competitor
-trap is copying structure, not reading the market.
-
-**Public complaints about the incumbent and its competitors.** One-star reviews,
-support forums, subreddits, feature-request threads. This is the highest-yield source
-for a genuinely new product and the one people skip. Nobody writes a paragraph about
-software that works; a furious review names the exact workflow that broke and why it
-mattered. Read the two- and three-star reviews most closely — one-stars are often
-about billing or support, threes about the product.
-
-**Adjacent domains.** Someone has solved this shape in another vertical. A booking
-system for clinics knows things a booking system for warehouses needs.
-
-Work these in parallel: dispatch one independent investigation per source, then
-reconcile. Do not read six sources serially in one context.
-
-## When the prior art is a pile, not a repository
-
-Most of the time there is no repo. There is a folder of photographs, a spreadsheet
-someone exported, screenshots of a desktop application, a wireframe drawn last month.
-
-**Ask for the pile before reading anything, and ask physically** — name
-`docs/research/salvage-inbox/`. Cloud: transcripts if they already normalised,
-else one zip. Do not start mining a half-empty inbox.
-
-Read [pile.md](pile.md) for the checklist, the normaliser, and what each kind of artifact
-is worth. Do not improvise those from memory — the transcription rule in particular is
-what keeps every later phase able to cite a photograph.
+For files/photos, use [pile.md](pile.md) and the normalizer. Originals stay private; transcripts preserve source labels, values and uncertainty. Delegate independent named sources to `salvage-miner`, pages to `pile-reader`, with narrow inputs/output limits; run serially if no worker mechanism is available.
 
 ## Output
 
-Write `docs/research/salvage.md`:
-
-1. **Domain facts** — each one stated plainly, with where it came from. "A pick ticket
-   carries the SKU, the depot stamp, the picker id and the quantity (`orders` schema +
-   photographed ticket)."
-2. **The vocabulary** the domain actually uses, including words the old build got wrong.
-3. **Entities and their real states**, from the schema, not from what feels tidy.
-4. **What the prior art abandoned** — what was built and did not survive. A feature
-   imported by no route, a column added and dropped two commits later, a surface reworked
-   four times, a screen the docs call essential that was never built. Record **what was
-   built, the evidence it died, and what it cost**. Stop there. See below.
-5. **Open questions the prior art raises but cannot answer.** These usually belong in the
-   field visit; hand them to `field-kit` rather than guessing. Everything in 4 that you
-   cannot explain belongs here as a question.
-
-Cite everything to a file path, a commit, or a photograph. An uncited "fact" is a memory,
-and memories are what the rebuild is trying to escape.
-
-## Salvage does not decide scope
-
-There is a strong pull, once you have read a build that sprawled, to write the list of
-things the new one must not do. Resist it. Salvage runs before the claim is confirmed,
-before the field visit, before anyone has said what the product is for. A prohibition
-written that early is a scope decision made from the weakest possible evidence — the last
-team's mistakes — and it arrives dressed as a finding, which means every agent downstream
-reads it as settled.
-
-So the section records **what happened**, not **what to do about it**:
-
-| Write this | Not this |
+| Section | Content |
 |---|---|
-| `ExportPanel` exists under `src/features/` and is imported by no route | Do not rebuild the export panel |
-| `service_type` enum added in `a1b2c3d`, deleted in `962713a` | Do not add a service-type enum |
-| Deceased/sponsor/occasion columns added then dropped (`5aa7510`) | Shraddha is out of scope |
-| The tax-filing surface exists; nothing in the stated problems mentions tax | Tax is not our problem |
+| Facts | Claim + exact path/commit/URL/photo reference |
+| Vocabulary | Domain terms and ambiguity |
+| Entities/states | What evidence supports, including exceptions |
+| Abandoned work | What existed, evidence it was abandoned, known cost; no prohibition on the new product |
+| Open questions | What only field research or the product decision can settle |
 
-The left column survives the product changing. The right column is a guess about a product
-that does not exist yet.
-
-**Where the verdict actually gets made:** `shape` decides what the product claims, and the
-claim is what excludes things — an abandoned feature that the claim does not cover is out
-because the claim does not cover it, not because the last build failed at it. `plan` then
-decides what a slice contains. Both of them read this section as evidence. Neither should
-find its conclusion already written.
-
-The abandoned list has a better use than prohibition anyway: it is the sharpest interview
-material `shape` will get. "The last build built stock tracking and never linked it to
-anything — do you actually count stock?" is a far better question than a line in a
-document saying inventory is out of scope.
-
-Two things that keep leaking into this section and do not belong anywhere in salvage: a
-**design decision** ("store a code, localise the label") — that is `ontology` or `plan`;
-and a **statistic from an article** — that is research. Salvage reads what people built.
-
-## The competitor trap
-
-Mining competitors is how products become clones. The facts/structure rule matters most
-here, and the test is simple: a fact survives when the competitor is deleted from the
-sentence. "Picks must be cancellable up to the truck-load because the floor refunds by
-hand otherwise" is a fact. "They have a cancellations tab" is their structure.
-
-Never copy a flow, an information architecture, or a pricing model because a competitor
-has one. Take what their existence proves about the domain.
-
-## When there really is nothing
-
-Occasionally the domain is genuinely new, or everything is behind a login you do not have.
-Say so in one line, list what you looked at, and move to research. Do not pad a report to
-justify the phase — a manufactured salvage document is worse than no document, because
-someone downstream will treat it as evidence.
-
-## What this is not
-
-Not an audit, not a migration plan, not a critique of anyone's build. Nobody needs a list
-of the old thing's bugs — it is being replaced. The only question is what it knew that
-you do not.
-
-Not research either. Salvage reads **what people built**; research reads **what is
-documented** — specs, rules, official docs; field research watches **what people do**.
-When those three disagree, that disagreement is the most valuable finding in the pipeline.
+Shape decides scope later. Do not turn abandoned features into “never build” rules, vendor layouts into requirements or printed fields into legal obligations. If nothing is accessible, list what was attempted and return the actual gap instead of manufacturing a report.

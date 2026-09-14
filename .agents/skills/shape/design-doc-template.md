@@ -73,7 +73,7 @@ out-of-band human). Do not invent a screen to fill the table.
 
 ## Stack
 
-Surfaces come from [docs/kit/recipe.yaml](../../../docs/kit/recipe.yaml). Record which this clip needs; `/next` composes them after this doc is approved.
+Surfaces come from [docs/kit/recipe.yaml](../../../docs/kit/recipe.yaml). Record which this clip needs; `/next` scaffolds them after this doc is approved.
 
 | Choice | Decision | Why |
 |---|---|---|
@@ -87,7 +87,7 @@ Surfaces come from [docs/kit/recipe.yaml](../../../docs/kit/recipe.yaml). Record
 | Files | Vercel Blob / skip | |
 | Region | aws-us-east-1 / eu / asia | |
 
-Decisions recorded, not composed. Cite first-party docs where a choice turned on a fact.
+Decisions recorded, not scaffolded. Cite first-party docs where a choice turned on a fact.
 
 ## Honest limits
 

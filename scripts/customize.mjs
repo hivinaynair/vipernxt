@@ -13,7 +13,7 @@
 // interview stays with the agent and the find-and-replace does not.
 //
 // Vendor stripping is not here. Surfaces come from docs/kit/recipe.yaml via
-// scripts/compose.mjs. This script only renames.
+// scripts/scaffold.mjs. This script only renames.
 
 import {
   existsSync,
@@ -51,7 +51,7 @@ if (scope && !/^@[a-z0-9][a-z0-9-]*$/.test(scope)) {
 }
 
 const SKIP = new Set(["node_modules", ".git", ".next", ".turbo", "dist", "build", "raw"]);
-const TEXT = /\.(json|ts|tsx|mjs|js|jsonc|md|yaml|yml)$/;
+const TEXT = /\.(json|ts|tsx|mjs|js|jsonc|md|yaml|yml|sh|css)$/;
 
 function walk(dir, out = []) {
   for (const entry of readdirSync(dir)) {

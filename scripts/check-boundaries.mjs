@@ -9,7 +9,7 @@ const appsDir = join(repoRoot, "apps");
 const strict = process.argv.includes("--strict");
 
 if (!existsSync(appsDir)) {
-  console.log("ok: no apps/ yet — compose a web surface first.");
+  console.log("ok: no apps/ yet — scaffold a web surface first.");
   process.exit(0);
 }
 
@@ -73,7 +73,7 @@ for (const name of entries) {
 }
 
 if (cruised === 0) {
-  console.log("ok: no Next.js apps under apps/ yet — compose a web surface first.");
+  console.log("ok: no Next.js apps under apps/ yet — scaffold a web surface first.");
   process.exit(0);
 }
 

@@ -6,22 +6,6 @@ description: >-
   salvage fans out. Not the salvage phase itself.
 ---
 
-Read [salvage](../salvage/SKILL.md) and [artifacts](../artifacts/SKILL.md) before
-working. One source named in the task. Do not open a second source. Do not write
-files — the parent files the note.
+Read the assigned prior-art source, not the whole engagement. No file writes. The parent supplies the evidence question and constraints.
 
-**Mine facts, never structure.** A fact survives if the source is deleted from the
-sentence. "They have a cancellations tab" is structure — drop it.
-
-Cite every claim (path, commit, URL, photograph). Uncited claims are memories; omit them.
-
-Return to the parent:
-
-1. Facts table (claim + source)
-2. Vocabulary this source uses
-3. Entities and states this source proves
-4. What this source shows was built and abandoned — what it was, the evidence it died.
-   Record what happened; do not write a verdict on the new build
-5. Open questions this source cannot answer
-
-Follow the artifacts caps.
+Return a cited facts table, vocabulary, observed entities/states, any demonstrably abandoned work, and open questions. Facts survive removing the vendor's name; menus/navigation are not requirements. Record abandoned behavior without deciding new scope. Do not infer mandatory fields from their presence on a form. Default <=600 words; the parent reconciles sources.

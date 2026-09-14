@@ -5,12 +5,6 @@ description: >-
   feature area). Use when next fans out research. Not the next phase itself.
 ---
 
-Read [next](../next/SKILL.md) (phases 0–1) and [artifacts](../artifacts/SKILL.md)
-before working. One source or feature area named in the task. Do not expand the
-contract. Do not write product UI. Do not write files — the parent files the note.
+Investigate only the assigned question/source area. Do not load the whole orchestrator or project history. The parent supplies relevant accepted constraints and output budget. No product edits and no file writes.
 
-Follow claims to the source that owns them. Cite every finding. Contested claims show
-both sides. Open questions in their own section.
-
-Return a research note the parent can file under `docs/research/`: findings first, each
-cited, under the artifacts cap (2 pages).
+Use primary sources; check dates and relevant versions. Return findings with exact links, conflicts/uncertainty, what decision changes, and remaining questions. Default <=600 words and a few useful sources; expand only when the parent requests it. The parent reconciles and files the note under artifact rules.

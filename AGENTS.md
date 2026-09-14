@@ -22,9 +22,9 @@ version agents need before touching anything.
 
 Auth: Clerk · Database: Drizzle ORM + Neon · Background work: Vercel Workflows ·
 Analytics: PostHog · Email: Resend · Files: Vercel Blob · UI: shadcn/ui ·
-Lint/format: Biome · E2E: Playwright (intended; not composed yet).
+Lint/format: Biome · E2E: Playwright (intended; not scaffolded yet).
 
-A new product shape decides which surfaces to compose from
+A new product shape decides which surfaces to scaffold from
 [docs/kit/recipe.yaml](docs/kit/recipe.yaml) — record the decision, do not
 strip a fat tree, and do not add a vendor the recipe does not name.
 
@@ -37,8 +37,8 @@ bun run check-types && bun run check-boundaries && bun run check-tokens && bun r
 `check-journeys` fails citations that are not spine IDs. Unbuilt served steps
 do not fail a slice. When the clip is done: `bun run check-journeys -- --complete`.
 
-Branches: PRs target `staging`; `main` is production. Pushes to either run the
-migrate workflow. Branch **from** `staging` too, and rebase onto it before the
+Branches: PRs target `staging`; `main` is production. When `db` is scaffolded, pushes to either run the generated
+migration workflow; the bare kit has no active migration workflow. Branch **from** `staging` too, and rebase onto it before the
 merge bar — base and target must match. Hotfixes are the exception: branch from
 `main`, land on `main`, back-merge the same day.
 
@@ -80,7 +80,7 @@ waits until they accept the slice. After the spine, `/next` runs `plan` then
 `build`. Those skills are host-agnostic — they do not name a cloud or a model as
 a prerequisite. `shape` and `design-system` read this file for the constraints
 above. The stack itself is [docs/kit/recipe.yaml](docs/kit/recipe.yaml) —
-compose after U5; do not clone a second template and strip it.
+scaffold after U5; do not clone a second template and strip it.
 
 Until `shape` is `done`, do not edit product UI, routes, or features
 (`apps/*/src/app`, `apps/*/src/features`). A project hook denies those writes. No state

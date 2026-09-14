@@ -7,193 +7,34 @@ description: >-
   unfamiliar domain, or when the user returns from talking to real users.
 ---
 
-# field-kit
+# Field research
 
-The one phase no agent can do. Your job is to make the trip worth taking, and to make what
-comes back usable.
+Input: salvage/research gaps. Output: targeted homework or findings plus a cited eval set. Follow [execution contract](../CONTRACT.md) and [artifacts](../artifacts/SKILL.md). Real field evidence comes from people, not generated answers.
 
-Two jobs: **prepare** the homework, and **absorb** what returns.
+## Choose delivery mode
 
-## Pick the field mode first
-
-Trip is not the default. Write `mode:` on the field phase.
-
-| Mode | When | Do |
+| Mode | Use | Artifact |
 |---|---|---|
-| **on-site** | They are at the counter this session | Homework md is a live checklist. Fill as they talk. Absorb the same day. Skip the `.docx` round-trip. |
-| **pile** | salvage-inbox already holds the photos/forms | Absorb. Hold `who: site` only for gaps salvage listed. |
-| **trip** | They will go later, and the pile cannot answer | Prepare the `.docx`, they leave, absorb when they return. |
+| on-site | Operator is available now | Live checklist; absorb answers the same day |
+| pile | Existing materials answer most questions | Analyze pile; request only material gaps |
+| trip | Evidence requires a later visit | Fillable DOCX, one stage per setting |
 
-Always capture the **last 10 real cases** (or a week of the job) into the eval set —
-anonymized, cited. If the SoR already stores expert-labelled history, that *is* the set.
-That set is what wave 0 seeds and what the first slice is scored against. Watch the
-person who does the job, not only the buyer. Operational context (judgment, workarounds,
-the laminated card) is a separate finding from entity names.
-
-**If they are about to change the SoR** (upgrade, migrate, new vendor): the homework's
-first page is baseline numbers, this week. Hours per job, re-keys, chase rounds, days of
-delay. After the change those numbers mix forever. This outranks every other ask.
-
-Also capture, when it would change the build: where the data may live (this machine /
-this network / may leave); which banks or channels the vendor's paid feature actually
-covers. "The upgrade does bank feeds" is not a fact until you know *their* banks.
-
----
-
-Follow the `artifacts` house rules for anything you write: front-load the
-finding, cite every fact, table anything parallel, respect the cap.
+Record mode on the field phase. Markdown is always the questionnaire source. DOCX rendering is required only for trip delivery: `bun scripts/homework.mjs build docs/product/homework/<name>.md`. Do not create another generator.
 
 ## Prepare
 
-Write `docs/product/homework/<nn>-<topic>.md`. It is a form to fill in on site, not an
-essay to read beforehand.
+Answer discoverable questions yourself first. Ask about recent actual events: walk through yesterday, show the last ten cases, demonstrate the last failure and the workaround. Avoid compliments, future-use promises and feature wishlists. Prioritize five questions; cap typed prompts around fifteen. Photograph relevant screens/forms only with the site's permission.
 
-### Photo-first, thin pack
+Include the operator, the owner of money/reporting and someone affected by the system. Capture task dependencies, exceptions, device/connectivity, data residency and human responsibility when relevant. If the incumbent is changing, baseline measurements come first.
 
-1. **Capture checklist first** (screens, receipts, printer, day-end printout).
-2. Cap typed questions at **~15**, with a ranked top five. More is usually agent curiosity.
-3. Move answered bullets under `## Closed` (or `## Settled`). `homework.mjs` **does not
-   render** those sections — rebuild the `.docx` after every close.
-4. Ask about the past, not the product. No "would you like…".
-
-### Provenance
-
-Every field artifact starts with one line: **observation** | **recollection** | **committee**
-(or mix, labelled per answer). Shape must not treat soft evidence as hard.
-
-### First, do your own work
-
-Never send someone out for something you could find yourself. Read the repo, the salvage
-notes, the research. The homework should contain only what exists in the world and nowhere
-else: how people actually work, what they actually do when the system fails, what is
-written in the margins of the register.
-
-### Who to talk to
-
-Name roles, not "users". The most valuable person is almost always the one who uses the
-current system all day and is never asked — the counter clerk, the dispatcher, the ward
-nurse. Include at least one person who owns money or reporting, and at least one person
-the software is done *to* rather than *by*.
-
-### The questions
-
-These rules are not stylistic. They decide whether the trip produces data or noise.
-
-**Ask about their life, not the idea.** Do not describe what you are building. A described
-product produces politeness, not information.
-
-**Ask about the past, never the future.** "Walk me through yesterday" is data. "Would you
-use an app that…" is a wish, delivered by someone who wants you to feel good.
-
-**Listen more than you talk.**
-
-Three kinds of answer are worthless, and the questions that produce them are the ones to
-delete: **compliments** ("that sounds great"), **hypothetical fluff** ("I'd definitely…"),
-and **wishlists** ("it should also do…").
-
-**Screen your own output before it reaches them.** Read back every question you wrote. Any
-question that asks about the future, describes the product, or invites an opinion instead
-of an account — rewrite it as a question about a specific past event. Do this before the
-file is handed over, not after the visit fails.
-
-Good shapes:
-
-- Walk me through yesterday, from opening to closing.
-- Show me the last ten you did.
-- What happened the last time it broke?
-- What do you keep on paper that the system does not hold?
-- Who calls you, and about what?
-- What happens at month end?
-- What did the last audit or inspection object to?
-
-### What to observe
-
-Watching beats asking, and the file should say so explicitly. Sit somewhere for two hours
-on a normal day and two on a busy one. Time one transaction. Count the peak. Photograph
-every screen of the current system, every printed artifact, every register page.
-
-### Structure it in stages
-
-One stage per person or setting. Each stage carries: who, where, what to ask, what to
-capture, and a **done when** line that is checkable — "photographed all screens of the
-booking flow", not "understood the booking flow". Number the stages and show how many
-there are, so progress is visible on site.
-
-Finish with the **open questions from earlier phases** this trip should settle.
-
-### Hand over something they can fill in
-
-A markdown file in a repo is not a form. Run:
-
-```
-bun scripts/homework.mjs build docs/product/homework/02-site-visit.md
-```
-
-It renders a `.docx` with every question and capture as a row with an empty box beside
-it, one stage per page. They type into it; nobody has to touch the repo, and nobody has
-to be taught anything about markdown. Do this every time — do not hand over the `.md` and
-do not improvise a renderer.
-
-**The markdown stays the source of truth.** The `.docx` is a render. Edit the homework in
-the `.md` and rebuild; never edit the `.docx` to change a question, or `state.yaml` will
-be pointing at a file that no longer says what was asked.
-
-**Never write a second generator.** If `homework.mjs` seems not to work — no pandoc, no
-python-docx, no LibreOffice — it does not need them; it writes the docx zip itself. A
-side script that builds the document from its own list of questions is the drift this
-rule exists to prevent: the `.md` that `state.yaml` points at stops being what anyone was
-asked. Every question lives in the `.md`, or it was not asked.
-
-The check is one command: does `homework.mjs read` on the returned file show the questions
-you think you sent? If not, the artifact and the questionnaire have already separated.
-
-Write the homework so it renders well — the convention is small:
-
-| In the markdown | In the document |
-|---|---|
-| `## Stage 2 — the counter clerk` | Heading, starts a new page |
-| `### What to ask` | Sub-heading |
-| `- Walk me through yesterday.` | Question, with an answer box |
-| `- [ ] Photograph every screen` | Capture, with a tick box and an answer box |
-| Anything else | Instruction — no box, nothing to fill |
-
-So: anything you want an answer to is a bullet. Anything that is context is a paragraph.
-If a question has no box next to it in the document, it was written as prose and they will
-skip it.
-
----
+Write `docs/product/homework/<nn>-<topic>.md` in stages. Each stage names who/where, questions as bullets, captures as checkboxes, and a concrete done-when. Move answered material under `## Closed`/`## Settled`; the renderer omits it. Rebuild trip DOCX after changes. Prose is instruction, not an answer box.
 
 ## Absorb
 
-They come back with photos, scribbled notes, voice memos, a PDF of a receipt, dumped into
-`docs/product/intake/`. Raw is fine — formatting is not their job.
+Read returned DOCX with `bun scripts/homework.mjs read <file>`; inspect answered counts before closing gaps. Photos go through salvage-inbox; keep originals and identifying data out of commits. Findings start with provenance: observation, recollection, committee, or explicitly authorized simulation.
 
-Read the filled document back with:
+Write `docs/research/field-<topic>.md`: observations, attributed verbatim quotes, contradictions, sourced facts and open gaps. Separate entity vocabulary from operational context. Never upgrade a recollection into an observation.
 
-```
-bun scripts/homework.mjs read docs/product/intake/02-site-visit.docx
-```
+Freeze/anonymize the last ten real cases or a useful week/history sample in `docs/research/eval-set.md`. Cite source IDs, expected outcome, before-number and independent verifier. Include representative exceptions; ten is a starting sample, not statistical validation. Synthetic cases stay labeled and cannot close real field gaps.
 
-It prints each question with the answer underneath and a count — `14/22 answered`. That
-count is what the item's `done_when` is checking, so read it before deciding the trip is
-finished. Photographs and anything else in the pile go through
-`scripts/salvage-inbox.mjs` first, so they are readable and captioned.
-
-Turn it into `docs/research/field-<topic>.md`:
-
-1. **What was observed**, separated from what was said. An observation outranks a claim.
-2. **Direct quotes**, attributed to a role. Keep their words; they are the most valuable
-   thing in the file.
-3. **Facts, each cited** to a photo, a quote, or an artifact.
-4. **What contradicts** the research, the salvage notes, or an assumption already recorded.
-   These are the highest-value findings in the whole pipeline — surface them loudly.
-5. **What is still open**, and whether another trip is needed.
-
-One visit is the start of a relationship, not a completed phase. Forward-deployed teams
-treat customer conversation as ongoing engineering work, not a discovery milestone that
-closes. Expect the spine to be revised by later conversations, and treat "go back and ask"
-as a normal move rather than an admission that the first trip failed.
-
-Watch for the three worthless answer types in what came back and mark them as such rather
-than treating them as findings. A compliment recorded as a requirement is how a product
-gets built for nobody.
+Before marking done, reconcile outstanding homework and hard problems; remove answered asks and prioritize remaining ones. A gap accepted as an assumption stays visible. Return to `/next` to draft shape. Continue user research during build when new evidence changes the story.

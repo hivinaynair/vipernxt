@@ -27,11 +27,11 @@ env_put() { # env_put FILE KEY VALUE — idempotent upsert
 
 # ── 0. preflight ─────────────────────────────────────────────────────────────
 stage "Checking tools"
-NEED_DB="$(bun scripts/lib/compose-need.mjs db)"
-NEED_AUTH="$(bun scripts/lib/compose-need.mjs auth)"
-NEED_ANALYTICS="$(bun scripts/lib/compose-need.mjs analytics)"
-NEED_EMAIL="$(bun scripts/lib/compose-need.mjs email)"
-NEED_FILES="$(bun scripts/lib/compose-need.mjs files)"
+NEED_DB="$(bun scripts/lib/scaffold-need.mjs db)"
+NEED_AUTH="$(bun scripts/lib/scaffold-need.mjs auth)"
+NEED_ANALYTICS="$(bun scripts/lib/scaffold-need.mjs analytics)"
+NEED_EMAIL="$(bun scripts/lib/scaffold-need.mjs email)"
+NEED_FILES="$(bun scripts/lib/scaffold-need.mjs files)"
 missing=0
 for t in gh vercel git; do
   if have "$t"; then good "$t"; else warn "$t not found"; missing=1; fi
@@ -39,7 +39,7 @@ done
 if [ "$NEED_DB" = 1 ]; then
   if have neonctl; then good "neonctl"; else warn "neonctl not found"; missing=1; fi
 else
-  good "neonctl skipped — no db surface in docs/kit/composed.yaml"
+  good "neonctl skipped — no db surface in docs/kit/scaffolded.yaml"
 fi
 if [ "$missing" = 1 ]; then
   say "Install what is missing, then re-run."
@@ -91,7 +91,7 @@ fi
 # ── 2. neon ──────────────────────────────────────────────────────────────────
 stage "Neon (one project, staging + production databases)"
 if [ "$NEED_DB" != 1 ]; then
-  say "skipped — composed.yaml has no db surface"
+  say "skipped — scaffolded.yaml has no db surface"
 else
 if [ -z "$NEON_REGION" ]; then
   NEON_REGION="$(ask 'Neon region [aws-us-east-1]:')"
@@ -165,7 +165,7 @@ fi
 # ── 4. clerk ─────────────────────────────────────────────────────────────────
 stage "Clerk"
 if [ "$NEED_AUTH" != 1 ]; then
-  say "skipped — composed.yaml has --without auth, or no web surface"
+  say "skipped — scaffolded.yaml has --without auth, or no web surface"
 else
 if ! have clerk; then
   warn "clerk CLI not found — skipping"
@@ -210,7 +210,7 @@ fi
 # ── 5. posthog ───────────────────────────────────────────────────────────────
 stage "PostHog (errors + analytics)"
 if [ "$NEED_ANALYTICS" != 1 ]; then
-  say "skipped — composed.yaml has --without analytics, or no web surface"
+  say "skipped — scaffolded.yaml has --without analytics, or no web surface"
 else
   say "Create a project at https://app.posthog.com (EU: https://eu.posthog.com)."
   say "Exception autocapture is a PostHog project setting. Keys stay in $ENVFILE."
@@ -229,7 +229,7 @@ fi
 # ── 6. resend ────────────────────────────────────────────────────────────────
 stage "Resend (email)"
 if [ "$NEED_EMAIL" != 1 ]; then
-  say "skipped — composed.yaml has --without email, or no web surface"
+  say "skipped — scaffolded.yaml has --without email, or no web surface"
 else
   say "Create an API key at https://resend.com/api-keys. Do not invent a from-address here."
   key="$(ask 'RESEND_API_KEY, or blank to skip:')"
@@ -244,7 +244,7 @@ fi
 # ── 7. blob ──────────────────────────────────────────────────────────────────
 stage "Vercel Blob (files)"
 if [ "$NEED_FILES" != 1 ]; then
-  say "skipped — composed.yaml has --without files, or no web surface"
+  say "skipped — scaffolded.yaml has --without files, or no web surface"
 else
   say "Create a Blob store on the Vercel project, then paste the read-write token."
   say "Dashboard: Storage → Blob. Do not create the store from this script."

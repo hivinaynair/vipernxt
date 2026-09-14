@@ -74,11 +74,11 @@ The design-doc **claim is the reframe**, not the feature they asked for. The **c
 
 A request that is this site's habit, not the domain: say so; do not encode it. Confirm the claim with the buyer **and** that it would not make the person who does the job look watched or replaced unless they accepted that.
 
-## C — Clip (compose from the recipe → ontology + spine → wave 0 + first slice)
+## C — Clip (ontology + spine → scaffold → structure → wave 0 + first slice)
 
 Surfaces come from [docs/kit/recipe.yaml](../kit/recipe.yaml), not from cloning a
-second template. `/next` runs `bun scripts/compose.mjs --add …` for what U5
-named (`web` / `agent` / `db`). Latest packages; overlays for feature folders,
+second template. `/next` runs `bun scripts/scaffold.mjs --add …` for what U5
+named (`web` / `agent` / `db`). Recipe-selected packages; overlays for feature folders,
 `@/env`, shadcn in `packages/ui`. Do not free-hand `create-next-app`.
 
 Ontology = **semantic** context (entities, states, SoR). Journey steps = **operational** context (what the clerk actually does), each tagged `bucket: script | judgment | human`. A script or judgment step often has no screen. Seed data **is** the anonymized eval set. The first slice is scored against the U2 number, not "tests pass."
@@ -89,9 +89,9 @@ Shadow before replace: the slice may sit beside the current process before it is
 
 ## F — Factory
 
-Only after they accept the clip. Then setup, Linear, structure, parallel slices. Each new slice must still cite a journey ID **and** say which eval cases it covers.
+Only after they accept the clip. Then setup, tickets, and scheduled slices. Each new slice must still cite a journey ID **and** say which eval cases it covers.
 
-Setup, Linear, and design-system wait until C is accepted. Missing DB/auth keys are one `who: fde` gather, not a nine-step provision.
+Setup and external ticket publication wait until C is accepted. Design-system structure precedes the first screen. Missing DB/auth keys are one `who: fde` gather, not a nine-step provision.
 
 A kit change that fell out of a dry-run (incumbent gate, eval-set seed, buckets) is the **productize** step. The site stays on its clone.
 
@@ -130,3 +130,5 @@ Exits:
 - **Factory may start** when they used the clip on a real (or seeded-real) case and did not say the story is wrong.
 - **Handoff may start** when they ran that case **without you**. Documents are not a handoff.
 - **Generalize may start** when one site is live and you want to ask the question. **Product may start** when somebody who is not your design partner has paid.
+
+The structure pass precedes the first product screen. `/next` alone owns progression and pauses; phase skills return artifacts. After first-slice acceptance, use the [factory execution design](factory.md).

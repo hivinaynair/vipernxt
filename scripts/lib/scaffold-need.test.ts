@@ -5,14 +5,14 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const script = join(import.meta.dir, "compose-need.mjs");
+const script = join(import.meta.dir, "scaffold-need.mjs");
 
 function ask(cwd: string, q: string) {
   return execFileSync("bun", [script, q, cwd], { encoding: "utf8" });
 }
 
-describe("compose-need", () => {
-  test("no composed.yaml means fat setup", () => {
+describe("scaffold-need", () => {
+  test("no scaffolded.yaml means fat setup", () => {
     const dir = mkdtempSync(join(tmpdir(), "need-"));
     try {
       expect(ask(dir, "db")).toBe("1");
@@ -29,7 +29,7 @@ describe("compose-need", () => {
     const dir = mkdtempSync(join(tmpdir(), "need-"));
     try {
       mkdirSync(join(dir, "docs/kit"), { recursive: true });
-      writeFileSync(join(dir, "docs/kit/composed.yaml"), "surfaces: [web, ui]\nwithout: []\n");
+      writeFileSync(join(dir, "docs/kit/scaffolded.yaml"), "surfaces: [web, ui]\nwithout: []\n");
       expect(ask(dir, "analytics")).toBe("1");
       expect(ask(dir, "email")).toBe("1");
       expect(ask(dir, "files")).toBe("1");
@@ -43,7 +43,7 @@ describe("compose-need", () => {
     const dir = mkdtempSync(join(tmpdir(), "need-"));
     try {
       mkdirSync(join(dir, "docs/kit"), { recursive: true });
-      writeFileSync(join(dir, "docs/kit/composed.yaml"), "surfaces: [agent]\nwithout: []\n");
+      writeFileSync(join(dir, "docs/kit/scaffolded.yaml"), "surfaces: [agent]\nwithout: []\n");
       expect(ask(dir, "analytics")).toBe("0");
       expect(ask(dir, "email")).toBe("0");
       expect(ask(dir, "files")).toBe("0");
@@ -58,7 +58,7 @@ describe("compose-need", () => {
     try {
       mkdirSync(join(dir, "docs/kit"), { recursive: true });
       writeFileSync(
-        join(dir, "docs/kit/composed.yaml"),
+        join(dir, "docs/kit/scaffolded.yaml"),
         "surfaces: [web, ui, db]\nwithout: [auth, jobs, analytics, email, files]\n",
       );
       expect(ask(dir, "db")).toBe("1");

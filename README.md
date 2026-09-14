@@ -8,7 +8,7 @@ already have, prices what they already pay for, finds the smallest thing that
 moves their number, builds it, and scores it against ten real cases before you
 show them.
 
-Two pieces, one repo — the skills that run the week, and the stack they compose.
+Two pieces, one repo — the skills that run the week, and the stack they scaffold.
 
 There is no route in from an idea with no customer; `check-drift` enforces that.
 And because it prices the incumbent before designing anything, *"they should
@@ -59,7 +59,7 @@ flowchart TD
     N --> U["<b>U — understand</b><br/>read what they already have · price the incumbent · watch the work<br/>last 10 cases → eval set · count the baseline"]
     U --> G1{{"✋ they confirm the reframe"}}
     G1 --> R["<b>R — reframe</b><br/>the claim <i>is</i> the design doc"]
-    R --> C["<b>C — clip</b> · the one slice that moves the number<br/>compose → ontology + spine → wave 0<br/>one journey working, on a local database"]
+    R --> C["<b>C — clip</b> · the one slice that moves the number<br/>scaffold → ontology + spine → wave 0<br/>one journey working, on a local database"]
     C --> G2{{"✋ you look at it,<br/>and at its score"}}
     G2 --> F["<b>F — factory</b> · the rest, built in parallel<br/>setup · Linear · parallel slices"]
     F --> REL["review PRs → staging → main"]
@@ -75,7 +75,7 @@ flowchart TD
 |---|---|
 | an hour | everything they already have, read and cited; the incumbent named and priced; a short list of what only they can tell you |
 | a day or two | one paragraph you confirmed: the outcome number, whose pain it is, why the obvious build is wrong |
-| a day after that | a named clone, a composed stack, the domain model in their vocabulary, an ID'd journey spine |
+| a day after that | a named clone, a scaffolded stack, the domain model in their vocabulary, an ID'd journey spine |
 | end of the week | one journey working on real seeded data **on your laptop**, scored against their last ten cases |
 | after you accept it | infrastructure, tickets, parallel slices |
 | later, if you want | the question of whether this becomes a product — asked with one customer live behind you, not guessed up front |
@@ -238,7 +238,7 @@ checkpoint, not a merge blocker — it is what you show them instead of "it work
 Cases live in `*.eval.ts` beside the code; one the slice does not cover is
 `skip:` **with a reason**, because a skip that quietly disappears reads as a pass.
 
-> **Playwright is not composed yet.** The recipe names it as the intended e2e
+> **Playwright is not scaffolded yet.** The recipe names it as the intended e2e
 > layer but nothing scaffolds it. Evidence for the first slice is the merge bar,
 > `bun test`, and screenshots from `next dev`.
 
@@ -252,7 +252,7 @@ Cases live in `*.eval.ts` beside the code; one the slice does not cover is
 - **Features cannot import each other.** `bun run check-boundaries` enforces it;
   a failure means a piece of logic earned promotion to `shared/`.
 - **The stack is a recipe.** Change [recipe.yaml](docs/kit/recipe.yaml) once;
-  clones compose from it. npm, ESLint, Vitest, Prisma and NextAuth arguments are
+  clones scaffold from it. npm, ESLint, Vitest, Prisma and NextAuth arguments are
   closed here.
 
 | Layer | Default | Skip |
@@ -279,7 +279,7 @@ them through symlinks. **You type `/next`.** Everything else is called for you.
 bun run dev
 bun run check-types && bun run check-boundaries && bun run check-tokens && bun run check-journeys && bun test
 bun scripts/eval.ts                       # score the slice against the last 10 real cases
-bun scripts/compose.mjs --add web --add db
+bun scripts/scaffold.mjs --add web --add db
 bun run db generate && bun run db seed    # seed depends on migrate
 bun run db reset                          # local PGlite wedged? throw it away and reseed
 ```
