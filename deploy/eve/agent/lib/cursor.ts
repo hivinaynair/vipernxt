@@ -54,7 +54,7 @@ export async function cursor<T>(path: string, method = "GET", body?: unknown): P
     },
     body: body === undefined ? undefined : JSON.stringify(body),
     redirect: "error",
-    signal: AbortSignal.timeout(15000),
+    signal: AbortSignal.timeout(30000),
   });
   if (!r.ok) {
     const detail = (await r.text()).replace(/\s+/g, " ").trim().slice(0, 180);

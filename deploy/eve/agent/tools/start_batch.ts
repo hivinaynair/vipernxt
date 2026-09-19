@@ -131,6 +131,7 @@ async function register(ctx: WorkflowStepToolContext) {
       state.batch.workflowOwner = ctx.callId;
       state.batch.status = "running";
       state.batch.error = undefined;
+      if (state.batch.active) state.batch.active.startedAt = Date.now();
       await saveState(state, sha);
       await postReceipt(issueNumber, {
         event: "resuming",
