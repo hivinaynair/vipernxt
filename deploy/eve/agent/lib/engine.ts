@@ -10,7 +10,7 @@ import {
 } from "./contract.js";
 import { advanceRemote } from "./cursor.js";
 import { deploymentReceipt, runDeadline, verifyDeployment } from "./deployment.js";
-import { GitHubError, github, head, type Issue } from "./github.js";
+import { GitHubError, github, head, type Issue, isAncestor } from "./github.js";
 import { assertLease, claim } from "./lease.js";
 import { type Batch, readState, saveState } from "./store.js";
 
@@ -173,9 +173,9 @@ export async function tick(overrides: Partial<typeof live> = {}) {
       if (!branch || (await head(branch)) !== b.candidate)
         throw new Error("Final branch no longer matches verified candidate");
       const base = required("FACTORY_BASE_BRANCH");
-      if ((await head(base)) !== b.manifest.base)
+      if (!(await isAncestor(b.commit, await head(base))))
         throw new Error(
-          "Target branch changed; combined verification must be rebased and repeated",
+          "Target branch no longer contains the approved intake; combined verification must be rebased and repeated",
         );
       const existing = await github<{ html_url: string }[]>(
         `/pulls?state=open&head=${encodeURIComponent(repository().split("/")[0] + ":" + branch)}&base=${encodeURIComponent(base)}`,

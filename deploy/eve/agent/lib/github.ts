@@ -40,3 +40,10 @@ export async function head(ref: string) {
   const result = await github<{ sha: string }>(`/commits/${encodeURIComponent(ref)}`);
   return result.sha;
 }
+export async function isAncestor(ancestor: string, descendant: string) {
+  if (ancestor === descendant) return true;
+  const result = await github<{ status: string }>(
+    `/compare/${encodeURIComponent(ancestor)}...${encodeURIComponent(descendant)}`,
+  );
+  return result.status === "ahead" || result.status === "identical";
+}

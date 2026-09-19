@@ -7,7 +7,8 @@ import { digest, intake, validateManifest } from "../lib/contract.js";
 import { coverageSchema, validateCoverage } from "../lib/coverage.js";
 import { deploymentReceipt, runDeadline, verifyDeployment } from "../lib/deployment.js";
 import { tick } from "../lib/engine.js";
-import { file, github, head, type Issue } from "../lib/github.js";
+import { file, github, head, type Issue, isAncestor } from "../lib/github.js";
+import { assertApprovedIntake } from "../lib/intake.js";
 import { verifyRuntime } from "../lib/runtime.js";
 import { readState, saveState } from "../lib/store.js";
 import { intakeIssueNumber } from "../lib/trust.js";
@@ -111,31 +112,32 @@ async function register(ctx: WorkflowStepToolContext) {
     JSON.parse((await file(source.manifest, source.commit)).text),
     repository(),
   );
-  if (manifest.base !== (await head(required("FACTORY_BASE_BRANCH"))))
-    throw new Error("Approved base differs from target branch head");
+  await assertApprovedIntake({
+    intake: source.commit,
+    base: manifest.base,
+    targetHead: await head(required("FACTORY_BASE_BRANCH")),
+    isAncestor,
+  });
   const repo = await github<{ default_branch: string }>("");
   await verifyRuntime(
     manifest.specFiles,
-    manifest.base,
+    source.commit,
     repo.default_branch,
     required("FACTORY_CALLBACK_AUDIENCE"),
     file,
   );
-  // Every pinned artifact must exist in the actual worker base, not only in
-  // a different manifest commit. A worker cannot silently lose requirements.
-  for (const p of manifest.specFiles) {
-    if ((await file(p, source.commit)).sha !== (await file(p, manifest.base)).sha)
-      throw new Error(`Pinned artifact differs from execution base: ${p}`);
-  }
+  // Workers start from the intake commit so pinned catalogs exist in the tree.
+  // manifest.base may be an earlier runtime pin; do not require identical blobs.
+  for (const p of manifest.specFiles) await file(p, source.commit);
   const catalog = coverageSchema.parse(
-    JSON.parse((await file(manifest.coverageFile, manifest.base)).text),
+    JSON.parse((await file(manifest.coverageFile, source.commit)).text),
   );
   if (!manifest.specFiles.includes(catalog.spineFile))
     throw new Error("Journey spine must be pinned");
   const coverage = validateCoverage(
     catalog,
     manifest,
-    parseYaml((await file(catalog.spineFile, manifest.base)).text),
+    parseYaml((await file(catalog.spineFile, source.commit)).text),
   );
   state.batch = {
     workflowOwner: ctx.callId,
@@ -147,7 +149,7 @@ async function register(ctx: WorkflowStepToolContext) {
     coverage,
     startedAt: Date.now(),
     status: "running",
-    candidate: manifest.base,
+    candidate: source.commit,
     accepted: [],
     attempts: {},
     evidence: [],
