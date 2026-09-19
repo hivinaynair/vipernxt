@@ -19,6 +19,9 @@ There is **no cron schedule**. Before each Cursor launch the workflow registers
 `cursor:<agent-id>` as a durable hook. The product's stop hook sends a short-lived
 Cursor-signed OIDC token to `/callbacks/cursor`. The endpoint checks issuer,
 audience, expiry and the registered agent identity, then wakes that hook.
+Workers also invoke the same callback script immediately before their final reply.
+The first hosted trial did not deliver automatic stop callbacks, despite a working
+identity socket; the explicit invocation provides a second delivery path.
 The callback body cannot approve anything. The workflow reads Cursor's actual
 run status and checks the diff and independent review evidence.
 

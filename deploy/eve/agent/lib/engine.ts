@@ -14,6 +14,8 @@ import { assertLease, claim } from "./lease.js";
 import { type Batch, readState, saveState } from "./store.js";
 
 export function workerPrompt(b: Batch, job: Job): string {
+  const notify =
+    "After all work and checks (including failures), immediately before your final response, run node .cursor/hooks/factory-stop.mjs once. This only wakes the coordinator; do not print tokens, edit this script, or interpret callback success as product approval. If it fails, report the callback failure honestly. The automatic stop hook is a second delivery path.";
   const contract = {
     job,
     specFiles: b.manifest.specFiles,
@@ -27,12 +29,14 @@ export function workerPrompt(b: Batch, job: Job): string {
       '{"commit":"exact SHA","approved":true,"unchanged":true,"findings":[],"checks":[{"command":["exact","argv"],"exitCode":0,"evidence":"observed output"}],"criteria":[{"step":"journey ID","passed":true,"evidence":"what you independently verified"}]}',
       "If any check fails or evidence is missing, approved must be false. Report the actual unchanged status using git status.",
       JSON.stringify(contract),
+      notify,
     ].join("\n");
   return [
     "Implement only this approved slice. Read AGENTS.md and all pinned specifications. Do not invent fields or requirements. Do not modify pinned evaluators, factory state, GitHub workflows or unrelated paths. Commit and push only the implementation branch; do not open or merge PRs or deploy.",
     `Base: ${b.active?.base}.`,
     JSON.stringify(contract),
     b.feedback ? `Previous review findings: ${b.feedback}` : "",
+    notify,
   ].join("\n");
 }
 
