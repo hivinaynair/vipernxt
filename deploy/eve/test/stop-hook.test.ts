@@ -97,7 +97,9 @@ test("command invoked through a symlink still consumes the hook event", async ()
     await symlink(new URL("../hooks/cursor-stop.mjs", import.meta.url).pathname, alias);
     const child = Bun.spawn(["node", alias], {
       env: { ...process.env, CURSOR_AGENT_SOCKET: "/tmp/vipernxt-no-such-socket" },
-      stdin: new Response(JSON.stringify({ hook_event_name: "stop", status: "completed" })),
+      stdin: new TextEncoder().encode(
+        JSON.stringify({ hook_event_name: "stop", status: "completed" }),
+      ),
       stdout: "pipe",
       stderr: "pipe",
     });
