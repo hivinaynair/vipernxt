@@ -76,11 +76,14 @@ Based on the MIT-licensed Vercel Foreman template at
 Cursor documents that project command hooks run only after the agent enters a
 writable environment. Reviewers explicitly initialize that environment with a
 temporary repository file, removed immediately; tracked files remain unchanged.
-A hosted probe of the corrected hook reached `/callbacks/cursor` automatically
-on 2026-09-20. This proves delivery, not acceptance or completion of the batch.
-Automatic delivery has been observed on follow-up runs, but fresh first-run
-delivery remains unverified. A probe also found Bun missing from its runtime.
-The two-slice test remains blocked; this is not a production-ready replacement.
+On 2026-09-20, Return Desk staging `4bfed95` with an active Cursor Build that
+installs Bun and Playwright: a fresh agent's **first** turn finished with
+`/run/cursor/api.sock` present but **no** POST to `/callbacks/cursor`. A
+**follow-up** run on the same agent delivered `POST /callbacks/cursor` with
+HTTP 204 automatically. Do not claim first-turn delivery; Eve's durable
+deadline remains the wake path when the first stop hook is missing. This proves
+follow-up delivery and OIDC wiring, not acceptance or batch completion.
+The two-slice hosted trial remains experimental.
 
 References: [Cursor hooks](https://cursor.com/docs/hooks) and
 [Cursor identity](https://cursor.com/docs/cloud-agent/identity).
