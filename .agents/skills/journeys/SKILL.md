@@ -30,6 +30,8 @@ bun scripts/journey.ts render docs/journeys/<name>.yaml --out docs/journeys/<nam
 
 Show the diagram; ask only about unresolved or newly introduced behavior. Faithful mechanical expansion of approved content returns to `/next` without another permission gate. Use `spine-checker` for an independent structural check when useful.
 
+Before returning, reconcile `docs/product/data-surfaces.md` with the spine: resolve design beat references to stable step IDs, account for each in-scope form/table/detail view, and carry material rules into EARS or linked acceptance cases. Keep the detailed inventory in the contract, not duplicated in YAML. Missing information requirements return to shape/plan before implementation; mechanical ID mapping does not reopen approval.
+
 ## Stable contract
 
 Never hand-edit generated markdown, renumber to close gaps or reuse a retired ID. Insert `J1.S2b` for a new moment. Same meaning keeps its ID. A wrong product story returns to shape's clip/table; a wrong expansion changes YAML only. Remove dropped steps from serves and retire dependent citations/tickets together.

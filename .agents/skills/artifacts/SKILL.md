@@ -20,6 +20,7 @@ Facts cite exact source paths, commits, observations or URLs. Date researched so
 | DESIGN.md | One page |
 | Homework | One page per person/setting |
 | Slice spec | Target 250, maximum 400 words |
+| Data-surface contract | One inventory plus concise per-surface tables; split by feature when needed, link shared definitions once; do not omit fields to meet a prose cap |
 | State, journey YAML and generated views | No arbitrary size cap; completeness wins |
 
 These are editing limits, not an excuse to omit requirements. Split different jobs into linked artifacts. Do not relocate the same long instructions merely to claim a shorter entrypoint. For broad research explicitly requested as a report, a larger self-contained report can live outside phase notes.

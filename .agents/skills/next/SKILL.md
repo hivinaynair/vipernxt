@@ -46,6 +46,8 @@ U1–U5 detail and optional later generalization: [fde-loop.md](../../../docs/pl
 
 ## Build and resume
 
+Before wave 0 or any slice with inputs/data displays, require the reviewed MVP [data-surface contract](../shape/data-surfaces.md), its approval decision and coverage of the affected journeys. Resolve material gaps through shape/plan; keep unrelated research moving. Reuse existing approval when the contract is unchanged.
+
 Run `bun scripts/check-drift.ts` before building; disclose findings and repair actual inconsistencies within scope. Wave 0 owns schema, seed, route shells and initial layout. `bun scripts/journey.ts routes <spine>` lists shells. Schema covers the next slice, not speculative future tables. Seed fixed IDs/dates from the eval set before feature work.
 
 Missing local DB keys do not block: PGlite runs locally. Use `bun run db generate`, `bun run db migrate`, `bun run --cwd packages/db db:seed`; stop the dev server before DB scripts. Reset only the disposable local DB when appropriate. Clerk keyless development requires its wiring; package installation alone is not verification.
@@ -66,4 +68,4 @@ Keep discovery, design, journeys and scaffold local. Prefer Cursor Cloud for imp
 
 ## Unattended handoff
 
-When the user authorizes factory execution after accepting the clip, read [the runtime guide](../../../docs/playbook/factory-runtime.md). Turn approved slices into `docs/product/factory.json`; include dependency IDs, allowed paths, pinned acceptance inputs, real checks and browser scenarios. Record the scope authorization decision. Commit specs, run `bun run factory prepare`, review/commit the manifest, then `bun run factory start`. Confirm status after dispatch; do not equate dispatch with completion. Use `status`/`cancel` or foreground `run` to resume. Missing deployment configuration permits a local result, never a deployed claim. Runtime is serial; do not claim Linear synchronization or parallel workers are enabled.
+When the user authorizes factory execution after accepting the clip, read [the runtime guide](../../../docs/playbook/factory-runtime.md). Turn approved slices into `docs/product/factory.json`; include dependency IDs, allowed paths, pinned acceptance inputs, real checks and browser scenarios. Include the approved data-surface contract and referenced definitions in `specFiles`; name each job’s affected surface IDs and require the verifier to check them. Record the scope authorization decision. Commit specs, run `bun run factory prepare`, review/commit the manifest, then `bun run factory start`. Confirm status after dispatch; do not equate dispatch with completion. Use `status`/`cancel` or foreground `run` to resume. Missing deployment configuration permits a local result, never a deployed claim. Runtime is serial; do not claim Linear synchronization or parallel workers are enabled.

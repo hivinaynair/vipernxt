@@ -18,6 +18,8 @@ Held items use `kind: gather | decide`, `who: fde | site`, `what`, `done_when`, 
 
 No product UI before confirmed U5 and approved design (`shape: done`), unless the explicit `ui_writes` override applies. Never disguise assumptions as confirmations. Review the first working slice before full provisioning/remaining factory work. A dedicated product repository may be provisioned earlier for explicitly selected cloud implementation. The first-slice review may be simulated only when the user already authorized simulation of that review.
 
+For input/data-display scope, implementation readiness also requires the [data-surface contract](shape/data-surfaces.md): reviewed fields, columns, rules and information needs tied to the approved journeys. Material unknowns block the affected scope before schema or UI implementation. Approval of the design can include this contract; do not re-ask settled decisions.
+
 Each skill returns a compact result: `completed | needs-input | blocked`, artifact paths, evidence, unresolved items, and next action. `/next` records it and continues. Do not repeat the result in multiple reports. Missing optional tools are disclosed; missing required acceptance evidence prevents completion.
 
 Use `artifacts` for product/research documents. Follow AGENTS.md for stack, boundaries and branch/worktree rules. Commit product artifacts under the repo's existing policy; do not commit raw customer material or secrets. External publishing, merging and spending follow the engagement's existing authorization, not a worker's interpretation of a ticket.

@@ -27,6 +27,8 @@ Answer discoverable questions yourself first. Ask about recent actual events: wa
 
 Include the operator, the owner of money/reporting and someone affected by the system. Capture task dependencies, exceptions, device/connectivity, data residency and human responsibility when relevant. If the incumbent is changing, baseline measurements come first.
 
+For form/table-heavy workflows, observe one completed form and one real decision made from a table: which values are entered, copied, calculated, ignored or missing; which columns drive action; and who may correct them. Collect anonymized examples and conditional/exception rules for the later [data-surface contract](../shape/data-surfaces.md). Ask only what existing evidence cannot settle.
+
 Write `docs/product/homework/<nn>-<topic>.md` in stages. Each stage names who/where, questions as bullets, captures as checkboxes, and a concrete done-when. Move answered material under `## Closed`/`## Settled`; the renderer omits it. Rebuild trip DOCX after changes. Prose is instruction, not an answer box.
 
 ## Absorb

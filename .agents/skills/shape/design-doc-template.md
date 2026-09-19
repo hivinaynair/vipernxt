@@ -11,7 +11,8 @@ This document holds only what no other artifact holds. It does not repeat:
 | ID'd steps, screens, criteria | `docs/journeys/<name>.yaml` (after the journeys skill) |
 | Repo layout, package manager, boundaries | `AGENTS.md` |
 | Colour, type, density | `DESIGN.md` |
-| Build order | Linear |
+| Form fields, table columns, display rules | `docs/product/data-surfaces.md` |
+| Build order | Slice specs and factory manifest; Linear when enabled |
 
 Write it as the gates pass — section 1 when the claim is confirmed, the rest as they land.
 An unconfirmed section is absent, not stubbed. No `TBD` in a finished doc; go and ask.
@@ -61,6 +62,8 @@ Forbidden: <actor> never <posts / pings everyone / logs in>.
 
 Omit this section if the clip has no screen (script-only, judgment-only, or
 out-of-band human). Do not invent a screen to fill the table.
+
+Data-surface contract: <link and reviewed revision; approval decision recorded in state>.
 
 | Screen | Bands | States |
 | | | |
