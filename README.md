@@ -61,7 +61,7 @@ flowchart TD
     G1 --> R["<b>R — reframe</b><br/>the claim <i>is</i> the design doc"]
     R --> C["<b>C — clip</b> · the one slice that moves the number<br/>scaffold → ontology + spine → wave 0<br/>one journey working, on a local database"]
     C --> G2{{"✋ you look at it,<br/>and at its score"}}
-    G2 --> F["<b>F — factory</b> · the rest, built in parallel<br/>setup · Linear · parallel slices"]
+    G2 --> F["<b>F — factory</b> · the rest, built in order<br/>setup · GitHub Issues · serial slices"]
     F --> REL["review PRs → staging → main"]
     REL --> G3{{"✋ does this become<br/>a product?"}}
     G3 --> G["<b>G — generalize</b> · optional<br/>three customers, same pain, somebody paid"]
@@ -160,7 +160,7 @@ step has a permanent ID. Meaning changes → new ID. Never recycled.
 flowchart LR
     S["<b>J1.S3</b><br/>the lead confirms the pick"]
     S --> F["feature F2 serves J1.S3"]
-    S --> T["Linear ticket carries J1.S3"]
+    S --> T["GitHub issue carries J1.S3"]
     S --> E["a test named for J1.S3"]
     S --> P["PR body says it landed J1.S3"]
     S --> SC["screenshot filed against J1.S3"]
@@ -318,4 +318,4 @@ Internal map: [docs/map.md](docs/map.md) · Agent constraints:
 
 After approving the first slice, `/next` can prepare and launch the [local serial factory](docs/playbook/factory-runtime.md). `bun run factory` exposes prepare/start/run/status/cancel commands. [Validation and current limits](docs/playbook/factory-validation.md) distinguish local completion from verified deployment.
 
-Discovery and design stay local. Execute approved work with your preferred harness, native provider integration, or the optional [hosted controller](docs/playbook/controller.md). The controller currently uses Linear, Cursor Cloud and Fly for durable scheduling and independent remote verification; the playbook does not require that stack. See the [comparison plan](docs/plans/cloud-factory-controller.md) before adopting unattended execution.
+Discovery and design stay local. The [Eve factory](deploy/eve/README.md) runs durable orchestration on Vercel, takes approved batches from GitHub Issues, and delegates implementation and independent verification to Cursor Cloud. It remains experimental; see its documented validation limits.

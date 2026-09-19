@@ -33,7 +33,10 @@ export default defineTool({
       /* Missing evidence is a hold, never permission. */
     }
     const result = await classifyFailure({
-      stage: batch.active?.phase ?? "dispatch",
+      stage:
+        batch.active?.phase === "integrated-review"
+          ? "integration"
+          : (batch.active?.phase ?? "dispatch"),
       code: "batch_blocked",
       summary: batch.error.slice(0, 4000),
       retriesRemaining: Math.max(0, batch.manifest.limits.attempts - used),

@@ -1,6 +1,6 @@
 # Unattended product factory
 
-The target is an approved product built and verified on staging without repeated human prompts. The user reviews the resulting product and starts a new change cycle. The [serial supervisor](factory-runtime.md) supports local workers and Cursor Cloud. The optional [hosted controller](controller.md) adds Linear commands and separate Cursor verification; local execution can still use host verification. This document describes the wider target architecture. End-to-end hosted validation is in progress; automatic delivery and parallel scheduling remain separate work.
+The target is an approved product built and verified on staging without repeated human prompts. The user reviews the resulting product and starts a new change cycle. The [serial supervisor](factory-runtime.md) supports local workers and Cursor Cloud. Hosted execution uses [Eve on Vercel](../../deploy/eve/README.md), GitHub Issues and separate Cursor verification. The local runner remains a development tool. This document describes the wider target architecture. End-to-end hosted validation is in progress; automatic delivery and parallel scheduling remain separate work.
 
 ## Entry and completion
 
@@ -18,7 +18,7 @@ Completion means all required journey steps have implementation evidence, the co
 
 [Anthropic's long-running application harness work](https://www.anthropic.com/engineering/harness-design-long-running-apps) supports treating environment setup, incremental work and browser verification as harness responsibilities. Its reported runs are not a portable cost benchmark for this kit. More agents and more review loops are hypotheses to measure, not automatic improvements.
 
-Recommendation: retain `/next` as the product-discovery and approval interface. Put unattended execution behind a small supervisor with a replaceable worker adapter. Start with a repository queue and one serial worker; evaluate Symphony before building equivalent orchestration from scratch. Linear should expose work to humans, not become the only durable copy of the product plan.
+Recommendation: retain `/next` as the product-discovery and approval interface. Put unattended execution behind a small supervisor with a replaceable worker adapter. Start with a repository queue and one serial worker; evaluate Symphony before building equivalent orchestration from scratch. GitHub Issues expose work to humans, not become the only durable copy of the product plan.
 
 ## Authoritative records
 
@@ -27,7 +27,7 @@ Recommendation: retain `/next` as the product-discovery and approval interface. 
 | Design and journey spine in Git | Scope, step IDs, acceptance, dependencies | Worker process state |
 | Generated job manifest, pinned to a spec commit/hash | Executable slices, allowed paths, required checks | New product decisions |
 | Supervisor ledger | Claims, leases, attempts, retry times, integration state, cost | Rewritten requirements |
-| Linear or another tracker | Human board and links to jobs/evidence | An independent conflicting acceptance spec |
+| GitHub Issues | Human board and links to jobs/evidence | An independent conflicting acceptance spec |
 | Evidence bundle at an exact commit | Command results, scenarios, screenshots, deployment result | A worker's unsupported “done” assertion |
 
 Each job includes a stable slice ID, spec hash, dependency IDs, journey step IDs, allowed paths, seed references, acceptance commands, required browser scenarios, evidence destinations and limits. Changed requirements invalidate affected pending jobs and their dependants. A completed job is reusable only when its inputs and dependencies remain compatible.
