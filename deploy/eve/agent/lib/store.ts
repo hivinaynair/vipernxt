@@ -85,10 +85,10 @@ export function archiveBatch(state: State, reason: string) {
   state.lease = undefined;
 }
 
-/** Same issue and intake may resume a blocked batch, or a Jev-orphaned running one. */
+/** Same issue and intake may resume a blocked/paused batch, or a Jev-orphaned running one. */
 export function isAuthorizedResume(batch: Batch, issue: number, intakeHash: string) {
   if (batch.issue !== issue || batch.intakeHash !== intakeHash) return false;
-  if (batch.status === "blocked") return true;
+  if (batch.status === "blocked" || batch.status === "paused") return true;
   return batch.status === "running" && Boolean(batch.triage) && !batch.error;
 }
 const branch = "factory/state";

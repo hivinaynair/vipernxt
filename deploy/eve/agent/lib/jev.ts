@@ -96,6 +96,9 @@ export async function classifyFailure(
   if (!failure.scopeValid || !failure.budgetAvailable) {
     return recommend(base, "stop");
   }
+  if (/invalid_model/i.test(failure.summary)) {
+    return recommend(base, "ask_owner");
+  }
   try {
     const answer = answerSchema.parse(await evaluator(failure));
     if (

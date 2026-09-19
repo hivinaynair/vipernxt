@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { advanceRemote, CursorError, type cursor } from "../agent/lib/cursor.js";
+import { advanceRemote, CursorError, type cursor, resolveStation } from "../agent/lib/cursor.js";
 import type { Attempt } from "../agent/lib/store.js";
 
 const attempt = (): Attempt => ({
@@ -93,11 +93,13 @@ test("dispatch uses the pinned input branch and configured execution model", asy
       startingRef: "factory/input/bc-review",
     };
     review.agentId = "bc-review";
-    const reviewRequest = transport(async (_, method, body) => {
+    const reviewRequest = transport(async (path, method, body) => {
+      if (path === "/models")
+        return { items: [{ id: "claude-4.5-sonnet-thinking" }, { id: "grok-4.6" }] };
       if (method !== "POST") throw new CursorError(404);
       const payload = body as { mode: string; model: { id: string } };
       expect(payload.mode).toBe("plan");
-      expect(payload.model.id).toBe("claude-4.6-sonnet-thinking");
+      expect(payload.model.id).toBe("claude-4.5-sonnet-thinking");
       expect((body as { model: { params?: unknown } }).model.params).toBeUndefined();
       return {
         agent: { id: review.agentId },
@@ -105,6 +107,11 @@ test("dispatch uses the pinned input branch and configured execution model", asy
       };
     });
     await advanceRemote(review, "review", reviewRequest);
+    const fallback = await resolveStation(
+      "review",
+      transport(async () => ({ items: [{ id: "grok-4.6" }, { id: "composer-2" }] })),
+    );
+    expect(fallback).toEqual({ mode: "plan", model: { id: "composer-2" } });
   } finally {
     if (old === undefined) delete process.env.FACTORY_REPO;
     else process.env.FACTORY_REPO = old;

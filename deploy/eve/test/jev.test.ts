@@ -29,6 +29,24 @@ describe("Jev shadow boundary", () => {
     expect(attentionFor("investigate")).toBe("eve");
     expect(eveMayResume({ attention: "eve", recommendation: "investigate" })).toBe(false);
   });
+  test("invalid Cursor model is owner configuration, not an Eve repair", async () => {
+    let calls = 0;
+    const result = await classifyFailure(
+      {
+        ...failure,
+        stage: "review",
+        summary: `Cursor HTTP 400: {"error":{"code":"invalid_model","message":"Model 'x' is not available or invalid."}}`,
+      },
+      async () => {
+        calls++;
+        return { choice: "repair" };
+      },
+    );
+    expect(result.recommendation).toBe("ask_owner");
+    expect(result.attention).toBe("owner");
+    expect(eveMayResume(result)).toBe(false);
+    expect(calls).toBe(0);
+  });
   test("scope and budget failures bypass the model and need the owner", async () => {
     let calls = 0;
     for (const patch of [{ scopeValid: false }, { budgetAvailable: false }]) {

@@ -16,9 +16,26 @@ export function stationFor(phase: Attempt["phase"]) {
   }
   return {
     mode: "plan" as const,
-    // IDs must come from GET /v1/models. Claude variants do not take effort/fast.
     model: { id: "claude-4.6-sonnet-thinking" },
   };
+}
+
+type ModelList = { items?: { id: string }[]; models?: string[] };
+
+export async function resolveStation(phase: Attempt["phase"], request: typeof cursor = cursor) {
+  const configured = stationFor(phase);
+  if (phase === "build") return configured;
+  const listed = await request<ModelList>("/models");
+  const ids = [...(listed.items ?? []).map((item) => item.id), ...(listed.models ?? [])].filter(
+    Boolean,
+  );
+  const pick =
+    ids.find((id) => id === configured.model.id) ??
+    ids.find((id) => /claude/i.test(id)) ??
+    ids.find((id) => id !== "grok-4.6") ??
+    ids[0];
+  if (!pick) throw new Error("Cursor has no reviewer model");
+  return { mode: "plan" as const, model: { id: pick } };
 }
 export class CursorError extends Error {
   constructor(
@@ -65,7 +82,7 @@ export async function advanceRemote(
     agent = await request(`/agents/${a.agentId}`);
   } catch (e) {
     if (!(e instanceof CursorError && e.status === 404) || a.posted) throw e;
-    const station = stationFor(a.phase);
+    const station = await resolveStation(a.phase, request);
     const created = await request<{ agent: { id: string }; run: Run }>("/agents", "POST", {
       agentId: a.agentId,
       prompt: { text: prompt },

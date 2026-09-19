@@ -243,6 +243,7 @@ test("Jev-orphaned running batch can be adopted by the next authorized label", (
     isAuthorizedResume({ ...batch, status: "running", triage: undefined } as never, 10, "x"),
   ).toBe(false);
   expect(isAuthorizedResume({ ...batch, status: "blocked" } as never, 10, "x")).toBe(true);
+  expect(isAuthorizedResume({ ...batch, status: "paused" } as never, 10, "x")).toBe(true);
 });
 
 test("receipts name the issue, station, and who must act", () => {
