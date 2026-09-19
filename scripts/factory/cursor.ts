@@ -220,6 +220,7 @@ export async function reviewWithCursor(options: {
   base: string;
   tree: string;
   instructions: string;
+  verification?: { checks: string[][]; browser: boolean };
   stopped: () => boolean;
   command: (argv: string[], label: string) => Promise<void>;
 }) {
@@ -267,7 +268,10 @@ export async function reviewWithCursor(options: {
     startingRef: `codex/factory-review/${hash({ dir }).slice(0, 24)}`,
     review: true,
     stopped: options.stopped,
-    prompt: `Review only. Do not edit, commit, push, open PRs or merge. Inspect the diff from ${options.base} to HEAD against this contract. Do not trust the builder summary. Return ONLY JSON {"approved":boolean,"findings":string[]} with concrete correctness, security or acceptance defects. Approve only when no actionable defects remain.\n${options.instructions}`,
+    prompt: options.verification
+      ? `Independently verify and review candidate ${candidate.commit} (tree ${options.tree}) against base ${options.base}. Do not trust builder reports. Run the contract setup, checks, browser command and combined checks in this VM. Run commands exactly as specified; report a failure if unavailable. For the browser command set FACTORY_TREE=${options.tree}, FACTORY_BROWSER_RECEIPT=/tmp/factory-browser.json and FACTORY_ATTEMPT_DIR=/tmp/factory-evidence (create it). Read the actual receipt, require passed=true and positive cases. Also exercise the cited journeys in the browser and capture evidence. Do not edit tracked code or tests, commit, push, open PRs or merge. Confirm git HEAD and tree before and after, and that tracked files are unchanged. Return ONLY JSON {"approved":boolean,"findings":string[],"commit":"${candidate.commit}","tree":"${options.tree}","unchanged":boolean,"checks":[{"command":string[],"exitCode":number,"output":string}],"browser":{"passed":boolean,"cases":number,"evidence":string}}. Include every required check result with bounded actual output. Missing evidence means approved=false. Contract:
+${options.instructions}`
+      : `Review only. Do not edit, commit, push, open PRs or merge. Inspect the diff from ${options.base} to HEAD against this contract. Do not trust the builder summary. Return ONLY JSON {"approved":boolean,"findings":string[]} with concrete correctness, security or acceptance defects. Approve only when no actionable defects remain.\n${options.instructions}`,
   });
   let verdict: { approved: boolean; findings: string[] };
   try {
@@ -276,6 +280,8 @@ export async function reviewWithCursor(options: {
     throw new Error("Cursor review did not return a JSON verdict");
   }
   save(join(options.dir, "review.json"), verdict);
+  if (options.verification)
+    validateVerification(verdict, candidate.commit, options.tree, options.verification);
   if (verdict.approved !== true || !Array.isArray(verdict.findings) || verdict.findings.length)
     throw new Error(
       `Independent Cursor review: ${JSON.stringify(verdict.findings).slice(0, 3000)}`,
@@ -315,4 +321,39 @@ export async function cancelCursorAttempts(dir: string, client?: CursorClient) {
       );
     }
   }
+}
+
+export function validateVerification(
+  value: unknown,
+  commit: string,
+  tree: string,
+  expected: { checks: string[][]; browser: boolean },
+) {
+  const v = value as {
+    commit?: string;
+    tree?: string;
+    unchanged?: boolean;
+    checks?: { command: string[]; exitCode: number; output: string }[];
+    browser?: { passed: boolean; cases: number; evidence: string };
+  };
+  if (v.commit !== commit || v.tree !== tree || v.unchanged !== true || !Array.isArray(v.checks))
+    throw new Error("Verification must identify the unchanged candidate");
+  if (
+    v.checks.length !== expected.checks.length ||
+    expected.checks.some(
+      (c, i) =>
+        JSON.stringify(c) !== JSON.stringify(v.checks?.[i]?.command) ||
+        v.checks?.[i]?.exitCode !== 0 ||
+        !v.checks?.[i]?.output?.trim(),
+    )
+  )
+    throw new Error("Missing or failed required verification check");
+  if (
+    expected.browser &&
+    (v.browser?.passed !== true ||
+      !Number.isSafeInteger(v.browser.cases) ||
+      v.browser.cases < 1 ||
+      !v.browser.evidence?.trim())
+  )
+    throw new Error("Missing browser verification evidence");
 }

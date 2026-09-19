@@ -1,6 +1,7 @@
 import { afterEach, expect, test } from "bun:test";
 import { type ChildProcess, execFileSync, spawn } from "node:child_process";
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { git, type Ledger, type Manifest, read, save, validate } from "./factory/core";
@@ -382,3 +383,51 @@ test("explicit resume keeps a blocked attempt, its prompt and evidence instead o
   expect(done.status).toBe("completed-local");
   expect(done.jobs.A.attempts).toHaveLength(1);
 });
+
+test("pause lets the current attempt finish, then resume dispatches its dependent", async () => {
+  const f = fixture({ slow: true });
+  const p = start(f.root);
+  await waitFor(() => existsSync(f.ledger) && read<Ledger>(f.ledger).jobs.A.status === "running");
+  execFileSync(process.execPath, [cli, "pause", f.path], { cwd: f.root, stdio: "pipe" });
+  await finish(p);
+  const paused = read<Ledger>(f.ledger);
+  expect(paused.status).toBe("paused");
+  expect(paused.jobs.A.status).toBe("accepted");
+  expect(paused.jobs.B.attempts).toHaveLength(0);
+  const resumed = spawn(process.execPath, [cli, "resume", f.path], {
+    cwd: f.root,
+    stdio: "ignore",
+  });
+  children.push(resumed);
+  await finish(resumed);
+  expect(read<Ledger>(f.ledger).status).toBe("completed-local");
+}, 20000);
+
+test("controller gate refusal prevents dispatch and preserves the pending ticket", async () => {
+  const f = fixture();
+  const server = createServer((_request, response) => {
+    response.writeHead(409);
+    response.end("held");
+  });
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  if (!address || typeof address === "string") throw new Error("Missing test server port");
+  try {
+    const p = spawn(process.execPath, [cli, "run", f.path], {
+      cwd: f.root,
+      stdio: "ignore",
+      env: {
+        ...process.env,
+        FACTORY_CONTROL_URL: `http://127.0.0.1:${address.port}`,
+        FACTORY_CONTROL_TOKEN: "test",
+      },
+    });
+    children.push(p);
+    await finish(p);
+    const s = read<Ledger>(f.ledger);
+    expect(s.status).toBe("blocked");
+    expect(s.jobs.A.attempts).toHaveLength(0);
+  } finally {
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+  }
+}, 10000);

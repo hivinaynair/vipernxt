@@ -25,6 +25,7 @@ export type Manifest = {
   approval: string;
   simulation?: boolean;
   phase?: "first-slice" | "product";
+  verification?: "cursor-cloud";
   worker: {
     kind: "codex" | "command" | "cursor";
     command?: Command;
@@ -110,6 +111,11 @@ export function validate(root: string, m: Manifest, sealed = true) {
     throw new Error("Invalid factory phase");
   if (m.phase === "first-slice" && (m.jobs.length !== 1 || m.delivery))
     throw new Error("First-slice runs contain one reviewable slice and no automatic delivery");
+  if (
+    m.verification &&
+    (m.verification !== "cursor-cloud" || m.worker.kind !== "cursor" || m.delivery)
+  )
+    throw new Error("Remote verification requires Cursor and does not execute delivery commands");
   const ids = new Set(m.jobs.map((j) => j.id));
   if (ids.size !== m.jobs.length) throw new Error("Duplicate jobs");
   for (const job of m.jobs) {

@@ -318,4 +318,4 @@ Internal map: [docs/map.md](docs/map.md) · Agent constraints:
 
 After approving the first slice, `/next` can prepare and launch the [local serial factory](docs/playbook/factory-runtime.md). `bun run factory` exposes prepare/start/run/status/cancel commands. [Validation and current limits](docs/playbook/factory-validation.md) distinguish local completion from verified deployment.
 
-Cloud implementation: start with [Cursor Cloud](docs/playbook/factory-runtime.md), guided by [Factory and Symphony](docs/playbook/factory-inspiration.md). Discovery and design stay local; cloud coding still needs a running controller for scheduling and verification.
+Discovery and design stay local. Execute approved work with your preferred harness, native provider integration, or the optional [hosted controller](docs/playbook/controller.md). The controller currently uses Linear, Cursor Cloud and Fly for durable scheduling and independent remote verification; the playbook does not require that stack. See the [comparison plan](docs/plans/cloud-factory-controller.md) before adopting unattended execution.

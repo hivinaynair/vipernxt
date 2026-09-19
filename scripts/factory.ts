@@ -27,7 +27,9 @@ import {
 
 const [action, input] = process.argv.slice(2);
 if (!action || action === "--help") {
-  console.log("Usage: bun run factory <prepare|start|run|resume|status|cancel> [manifest.json]");
+  console.log(
+    "Usage: bun run factory <prepare|start|run|resume|retry|pause|status|cancel> [manifest.json]",
+  );
   process.exit(0);
 }
 const root = git(process.cwd(), "rev-parse", "--show-toplevel");
@@ -104,6 +106,21 @@ function result(attempt: Attempt): Result | undefined {
   }
   return;
 }
+async function gate(job: string, stage: string) {
+  const environment = process.env;
+  const url = environment.FACTORY_CONTROL_URL;
+  if (!url) return;
+  const response = await fetch(`${url}/internal/gate`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${environment.FACTORY_CONTROL_TOKEN}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ id: m.id, job, stage }),
+    signal: AbortSignal.timeout(10000),
+  });
+  if (!response.ok) throw new Error("Controller gate unavailable or scope changed; execution held");
+}
 async function run() {
   validate(root, m);
   mkdirSync(dir, { recursive: true });
@@ -139,6 +156,27 @@ async function run() {
         jobs: Object.fromEntries(m.jobs.map((j) => [j.id, { status: "pending", attempts: [] }])),
       };
       save(ledgerPath, state);
+    }
+    if (action === "resume") {
+      if (existsSync(join(dir, "pause"))) unlinkSync(join(dir, "pause"));
+      if (state.status === "paused") state.status = "running";
+    }
+    if (action === "retry") {
+      if (!["failed", "blocked"].includes(state.status))
+        throw new Error("Retry requires failed or blocked work");
+      let retried = false;
+      for (const entry of Object.values(state.jobs)) {
+        if (entry.status === "failed" && entry.attempts.length < m.limits.attempts) {
+          entry.status = "pending";
+          retried = true;
+        }
+        if (entry.status === "blocked") entry.status = "pending";
+      }
+      if (!retried)
+        throw new Error(
+          "No safe retry within remaining attempt budget; reconcile blocked work or approve a new batch",
+        );
+      state.status = "running";
     }
     if (action === "resume" && state.status === "blocked") {
       let recovered = false;
@@ -216,6 +254,7 @@ async function run() {
         }
         if (done.blocked) throw new Error(done.error);
         if (done.ok) {
+          await gate(job.id, "integrate");
           if (!done.commit || git(root, "rev-parse", `${done.commit}^`) !== attempt.base)
             throw new Error("Invalid attempt commit parent");
           const head = git(root, "rev-parse", state.branch);
@@ -235,6 +274,15 @@ async function run() {
         }
         save(ledgerPath, state);
       }
+      if (existsSync(join(dir, "pause"))) {
+        state.status = Object.values(state.jobs).some((j) => j.status === "running")
+          ? "pausing"
+          : "paused";
+        save(ledgerPath, state);
+        if (state.status === "paused") return;
+        await Bun.sleep(100);
+        continue;
+      }
       if (!Object.values(state.jobs).some((j) => j.status === "running")) {
         for (const job of m.jobs)
           if (
@@ -248,6 +296,7 @@ async function run() {
             j.dependsOn.every((id) => state.jobs[id].status === "accepted"),
         );
         if (job) {
+          await gate(job.id, "dispatch");
           const entry = state.jobs[job.id];
           const number = entry.attempts.length + 1;
           const attemptDir = join(dir, "attempts", `${job.id}-${number}`);
@@ -348,11 +397,11 @@ try {
     save(manifestPath, m);
     console.log(`Prepared ${m.id}; commit this manifest before starting`);
   } else if (action === "status") console.log(JSON.stringify(read(ledgerPath), null, 2));
-  else if (action === "cancel") {
+  else if (action === "cancel" || action === "pause") {
     mkdirSync(dir, { recursive: true });
-    writeFileSync(join(dir, "cancel"), "");
-    console.log("Cancellation requested");
-  } else if (action === "run" || action === "resume") {
+    writeFileSync(join(dir, action), "");
+    console.log(`${action} requested`);
+  } else if (action === "run" || action === "resume" || action === "retry") {
     await run();
     if (
       !["completed-local", "awaiting-review", "delivered"].includes(read<Ledger>(ledgerPath).status)

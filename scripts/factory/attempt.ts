@@ -139,7 +139,8 @@ function collectUsage() {
 try {
   let commit = req.base;
   let url: string | undefined;
-  for (const [i, cmd] of (req.manifest.setup ?? []).entries()) await command(cmd, `setup-${i}`);
+  if (req.manifest.verification !== "cursor-cloud")
+    for (const [i, cmd] of (req.manifest.setup ?? []).entries()) await command(cmd, `setup-${i}`);
   if (req.delivery) {
     const delivery = req.manifest.delivery;
     if (!delivery) throw new Error("Missing delivery contract");
@@ -211,23 +212,28 @@ try {
     if (!changes.length) throw new Error("Worker produced no changes");
     const tree = git(req.worktree, "write-tree");
     candidateTree = tree;
-    for (const [i, check] of job.checks.entries()) await command(check, `check-${i}`);
-    if (job.browser) {
-      await command(job.browser, "browser");
-      const browser = read<{ tree: string; passed: boolean; cases: number }>(
-        join(dir, "browser.json"),
-      );
-      if (
-        browser.tree !== tree ||
-        browser.passed !== true ||
-        !Number.isSafeInteger(browser.cases) ||
-        browser.cases < 1
-      )
-        throw new Error(
-          "Browser receipt must identify this candidate with at least one passed scenario",
+    if (req.manifest.verification !== "cursor-cloud") {
+      for (const [i, check] of job.checks.entries()) await command(check, `check-${i}`);
+      if (job.browser) {
+        await command(job.browser, "browser");
+        const browser = read<{ tree: string; passed: boolean; cases: number }>(
+          join(dir, "browser.json"),
         );
+        if (
+          browser.tree !== tree ||
+          browser.passed !== true ||
+          !Number.isSafeInteger(browser.cases) ||
+          browser.cases < 1
+        )
+          throw new Error(
+            "Browser receipt must identify this candidate with at least one passed scenario",
+          );
+      }
     }
-    if (job.review.length === 1 && job.review[0] === "cursor-cloud") {
+    if (
+      req.manifest.verification === "cursor-cloud" ||
+      (job.review.length === 1 && job.review[0] === "cursor-cloud")
+    ) {
       await reviewWithCursor({
         config: {
           repository: req.manifest.worker.repository ?? "",
@@ -237,13 +243,23 @@ try {
         worktree: req.worktree,
         base: req.base,
         tree,
-        instructions: JSON.stringify({ job, specFiles: req.manifest.specFiles }),
+        instructions: JSON.stringify({
+          job,
+          specFiles: req.manifest.specFiles,
+          setup: req.manifest.setup,
+          combinedChecks: req.manifest.combinedChecks,
+        }),
+        verification:
+          req.manifest.verification === "cursor-cloud"
+            ? { checks: [...job.checks, ...req.manifest.combinedChecks], browser: !!job.browser }
+            : undefined,
         stopped: () => stopping,
         command,
       });
     } else await command(job.review, "review");
-    for (const [i, check] of req.manifest.combinedChecks.entries())
-      await command(check, `combined-${i}`);
+    if (req.manifest.verification !== "cursor-cloud")
+      for (const [i, check] of req.manifest.combinedChecks.entries())
+        await command(check, `combined-${i}`);
     git(req.worktree, "add", "-A");
     if (git(req.worktree, "write-tree") !== tree)
       throw new Error("Verification/review modified the candidate; evidence is invalid");
