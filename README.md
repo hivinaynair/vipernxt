@@ -1,6 +1,6 @@
 # ViperNxt
 
-**Turn a validated problem into a working MVP—with requirements first and cloud agents doing the implementation.**
+**Plan your product, define the requirements, and build it with cloud agents.**
 
 ViperNxt is a SaaS starter and an agent workflow for solo developers. Start with
 `/next` and describe what you want to build. It researches the problem, helps you
@@ -29,8 +29,8 @@ Use `/next` again to continue; it reads the saved project state. `/status` shows
 where you are and what needs your input. Requires [Bun](https://bun.sh) 1.4.x.
 
 You can start with an idea, but implementation waits for evidence that another
-person has the problem. Research may conclude that improving an existing tool—or
-not building—is the better answer.
+person has the problem. Research may conclude that improving an existing tool or
+not building is the better answer.
 
 ## What happens next?
 
@@ -78,7 +78,7 @@ See the [Eve setup and limits](deploy/eve/README.md).
 The [recipe](docs/kit/recipe.yaml) scaffolds only the surfaces and services the
 product needs. When auth is selected, setup can create or reuse a Clerk application
 and scaffold Playwright sign-in helpers. Cloud verification uses dedicated
-development users and runtime secrets—see [Clerk setup and testing](docs/kit/cloud-auth.md).
+development users and runtime secrets. See [Clerk setup and testing](docs/kit/cloud-auth.md).
 
 ## Working in the repository
 
