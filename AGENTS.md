@@ -79,7 +79,7 @@ runs `customize` after the design doc, then the first working clip (Cursor Cloud
 product GitHub repository may be created for that cloud slice; full `setup.sh`
 provisioning waits until they accept the slice. After the spine, `/next` runs `plan` then
 `build`. Product contracts stay host-agnostic; Cursor-specific execution lives in its
-factory adapter and requires controller API credentials. `shape` and `design-system` read this file for the constraints
+factory adapter and requires Cursor API credentials. `shape` and `design-system` read this file for the constraints
 above. The stack itself is [docs/kit/recipe.yaml](docs/kit/recipe.yaml) —
 scaffold after U5; do not clone a second template and strip it.
 
