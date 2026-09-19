@@ -16,18 +16,16 @@ export function stationFor(phase: Attempt["phase"]) {
   }
   return {
     mode: "plan" as const,
-    model: {
-      id: "claude-4.5-sonnet",
-      params: [
-        { id: "effort", value: "medium" },
-        { id: "fast", value: "false" },
-      ],
-    },
+    // IDs must come from GET /v1/models. Claude variants do not take effort/fast.
+    model: { id: "claude-4.6-sonnet-thinking" },
   };
 }
 export class CursorError extends Error {
-  constructor(public status: number) {
-    super(`Cursor HTTP ${status}`);
+  constructor(
+    public status: number,
+    detail = "",
+  ) {
+    super(detail ? `Cursor HTTP ${status}: ${detail}` : `Cursor HTTP ${status}`);
   }
 }
 export async function cursor<T>(path: string, method = "GET", body?: unknown): Promise<T> {
@@ -41,7 +39,10 @@ export async function cursor<T>(path: string, method = "GET", body?: unknown): P
     redirect: "error",
     signal: AbortSignal.timeout(15000),
   });
-  if (!r.ok) throw new CursorError(r.status);
+  if (!r.ok) {
+    const detail = (await r.text()).replace(/\s+/g, " ").trim().slice(0, 180);
+    throw new CursorError(r.status, detail);
+  }
   return r.json() as Promise<T>;
 }
 export type Run = {

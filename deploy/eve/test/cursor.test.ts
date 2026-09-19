@@ -97,7 +97,8 @@ test("dispatch uses the pinned input branch and configured execution model", asy
       if (method !== "POST") throw new CursorError(404);
       const payload = body as { mode: string; model: { id: string } };
       expect(payload.mode).toBe("plan");
-      expect(payload.model.id).toBe("claude-4.5-sonnet");
+      expect(payload.model.id).toBe("claude-4.6-sonnet-thinking");
+      expect((body as { model: { params?: unknown } }).model.params).toBeUndefined();
       return {
         agent: { id: review.agentId },
         run: { id: "run-2", agentId: review.agentId, status: "CREATING" },

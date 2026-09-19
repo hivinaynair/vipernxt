@@ -3,7 +3,7 @@ import { parseReview } from "../agent/lib/contract.js";
 import { stationFor } from "../agent/lib/cursor.js";
 import { attentionFor, classifyFailure, eveMayResume } from "../agent/lib/jev.js";
 import { formatReceipt } from "../agent/lib/receipt.js";
-import { archiveBatch, type State } from "../agent/lib/store.js";
+import { archiveBatch, isAuthorizedResume, type State } from "../agent/lib/store.js";
 import { classifyStoredFailure } from "../agent/lib/triage.js";
 
 describe("Jev routes owner vs Eve", () => {
@@ -213,8 +213,36 @@ test("review station uses a different vendor and plan mode", () => {
   expect(stationFor("build")).toMatchObject({ mode: "agent", model: { id: "grok-4.6" } });
   expect(stationFor("review")).toMatchObject({
     mode: "plan",
-    model: { id: "claude-4.5-sonnet" },
+    model: { id: "claude-4.6-sonnet-thinking" },
   });
+  expect(stationFor("review").model).not.toHaveProperty("params");
+});
+
+test("Jev-orphaned running batch can be adopted by the next authorized label", () => {
+  const batch = {
+    issue: 10,
+    intakeHash: "x",
+    status: "running" as const,
+    error: undefined,
+    triage: {
+      key: "agent:Cursor HTTP 400",
+      result: {
+        version: 1 as const,
+        evidenceHash: "h",
+        model: "typesafe-ai/jev" as const,
+        mode: "shadow" as const,
+        status: "evaluated" as const,
+        recommendation: "retry_read" as const,
+        attention: "eve" as const,
+        execution: "hold" as const,
+      },
+    },
+  };
+  expect(isAuthorizedResume(batch as never, 10, "x")).toBe(true);
+  expect(
+    isAuthorizedResume({ ...batch, status: "running", triage: undefined } as never, 10, "x"),
+  ).toBe(false);
+  expect(isAuthorizedResume({ ...batch, status: "blocked" } as never, 10, "x")).toBe(true);
 });
 
 test("receipts name the issue, station, and who must act", () => {

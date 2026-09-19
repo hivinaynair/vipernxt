@@ -62,7 +62,9 @@ the next label can start.
 Cursor starts from a dedicated `factory/input/<agent-id>` branch whose head is
 checked against the approved commit. This works around a raw-SHA launch rejected
 by the live Cursor v1 API. Implementers use Grok 4.6 in agent mode. Reviewers
-use Claude 4.5 Sonnet in plan mode.
+use Claude 4.6 Sonnet Thinking in plan mode. A fresh authorized label
+can also adopt a Jev-orphaned running batch (same issue and intake)
+after the previous workflow has already returned.
 
 The build limits generated Vercel function invocations to 60 seconds, shorter
 than the five-minute lease expiry.

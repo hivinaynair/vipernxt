@@ -11,7 +11,13 @@ import { file, github, head, type Issue, isAncestor } from "../lib/github.js";
 import { assertApprovedIntake } from "../lib/intake.js";
 import { postReceipt } from "../lib/receipt.js";
 import { verifyRuntime } from "../lib/runtime.js";
-import { archiveBatch, readState, type State, saveState } from "../lib/store.js";
+import {
+  archiveBatch,
+  isAuthorizedResume,
+  readState,
+  type State,
+  saveState,
+} from "../lib/store.js";
 import { intakeIssueNumber } from "../lib/trust.js";
 
 export default defineWorkflowTool({
@@ -120,11 +126,7 @@ async function register(ctx: WorkflowStepToolContext) {
       state.batch.workflowOwner === ctx.callId
     )
       return { status: state.batch.status };
-    if (
-      state.batch.issue === issueNumber &&
-      state.batch.intakeHash === digest(source) &&
-      state.batch.status === "blocked"
-    ) {
+    if (isAuthorizedResume(state.batch, issueNumber, digest(source))) {
       if (Date.now() >= runDeadline(state.batch)) throw new Error("Original batch budget expired");
       state.batch.workflowOwner = ctx.callId;
       state.batch.status = "running";

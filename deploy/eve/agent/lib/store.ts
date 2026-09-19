@@ -84,6 +84,13 @@ export function archiveBatch(state: State, reason: string) {
   state.batch = undefined;
   state.lease = undefined;
 }
+
+/** Same issue and intake may resume a blocked batch, or a Jev-orphaned running one. */
+export function isAuthorizedResume(batch: Batch, issue: number, intakeHash: string) {
+  if (batch.issue !== issue || batch.intakeHash !== intakeHash) return false;
+  if (batch.status === "blocked") return true;
+  return batch.status === "running" && Boolean(batch.triage) && !batch.error;
+}
 const branch = "factory/state";
 const path = "factory-state.json";
 export async function readState(): Promise<{ state: State; sha?: string }> {
