@@ -12,7 +12,7 @@ This document holds only what no other artifact holds. It does not repeat:
 | Repo layout, package manager, boundaries | `AGENTS.md` |
 | Colour, type, density | `DESIGN.md` |
 | Form fields, table columns, display rules | `docs/product/data-surfaces.md` |
-| Build order | Slice specs and factory manifest; Linear when enabled |
+| Build order | Slice specs and factory manifest; GitHub issues |
 
 Write it as the gates pass — section 1 when the claim is confirmed, the rest as they land.
 An unconfirmed section is absent, not stubbed. No `TBD` in a finished doc; go and ask.
@@ -35,6 +35,10 @@ An unconfirmed section is absent, not stubbed. No `TBD` in a finished doc; go an
 | | person / org / system | | |
 
 Default seat: <actor>. <One URL, seats, shared state — or say why not.>
+
+## Foundations
+
+Link the access matrix and record authentication, tenancy, authorization, persistence and navigation as required or unnecessary with reasons. Name test actors, tenant boundaries and denial scenarios; never include credentials.
 
 ## The clip
 

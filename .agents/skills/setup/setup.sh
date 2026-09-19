@@ -167,44 +167,12 @@ stage "Clerk"
 if [ "$NEED_AUTH" != 1 ]; then
   say "skipped — scaffolded.yaml has --without auth, or no web surface"
 else
-if ! have clerk; then
-  warn "clerk CLI not found — skipping"
-  say "Install with: bun add -g @clerk/clerk-cli   (then: clerk auth login)"
-elif ! clerk whoami >/dev/null 2>&1; then
-  warn "clerk not authenticated"
-  say "Run: clerk auth login   then re-run this script"
-else
-  good "clerk authenticated"
-  linked=$(clerk whoami 2>/dev/null | bun scripts/lib/json-pick.mjs clerk-linked 2>/dev/null || echo no)
-  if [ "$linked" = yes ]; then
-    good "project already linked to a Clerk application"
-  else
-    say "This project is not linked to a Clerk application yet."
-    if confirm "Create a new Clerk app named ${PRODUCT}?"; then
-      clerk apps create "$PRODUCT" && good "created $PRODUCT" || warn "create failed"
-      clerk link 2>/dev/null && good "linked" || warn "link failed — run 'clerk link' manually"
-    elif confirm "Link an existing app instead?"; then
-      clerk link 2>/dev/null && good "linked" || warn "link failed"
-    else
-      say "skipped"
-    fi
+  # Runtime keys are written by Clerk; never echoed into the agent context.
+  if ! bun scripts/lib/setup-clerk.ts "$PRODUCT"; then
+    warn "Clerk setup incomplete. Run bunx clerk@3.3.0 auth login, or reconcile .clerk/provisioning.json."
+    exit 1
   fi
-
-  # The CLI writes the env file itself: keys never pass through this script,
-  # never appear in output, and never reach an agent's context.
-  if clerk whoami 2>/dev/null | grep -q '"linked": *true'; then
-    clerk env pull --file "$ENVFILE" >/dev/null 2>&1 \
-      && good "development keys written to $ENVFILE" \
-      || warn "env pull failed — run: clerk env pull --file $ENVFILE"
-    have clerk && clerk doctor >/dev/null 2>&1 && good "clerk doctor passed" || true
-
-    if confirm "Enable organizations (B2B — teams, seats, roles)?"; then
-      clerk enable orgs && good "organizations enabled" || warn "enable orgs failed"
-    else
-      say "organizations off — enable later with: clerk enable orgs"
-    fi
-  fi
-fi
+  say "Next: configure dedicated test users and Cursor Runtime Secrets using docs/kit/cloud-auth.md."
 fi
 
 # ── 5. posthog ───────────────────────────────────────────────────────────────

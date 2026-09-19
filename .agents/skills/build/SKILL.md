@@ -46,3 +46,5 @@ Return completed, needs-input or blocked with concrete evidence. Two failed repa
 When Cursor Cloud is selected, `/next` dispatches this contract through the factory; local sessions prepare the handoff and inspect evidence.
 
 When launched by the factory, the attempt contract owns file scope and verification. Implement only that slice and return; Cursor may commit to its own result branch for transport; the supervisor owns acceptance, review, integration and delivery. Do not open a competing PR or independently publish.
+
+For authenticated journeys, follow [cloud authentication](../../../docs/kit/cloud-auth.md). Pin the approved access matrix and test actor variable names in the handoff. Use Clerk development identities, verify server-side role and tenant denial, and report missing credentials as blocked rather than bypassing auth.

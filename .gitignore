@@ -65,3 +65,9 @@ docs/research/salvage-inbox/pages/*.tsv
 .factory/
 
 .env.factory.local
+
+# Authenticated browser sessions must never enter Git
+**/playwright/.auth/
+
+# Clerk local project links and provisioning receipts
+**/.clerk/

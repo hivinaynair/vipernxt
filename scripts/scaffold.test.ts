@@ -622,3 +622,22 @@ describe("scaffold execution boundaries", () => {
     expect(readFileSync(generated, "utf8")).toBe("// edited\n");
   });
 });
+
+describe("Clerk browser scaffold", () => {
+  test("auth adds runner and helpers; opting out adds neither", () => {
+    dir = fixture();
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "auth-product" }));
+    run(["--add", "web", "--apply"], dir);
+    expect(existsSync(join(dir, "apps/web/e2e/sign-in.ts"))).toBe(true);
+    const pkg = JSON.parse(readFileSync(join(dir, "apps/web/package.json"), "utf8"));
+    expect(pkg.scripts.e2e).toBe("playwright test");
+    rmSync(dir, { recursive: true, force: true });
+    dir = fixture();
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "public-product" }));
+    run(["--add", "web", "--without", "auth", "--apply"], dir);
+    expect(existsSync(join(dir, "apps/web/e2e/sign-in.ts"))).toBe(false);
+    expect(
+      JSON.parse(readFileSync(join(dir, "apps/web/package.json"), "utf8")).scripts.e2e,
+    ).toBeUndefined();
+  });
+});
