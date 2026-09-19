@@ -59,7 +59,8 @@ export function validateManifest(value: unknown, repo: string): Manifest {
     throw new Error("Coverage catalog must be pinned in specFiles");
   const seen = new Set<string>();
   for (const job of m.jobs) {
-    if (job.id === "__integrated_review__") throw new Error("Reserved job ID");
+    if (["__integrated_review__", "__deployed_review__"].includes(job.id))
+      throw new Error("Reserved job ID");
     if (seen.has(job.id) || job.dependsOn.some((id) => !seen.has(id)))
       throw new Error("Jobs must be unique and ordered after dependencies");
     if (job.requiresBrowser && !job.browser) throw new Error("Browser evidence command missing");

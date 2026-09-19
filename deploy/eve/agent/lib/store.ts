@@ -1,12 +1,13 @@
 import { required } from "./config.js";
 import type { Manifest } from "./contract.js";
 import type { Coverage } from "./coverage.js";
+import type { VerifiedDeployment } from "./deployment.js";
 import { file, GitHubError, github, head } from "./github.js";
 import type { Recommendation } from "./jev.js";
 
 export type Attempt = {
   agentId: string;
-  phase: "build" | "review" | "integrated-review";
+  phase: "build" | "review" | "integrated-review" | "deployed-review";
   base: string;
   startingRef?: string;
   startedAt: number;
@@ -23,9 +24,11 @@ export type Batch = {
   manifestPath: string;
   manifest: Manifest;
   coverage?: Coverage;
+  deployment?: VerifiedDeployment & { startedAt: number };
+  deployedReview?: { commit: string; url: string; review: unknown };
   integratedReview?: { commit: string; review: unknown };
   startedAt: number;
-  status: "running" | "paused" | "blocked" | "review";
+  status: "running" | "paused" | "blocked" | "review" | "mvp-complete" | "slice-complete";
   candidate: string;
   accepted: string[];
   attempts: Record<string, number>;

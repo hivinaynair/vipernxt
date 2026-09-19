@@ -61,8 +61,17 @@
     },
     "e2e": {
       "dependsOn": ["^build"],
-      "passThroughEnv": ["PLAYWRIGHT_*", "CI", "PORT"],
-      "outputs": ["playwright-report/**", "test-results/**"]
+      "passThroughEnv": [
+        "PLAYWRIGHT_*",
+        "CI",
+        "PORT",
+        "E2E_*",
+        "FACTORY_STAGING_URL",
+        "CLERK_SECRET_KEY",
+        "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"
+      ],
+      "outputs": ["playwright-report/**", "test-results/**"],
+      "cache": false
     },
     "dev": {
       "cache": false,

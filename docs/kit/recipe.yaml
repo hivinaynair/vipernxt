@@ -48,11 +48,8 @@ surfaces:
     email: resend
     files: vercel-blob
     lint: biome
-    # Intended e2e layer. Nothing scaffolds it yet, so a scaffolded clone has no
-    # Playwright and no traces — evidence for the first slice is the merge bar,
-    # bun test, and screenshots from `next dev`. Recorded so the choice is made
-    # when someone does add it, not so scaffold pretends it is there.
-    e2e: playwright (not scaffolded)
+    # Auth facet scaffolds Clerk Playwright helpers; product journeys supply tests.
+    e2e: playwright
   ui:
     path: packages/ui
     # No scaffold command. `shadcn init` is a create-a-project flow: it prompts

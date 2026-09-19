@@ -1,6 +1,12 @@
 import { expect, test } from "bun:test";
 import { digest, verificationCommands } from "../agent/lib/contract.js";
-import { integratedJob, promptRequirements, tick } from "../agent/lib/engine.js";
+import {
+  deployedJob,
+  executionCommands,
+  integratedJob,
+  promptRequirements,
+  tick,
+} from "../agent/lib/engine.js";
 import type { Batch, State } from "../agent/lib/store.js";
 
 function fixture() {
@@ -90,8 +96,33 @@ function fixture() {
         return {
           state: "open",
           labels: [{ name: "factory" }],
-          body: "```factory-batch\n" + JSON.stringify(source) + "\n```",
+          body:
+            "```factory-batch\n" +
+            JSON.stringify(source) +
+            "\n```" +
+            (state.batch?.deployment
+              ? '\n```factory-deployment\n{"deploymentId":10,"statusId":20}\n```'
+              : ""),
         } as T;
+      if (path === "/deployments?environment=staging&per_page=1") return [{ id: 10 }] as T;
+      if (path === "/deployments/10")
+        return {
+          id: 10,
+          sha: candidate,
+          environment: "staging",
+          production_environment: false,
+          creator: { login: "vercel[bot]" },
+        } as T;
+      if (path === "/deployments/10/statuses?per_page=1")
+        return [
+          {
+            id: 20,
+            state: "success",
+            environment: "staging",
+            environment_url: "https://staging.example.com",
+            creator: { login: "vercel[bot]" },
+          },
+        ] as T;
       if (path.startsWith("/pulls?")) return [] as T;
       if (path === "/pulls" && method === "POST") {
         prs++;
@@ -132,7 +163,39 @@ function fixture() {
       evidence: "Observed behavior",
     })),
   });
+  const enableDeployment = () => {
+    const b = state.batch!;
+    b.coverage!.deployed = {
+      environment: "staging",
+      origin: "https://staging.example.com",
+      creator: "vercel[bot]",
+      checks: [["bun", "run", "test:deployed"]],
+    };
+    b.deployment = {
+      deploymentId: 10,
+      statusId: 20,
+      commit: candidate,
+      url: "https://staging.example.com/",
+      startedAt: Date.now(),
+    };
+    b.integratedReview = { commit: candidate, review: goodReview() };
+    b.pr = "https://github.com/acme/product/pull/2";
+    b.startedAt = 0; // Approval may arrive days after implementation.
+  };
+  const deployedReview = () => {
+    const b = state.batch!;
+    return {
+      ...goodReview(),
+      checks: executionCommands(b, deployedJob(b)).map((command) => ({
+        command,
+        exitCode: 0,
+        evidence: "Observed deployed behavior",
+      })),
+    };
+  };
   return {
+    enableDeployment,
+    deployedReview,
     deps,
     state: () => state,
     prs: () => prs,
@@ -214,4 +277,79 @@ test("slice prompts carry assigned requirements and prerequisites, not the whole
   expect(promptRequirements(b, job).map((r) => r.id)).toEqual(["loan-created", "existing-auth"]);
   f.startReview();
   expect(promptRequirements(b, integratedJob(b))).toHaveLength(2);
+});
+
+test("deployed review reserves a new run without rebuilding or merging", async () => {
+  const f = fixture();
+  f.enableDeployment();
+  await tick(f.deps);
+  expect(f.state().batch!.active?.phase).toBe("deployed-review");
+  expect(f.prs()).toBe(0);
+});
+test("only actual deployed acceptance permits MVP completion", async () => {
+  const f = fixture();
+  f.enableDeployment();
+  f.startReview();
+  f.state().batch!.active!.phase = "deployed-review";
+  f.setReview(f.deployedReview());
+  await tick(f.deps);
+  expect(f.state().batch!.status).toBe("mvp-complete");
+  expect(f.state().batch!.deployedReview!.url).toBe("https://staging.example.com/");
+  expect(f.prs()).toBe(0);
+});
+test("local-only commands cannot pass as deployed checks", async () => {
+  const f = fixture();
+  f.enableDeployment();
+  f.startReview();
+  f.state().batch!.active!.phase = "deployed-review";
+  f.setReview(f.goodReview());
+  await tick(f.deps);
+  expect(f.state().batch!.status).toBe("blocked");
+});
+test("deployment acceptance has its own bounded clock that cannot reset", async () => {
+  const f = fixture();
+  f.enableDeployment();
+  f.state().batch!.deployment!.startedAt = 0;
+  await tick(f.deps);
+  expect(f.state().batch!.status).toBe("blocked");
+});
+test("revoked deployment success blocks an otherwise passing review", async () => {
+  const f = fixture();
+  f.enableDeployment();
+  f.startReview();
+  f.state().batch!.active!.phase = "deployed-review";
+  f.setReview(f.deployedReview());
+  const github = f.deps.github;
+  f.deps.github = async <T>(path: string, method?: string) =>
+    path.includes("/statuses?") ? ([{ id: 21, state: "inactive" }] as T) : github<T>(path, method);
+  await tick(f.deps);
+  expect(f.state().batch!.status).toBe("blocked");
+});
+test("first-slice deployed acceptance cannot claim MVP completion", async () => {
+  const f = fixture();
+  f.enableDeployment();
+  f.startReview();
+  f.state().batch!.coverage!.scope = "first-slice";
+  f.state().batch!.active!.phase = "deployed-review";
+  f.setReview(f.deployedReview());
+  await tick(f.deps);
+  expect(f.state().batch!.status).toBe("slice-complete");
+});
+test("deployment is rechecked after the reviewer finishes", async () => {
+  const f = fixture();
+  f.enableDeployment();
+  f.startReview();
+  f.state().batch!.active!.phase = "deployed-review";
+  f.setReview(f.deployedReview());
+  let statusReads = 0;
+  const github = f.deps.github;
+  f.deps.github = async <T>(path: string, method?: string) => {
+    if (path.includes("/statuses?") && ++statusReads > 1)
+      return [{ id: 21, state: "inactive" }] as T;
+    return github<T>(path, method);
+  };
+  await tick(f.deps);
+  expect(statusReads).toBe(2);
+  expect(f.state().batch!.status).toBe("blocked");
+  expect(f.state().batch!.deployedReview).toBeUndefined();
 });

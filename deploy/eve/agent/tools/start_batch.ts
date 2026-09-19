@@ -5,6 +5,7 @@ import { z } from "zod";
 import { enabled, repository, required } from "../lib/config.js";
 import { digest, intake, validateManifest } from "../lib/contract.js";
 import { coverageSchema, validateCoverage } from "../lib/coverage.js";
+import { deploymentReceipt, runDeadline, verifyDeployment } from "../lib/deployment.js";
 import { tick } from "../lib/engine.js";
 import { file, github, head, type Issue } from "../lib/github.js";
 import { verifyRuntime } from "../lib/runtime.js";
@@ -12,7 +13,7 @@ import { readState, saveState } from "../lib/store.js";
 import { intakeIssueNumber } from "../lib/trust.js";
 export default defineWorkflowTool({
   description:
-    "Run the approved GitHub batch using durable Cursor completion waits. No repeated model polling.",
+    "Run the approved GitHub batch or resume draft-PR delivery for deployed acceptance using an operator-approved factory-deployment receipt and durable Cursor waits. No repeated model polling.",
   inputSchema: z.object({}),
   execution: "background",
   async execute(_, ctx) {
@@ -70,6 +71,23 @@ async function register(ctx: WorkflowStepToolContext) {
     if (
       state.batch.issue === issueNumber &&
       state.batch.intakeHash === digest(source) &&
+      state.batch.status === "review" &&
+      !state.batch.deployment
+    ) {
+      if (state.batch.integratedReview?.commit !== state.batch.candidate || !state.batch.pr)
+        throw new Error("Integrated acceptance and draft PR required");
+      state.batch.deployment = {
+        ...(await verifyDeployment(state.batch, deploymentReceipt(issue.body ?? ""))),
+        startedAt: Date.now(),
+      };
+      state.batch.workflowOwner = ctx.callId;
+      state.batch.status = "running";
+      await saveState(state, sha);
+      return { status: "deployed-acceptance-authorized" };
+    }
+    if (
+      state.batch.issue === issueNumber &&
+      state.batch.intakeHash === digest(source) &&
       state.batch.workflowOwner === ctx.callId
     )
       return { status: state.batch.status };
@@ -80,8 +98,7 @@ async function register(ctx: WorkflowStepToolContext) {
     ) {
       // A new authorized label event may resume the SAME reserved run.
       // Preserve identity, clocks, attempts and evidence; no budget reset.
-      if (Date.now() >= state.batch.startedAt + state.batch.manifest.limits.runSeconds * 1000)
-        throw new Error("Original batch budget expired");
+      if (Date.now() >= runDeadline(state.batch)) throw new Error("Original batch budget expired");
       state.batch.workflowOwner = ctx.callId;
       state.batch.status = "running";
       state.batch.error = undefined;
@@ -151,10 +168,7 @@ async function advance(ctx: WorkflowStepToolContext) {
     status: b.status,
     agentId: b.active?.agentId,
     deadline: b.active
-      ? Math.min(
-          b.startedAt + b.manifest.limits.runSeconds * 1000,
-          b.active.startedAt + b.manifest.limits.jobSeconds * 1000,
-        )
+      ? Math.min(runDeadline(b), b.active.startedAt + b.manifest.limits.jobSeconds * 1000)
       : undefined,
     pr: b.pr,
     error: b.error,
@@ -172,10 +186,7 @@ async function prepare(ctx: WorkflowStepToolContext) {
     status: next.status,
     agentId: next.active?.agentId,
     deadline: next.active
-      ? Math.min(
-          next.startedAt + next.manifest.limits.runSeconds * 1000,
-          next.active.startedAt + next.manifest.limits.jobSeconds * 1000,
-        )
+      ? Math.min(runDeadline(next), next.active.startedAt + next.manifest.limits.jobSeconds * 1000)
       : undefined,
     pr: next.pr,
     error: next.error,

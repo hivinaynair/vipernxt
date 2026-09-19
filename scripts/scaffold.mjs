@@ -26,6 +26,7 @@ const OVERLAYS = {
   "env-module": "import env from @/env; never process.env in app code",
   "check-boundaries": "tooling/dependency-cruiser + bun run check-boundaries",
   "ui-gate": "deny apps/*/src/app and src/features until shape is done",
+  auth: "Clerk browser test helpers; dedicated development identities only",
   analytics: "PostHog errors + product analytics; keys optional until setup",
   email: "Resend; RESEND_API_KEY optional until setup",
   files: "Vercel Blob; BLOB_READ_WRITE_TOKEN optional until setup",
@@ -63,6 +64,8 @@ export function withAppScripts(
     scripts["check-types"] = "tsc --noEmit";
     added.push("check-types");
   }
+
+  if (surfaces.includes("auth") && !scripts.e2e) scripts.e2e = "playwright test";
 
   // create-next-app has no idea the scaffolded workspace packages exist, so
   // nothing in the app could import them.
@@ -327,6 +330,16 @@ export function main(args = process.argv.slice(2)) {
     if (selected.includes(facet.on) && !without.includes(name) && facet.command)
       after.push([...facet.command.split(" "), "--cwd", catalog[facet.on].path, ...facet.args]);
   }
+  if (selected.includes("web") && !without.includes("auth"))
+    after.push([
+      "bun",
+      "add",
+      "--dev",
+      "--cwd",
+      catalog.web.path,
+      "@clerk/testing",
+      "@playwright/test",
+    ]);
   const overlayIds = [...new Set(selected.flatMap((name) => SURFACE_OVERLAYS[name] ?? []))];
   for (const name of Object.keys(facets))
     if (selected.includes(facets[name].on) && !without.includes(name) && OVERLAYS[name])
@@ -475,7 +488,11 @@ export function main(args = process.argv.slice(2)) {
       mkdirSync(dirname(envPath), { recursive: true });
       writeFileSync(generatedPath, generateWebEnv(newEnv));
       if (!legacyEnv || legacyEnv === generateWebEnv(oldEnv)) writeFileSync(envPath, wrapper);
-      ensureAppScripts(paths.web, { root, scope: workspaceScope(root), surfaces: selected });
+      ensureAppScripts(paths.web, {
+        root,
+        scope: workspaceScope(root),
+        surfaces: [...selected, ...(without.includes("auth") ? [] : ["auth"])],
+      });
     }
     if (selected.includes("db")) {
       mkdirSync(dirname(workflowPath), { recursive: true });

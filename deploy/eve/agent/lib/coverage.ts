@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { Manifest } from "./contract.js";
+import { deployedContractSchema } from "./deployment.js";
 
 const id = z.string().trim().min(1);
 export const coverageSchema = z
@@ -8,10 +9,11 @@ export const coverageSchema = z
     approval: id,
     scope: z.enum(["first-slice", "mvp"]),
     spineFile: id,
+    accessFile: id.optional(),
     exclusions: z.array(z.object({ step: id, criterion: id, reason: id }).strict()),
     foundations: z.object(
       Object.fromEntries(
-        ["authentication", "tenancy", "authorization", "persistence"].map((name) => [
+        ["authentication", "tenancy", "authorization", "persistence", "navigation"].map((name) => [
           name,
           z.discriminatedUnion("applies", [
             z.object({ applies: z.literal(false), reason: id }).strict(),
@@ -26,6 +28,7 @@ export const coverageSchema = z
         ]),
       ),
     ),
+    deployed: deployedContractSchema.optional(),
     integrated: z
       .object({
         checks: z.array(z.array(id).min(1)).min(1),
@@ -60,6 +63,15 @@ export const coverageSchema = z
 // shrink scope. This checks structural coverage, not completeness of discovery.
 export function validateCoverage(value: unknown, manifest: Manifest, spine: unknown) {
   const catalog = coverageSchema.parse(value);
+  if (catalog.scope === "mvp" && !catalog.deployed)
+    throw new Error("MVP requires deployed acceptance contract");
+  if (
+    ["authentication", "authorization", "tenancy"].some(
+      (name) => catalog.foundations[name]?.applies,
+    ) &&
+    (!catalog.accessFile || !manifest.specFiles.includes(catalog.accessFile))
+  )
+    throw new Error("Applicable access foundations require a pinned access matrix");
   if (!manifest.specFiles.includes(catalog.spineFile))
     throw new Error("Journey spine must be pinned");
   const parsedSpine = z
@@ -83,6 +95,12 @@ export function validateCoverage(value: unknown, manifest: Manifest, spine: unkn
     !catalog.integrated.browser
   )
     throw new Error("Interactive journeys require integrated browser verification");
+  if (
+    steps.some((s) => s.screen && catalog.requirements.some((r) => r.step === s.id)) &&
+    catalog.deployed &&
+    !catalog.deployed.browser
+  )
+    throw new Error("Interactive journeys require deployed browser verification");
   const source = parsedSpine.journeys.flatMap((j) =>
     j.steps.flatMap((s) => s.criteria.map((criterion) => ({ step: s.id, criterion }))),
   );
