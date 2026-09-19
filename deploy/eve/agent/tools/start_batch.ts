@@ -56,6 +56,7 @@ async function failRegister(
   source: { commit?: string; manifest?: string } | undefined,
   error: unknown,
 ): Promise<never> {
+  "use step";
   const message =
     error instanceof Error ? error.message.slice(0, 500) : "Factory registration failed";
   state.lastFailure = {
