@@ -182,7 +182,7 @@ export async function tick(overrides: Partial<typeof live> = {}) {
       await persist("paused");
       return;
     }
-    if (Date.now() >= runDeadline(b))
+    if (Date.now() >= runDeadline(b) && !b.active?.posted)
       throw new Error(
         "Batch time budget exhausted; reconcile any active Cursor run before resuming",
       );
@@ -262,6 +262,8 @@ export async function tick(overrides: Partial<typeof live> = {}) {
     }
     const run = await advanceRemote(b.active, workerPrompt(b, job));
     if (!run || ["CREATING", "RUNNING"].includes(run.status)) {
+      if (Date.now() >= runDeadline(b))
+        throw new Error("Batch time budget exhausted; remote may still be running");
       if (Date.now() >= b.active.startedAt + b.manifest.limits.jobSeconds * 1000)
         throw new Error("Cursor stage time budget exhausted; remote may still be running");
       await checkpoint();
