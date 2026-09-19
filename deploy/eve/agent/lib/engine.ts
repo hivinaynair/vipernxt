@@ -9,10 +9,22 @@ import {
   verificationCommands,
 } from "./contract.js";
 import { advanceRemote } from "./cursor.js";
+import { deploymentReceipt, runDeadline, verifyDeployment } from "./deployment.js";
 import { GitHubError, github, head, type Issue } from "./github.js";
 import { assertLease, claim } from "./lease.js";
 import { type Batch, readState, saveState } from "./store.js";
 
+export function deployedJob(b: Batch): Job {
+  if (!b.coverage?.deployed || !b.deployment) throw new Error("Missing verified deployment");
+  return {
+    ...integratedJob(b),
+    id: "__deployed_review__",
+    title: "Deployed staging acceptance",
+    checks: b.coverage.deployed.checks,
+    browser: b.coverage.deployed.browser,
+    requiresBrowser: Boolean(b.coverage.deployed.browser),
+  };
+}
 export function integratedJob(b: Batch): Job {
   if (!b.coverage)
     throw new Error("Batch predates required coverage contract; create a newly approved batch");
@@ -32,7 +44,7 @@ export function integratedJob(b: Batch): Job {
 
 export function reviewCriteria(b: Batch, job: Job): string[] {
   if (!b.coverage) throw new Error("Missing coverage contract");
-  return b.active?.phase === "integrated-review"
+  return b.active?.phase === "integrated-review" || b.active?.phase === "deployed-review"
     ? b.coverage.requirements.map((r) => r.id)
     : b.coverage.requirements
         .filter((r) => r.delivery.kind === "job" && r.delivery.job === job.id)
@@ -41,7 +53,8 @@ export function reviewCriteria(b: Batch, job: Job): string[] {
 
 export function promptRequirements(b: Batch, job: Job) {
   if (!b.coverage) throw new Error("Missing coverage contract");
-  if (b.active?.phase === "integrated-review") return b.coverage.requirements;
+  if (b.active?.phase === "integrated-review" || b.active?.phase === "deployed-review")
+    return b.coverage.requirements;
   const catalog = new Map(b.coverage.requirements.map((r) => [r.id, r]));
   const included = new Set<string>();
   const visit = (id: string) => {
@@ -55,19 +68,40 @@ export function promptRequirements(b: Batch, job: Job) {
   return b.coverage.requirements.filter((r) => included.has(r.id));
 }
 
+export function executionCommands(b: Batch, job: Job) {
+  if (!b.deployment) return verificationCommands(b.manifest, job);
+  return [
+    ...b.manifest.setup,
+    ...[...job.checks, ...(job.browser ? [job.browser] : [])].map((command) => [
+      "env",
+      `FACTORY_STAGING_URL=${b.deployment!.url}`,
+      `E2E_BASE_URL=${b.deployment!.url}`,
+      ...command,
+    ]),
+  ];
+}
 export function workerPrompt(b: Batch, job: Job): string {
   const contract = {
     job,
+    deployment: b.deployment,
     requirements: promptRequirements(b, job),
     criterionIds: b.coverage ? reviewCriteria(b, job) : job.steps,
     specFiles: b.manifest.specFiles,
-    commands: verificationCommands(b.manifest, job),
+    commands: executionCommands(b, job),
   };
-  if (b.active?.phase === "review" || b.active?.phase === "integrated-review")
+  if (
+    b.active?.phase === "review" ||
+    b.active?.phase === "integrated-review" ||
+    b.active?.phase === "deployed-review"
+  )
     return [
+      b.deployment
+        ? `Verify the actual deployed site at ${b.deployment.url}. Run checks with FACTORY_STAGING_URL=${b.deployment.url}. Never substitute localhost, mocks or a different URL. Use only approved test accounts/data; missing credentials or unavailable site must fail. Do not deploy or merge.`
+        : "Verify the candidate in the worker environment.",
       "Independently verify this exact commit. Do not edit tracked files or push code. Ignore the builder's claims.",
       `Commit: ${b.active.base}. Compare against ${b.active.phase === "integrated-review" ? b.manifest.base : b.candidate}.`,
       "Use a writable Cloud VM for verification, not an early read-only exploration turn. First create and immediately remove a temporary file in the repository root using mktemp and rm, so repository hooks are active. Keep tracked files unchanged; never invoke the completion hook manually.",
+      "For authentication, use dedicated Clerk development identities and runtime secrets with the pinned approved access matrix. Never bypass authentication or output credentials. Verify signed-out, role and cross-tenant denials where applicable.",
       "Read every pinned specification and verify every cited journey step, including fields, tables, validation, permissions and error states. Run every command, including browser evidence when requested. Return ONLY JSON:",
       '{"commit":"exact SHA","approved":true,"unchanged":true,"findings":[],"checks":[{"command":["exact","argv"],"exitCode":0,"evidence":"observed output"}],"criteria":[{"step":"exact requirement ID from criterionIds","passed":true,"evidence":"what you independently verified"}]}',
       "If any check fails or evidence is missing, approved must be false. Report the actual unchanged status using git status.",
@@ -118,13 +152,23 @@ export async function tick(overrides: Partial<typeof live> = {}) {
       await checkpoint();
       return;
     }
-    if (Date.now() >= b.startedAt + b.manifest.limits.runSeconds * 1000)
+    if (Date.now() >= runDeadline(b))
       throw new Error(
         "Batch time budget exhausted; reconcile any active Cursor run before resuming",
       );
     const nextJob = b.manifest.jobs.find((j) => !b.accepted.includes(j.id));
-    const job = nextJob ?? integratedJob(b);
-    if (!nextJob && b.integratedReview?.commit === b.candidate) {
+    if (b.deployment) {
+      const receipt = deploymentReceipt(issue.body ?? "");
+      if (
+        receipt.deploymentId !== b.deployment.deploymentId ||
+        receipt.statusId !== b.deployment.statusId
+      )
+        throw new Error("Approved deployment receipt changed");
+      const verified = await verifyDeployment(b, receipt, github);
+      if (verified.url !== b.deployment.url) throw new Error("Deployment URL changed");
+    }
+    const job = b.deployment ? deployedJob(b) : (nextJob ?? integratedJob(b));
+    if (!b.deployment && !nextJob && b.integratedReview?.commit === b.candidate) {
       const branch = b.resultBranch;
       if (!branch || (await head(branch)) !== b.candidate)
         throw new Error("Final branch no longer matches verified candidate");
@@ -159,7 +203,7 @@ export async function tick(overrides: Partial<typeof live> = {}) {
       b.attempts[job.id] = count + 1;
       b.active = {
         agentId: `bc-${randomUUID()}`,
-        phase: nextJob ? "build" : "integrated-review",
+        phase: b.deployment ? "deployed-review" : nextJob ? "build" : "integrated-review",
         branch: nextJob ? undefined : b.resultBranch,
         base: b.candidate,
         startedAt: Date.now(),
@@ -225,9 +269,19 @@ export async function tick(overrides: Partial<typeof live> = {}) {
     const review = checkReview(
       JSON.parse(raw ?? "null"),
       b.active.base,
-      verificationCommands(b.manifest, job),
+      executionCommands(b, job),
       reviewCriteria(b, job),
     );
+    if (b.active.phase === "deployed-review") {
+      const verified = await verifyDeployment(b, b.deployment!, github);
+      if (verified.url !== b.deployment!.url)
+        throw new Error("Deployment URL changed during review");
+      b.deployedReview = { commit: b.active.base, url: verified.url, review };
+      b.active = undefined;
+      b.status = b.coverage.scope === "mvp" ? "mvp-complete" : "slice-complete";
+      await checkpoint();
+      return;
+    }
     if (!b.active.branch || (await head(b.active.branch)) !== b.active.base)
       throw new Error("Worker branch changed during independent review");
     if (b.active.phase === "integrated-review") {

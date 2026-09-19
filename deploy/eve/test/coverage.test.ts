@@ -22,7 +22,7 @@ const manifest = () =>
       base,
       approval: "approved",
       verification: "cursor-cloud",
-      specFiles: ["docs/coverage.json", "docs/evidence.md", "docs/spine.yaml"],
+      specFiles: ["docs/coverage.json", "docs/evidence.md", "docs/spine.yaml", "docs/access.md"],
       coverageFile: "docs/coverage.json",
       setup: [],
       worker: { kind: "cursor", repository: "https://github.com/acme/product" },
@@ -57,10 +57,17 @@ const catalog = () => ({
   version: 1,
   approval: "design-1",
   scope: "mvp",
+  deployed: {
+    environment: "staging",
+    origin: "https://staging.example.com",
+    creator: "vercel[bot]",
+    checks: [["bun", "run", "e2e"]],
+  },
   spineFile: "docs/spine.yaml",
+  accessFile: "docs/access.md",
   exclusions: [],
   foundations: Object.fromEntries(
-    ["authentication", "tenancy", "authorization", "persistence"].map((name) => [
+    ["authentication", "tenancy", "authorization", "persistence", "navigation"].map((name) => [
       name,
       { applies: false, reason: "Synthetic fixture" },
     ]),
@@ -199,4 +206,54 @@ test("old self-referential existing commit field is rejected", () => {
     ],
   };
   expect(() => check(old, manifest())).toThrow();
+});
+
+test("MVP cannot omit actual deployed acceptance", () => {
+  const c = catalog();
+  const { deployed: _, ...missing } = c;
+  expect(() => check(missing, manifest())).toThrow("MVP requires deployed acceptance");
+});
+test("navigation applicability is required and its consumers need dependencies", () => {
+  const c = catalog();
+  delete c.foundations.navigation;
+  expect(() => check(c, manifest())).toThrow();
+  const c2 = catalog();
+  c2.requirements[1].dependsOn = [];
+  expect(() =>
+    check(
+      {
+        ...c2,
+        foundations: {
+          ...c2.foundations,
+          navigation: { applies: true, requirements: ["identity"], consumers: ["create-loan"] },
+        },
+      },
+      manifest(),
+    ),
+  ).toThrow("Missing navigation prerequisite");
+});
+test("interactive MVP requires browser checks against deployment", () => {
+  const interactive = structuredClone(spine);
+  Object.assign(interactive.journeys[0].steps[0], { screen: "sign-in" });
+  const c = catalog();
+  expect(() =>
+    validateCoverage(
+      { ...c, integrated: { ...c.integrated, browser: ["bun", "run", "e2e"] } },
+      manifest(),
+      interactive,
+    ),
+  ).toThrow("deployed browser verification");
+});
+
+test("applicable authentication cannot dispatch without pinned access matrix", () => {
+  const c = catalog();
+  const value = {
+    ...c,
+    accessFile: "docs/unpinned.md",
+    foundations: {
+      ...c.foundations,
+      authentication: { applies: true, requirements: ["identity"], consumers: ["create-loan"] },
+    },
+  };
+  expect(() => check(value, manifest())).toThrow("pinned access matrix");
 });

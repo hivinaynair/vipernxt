@@ -22,6 +22,8 @@ export default defineTool({
       error: b.error,
       pr: b.pr,
       candidate: b.candidate,
+      deployment: b.deployment,
+      deployedAcceptance: b.deployedReview,
       triage: b.triage?.result,
     };
   },
