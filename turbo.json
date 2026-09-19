@@ -5,7 +5,19 @@
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": [".next/**", "!.next/cache/**", "!.next/dev/**"]
+      "outputs": [".next/**", "!.next/cache/**", "!.next/dev/**"],
+      "env": [
+        "DATABASE_URL",
+        "DATABASE_URL_UNPOOLED",
+        "CLERK_SECRET_KEY",
+        "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+        "NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN",
+        "NEXT_PUBLIC_POSTHOG_HOST",
+        "RESEND_API_KEY",
+        "BLOB_READ_WRITE_TOKEN",
+        "PREVIEW_LOGIN_SECRET",
+        "SKIP_ENV_VALIDATION"
+      ]
     },
     "//#format-and-lint": {
       "description": "Check for formatting and linting issues"
@@ -54,7 +66,19 @@
     },
     "dev": {
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "passThroughEnv": [
+        "DATABASE_URL",
+        "DATABASE_URL_UNPOOLED",
+        "CLERK_SECRET_KEY",
+        "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+        "NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN",
+        "NEXT_PUBLIC_POSTHOG_HOST",
+        "RESEND_API_KEY",
+        "BLOB_READ_WRITE_TOKEN",
+        "PREVIEW_LOGIN_SECRET",
+        "SKIP_ENV_VALIDATION"
+      ]
     },
     "add": {
       "cache": false

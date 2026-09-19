@@ -2,7 +2,7 @@
 
 Clone this repo, type `/next`. It names the clone when the design doc is
 approved — you do not type `/customize`. Do not invent a product UI first.
-The stack is [docs/kit/recipe.yaml](kit/recipe.yaml): compose latest Next /
+The stack is [docs/kit/recipe.yaml](kit/recipe.yaml): scaffold recipe-selected Next /
 Clerk / Neon / shadcn / Eve, then apply overlays (feature folders, `@/env`,
 shadcn in `packages/ui`). There is no second template repo. The engagement
 order is [playbook/fde-loop.md](playbook/fde-loop.md).
@@ -18,7 +18,7 @@ is a view of this file — not a second spec.
 | 1. Clone | you | Throwaway clone for a live site. Keep the opinions. Do not park a customer in the kit. |
 | 2. `/next` | agent | Creates `docs/product/state.yaml`, incumbent gate, salvage, field. Pin `/next` as a Custom Mode. |
 | 3. Confirm U5 | you | Outcome, who has the pain, why the obvious build is wrong. Until `shape` is `done`, a hook denies product UI. |
-| 4. Name the clone | `/next` | Invokes `customize` — name first, then compose from the recipe. Writes `PRODUCT` to `.env.playbook`. |
+| 4. Name the clone | `/next` | Invokes `customize` — name first, then scaffold from the recipe. Writes `PRODUCT` to `.env.playbook`. |
 | 5. Thin slice | agent | Ontology + spine + wave 0 (eval set) + one journey on `.env.local`. |
 | 6. You look at it | you | Mandatory stop. |
 | 7. `setup` | script | After they accept — [setup.sh](../.agents/skills/setup/setup.sh). GitHub, Neon, Vercel, Clerk, Linear. |
@@ -30,14 +30,14 @@ is a view of this file — not a second spec.
 
 | Path | Role |
 |---|---|
-| `apps/` | Not in the tree until compose. Next lands at `apps/web` with `src/app` / `src/features` / `src/shared`. |
-| `packages/` | Not in the tree until compose. Then `ui` (shadcn) and `db` (Drizzle + Neon). |
-| `e2e/` | Not in the tree until compose. |
+| `apps/` | Not in the tree until scaffold. Next lands at `apps/web` with `src/app` / `src/features` / `src/shared`. |
+| `packages/` | Not in the tree until scaffold. Then `ui` (shadcn) and `db` (Drizzle + Neon). |
+| `e2e/` | Not in the tree until scaffold. |
 | `tooling/typescript-config` | Shared `tsconfig`s. |
 | `tooling/mocks` | Shared MSW handlers (`@repo/mocks`). Started from `test/setup.ts`. |
 | `tooling/dependency-cruiser` | Feature-folder import rules. `bun run check-boundaries`. |
 | `test/` | `bun test` preload only. Suites are colocated `*.test.ts(x)`. |
-| `docs/kit/` | Stack recipe + overlays. Compose reads this. Not a second GitHub template. |
+| `docs/kit/` | Stack recipe + overlays. Scaffold reads this. Not a second GitHub template. |
 | `docs/` | Product artifacts after `/next`. This map. Research notes. |
 | `.agents/skills/` | Playbook + vendor skills. Source of truth. Vendored from [saas-playbook](https://github.com/hivinaynair/saas-playbook). Child jobs (`salvage-miner`, …) live here too — that is the path Pi and Claude Code scan. |
 | `.cursor/skills/`, `.claude/skills/` | Symlinks to `.agents/skills/` so Cursor and Claude Code both see them. |
@@ -50,8 +50,8 @@ Features must not import each other ([`tooling/dependency-cruiser/nextjs.mjs`](.
 ## Stack (recipe, not a second repo)
 
 Edit [docs/kit/recipe.yaml](kit/recipe.yaml) when the default should change.
-`bun scripts/compose.mjs --add web --add db` prints the commands (`@latest`
-within pinned majors) and the overlays. `--apply` refuses on this kit. On a named clone it copies overlays and writes `composed.yaml`.
+`bun scripts/scaffold.mjs --add web --add db` prints the commands (`@latest`
+within pinned majors) and the overlays. `--apply` refuses on this kit. On a named clone it copies overlays and writes `scaffolded.yaml`.
 
 | Layer | Recipe default | Skip |
 |---|---|---|
@@ -67,12 +67,12 @@ within pinned majors) and the overlays. `--apply` refuses on this kit. On a name
 | Agents | Eve → `apps/agent` | until U5 names judgment steps |
 | Lint / format | Biome | ESLint, Prettier |
 | Unit test | `bun test` + Testing Library | Vitest, Jest |
-| E2E | Playwright — intended, not composed yet | Cypress |
+| E2E | Playwright — intended, not scaffolded yet | Cypress |
 | Region | `NEON_REGION` at setup (US / EU / Asia) | a per-region template |
 | Branches | PRs → `staging`; `main` is production | Trunk-only until you change it on purpose |
 
-A new product shape records surfaces on `state.yaml`. `customize` composes them.
-Nothing else adds a vendor "just in case". This kit is empty of Next until compose.
+A new product shape records surfaces on `state.yaml`. `customize` scaffolds them.
+Nothing else adds a vendor "just in case". This kit is empty of Next until scaffold.
 
 ## Playbook
 
@@ -98,7 +98,7 @@ Type `/next`. It reads `docs/product/state.yaml` and does every step that is not
 | `plan` | One spine feature → short spec + slices. `/next` runs it after the spine. |
 | `build` | Implements one slice. Tests cite step IDs. PR to `staging`. Host-agnostic. |
 | `prototype` | Three variants of one component, mid-build. |
-| `customize` | Names the clone (`scripts/customize.mjs`) and composes surfaces from the recipe. `/next` runs it after shape; first local clip next, not setup. |
+| `customize` | Names the clone (`scripts/customize.mjs`) and scaffolds surfaces from the recipe. `/next` runs it after shape; first local clip next, not setup. |
 | `setup` | Runs `setup.sh`. One Neon project, two databases. |
 | `next-dev-loop` | Runtime verify after app edits (`/_next/mcp` + browser). |
 | `before-and-after` | Vendor skill. Before/after screenshot pair for a PR. |
@@ -136,7 +136,7 @@ Local, on commit ([`lefthook.yml`](../lefthook.yml)): Biome, boundaries, affecte
 
 Deterministic where it can be: `scripts/status.ts` renders the digest, `check-drift.ts`
 reports contradictions across artifacts, `linear-sync.ts` decides what Linear should say,
-`customize.mjs` renames the clone, `compose.mjs` prints the scaffold plan from
+`customize.mjs` renames the clone, `scaffold.mjs` prints the scaffold plan from
 the recipe, `journey.ts` validates and renders the spine. Skills
 carry judgement; scripts carry anything that should come out the same every time.
 
@@ -157,7 +157,7 @@ CI: [`.github/workflows/check.yml`](../.github/workflows/check.yml) on PRs and o
 |---|---|
 | Starter leftovers | “Create Next App” copy. `customize` question 1 and 7 delete it on the first real clone. |
 | Billing | Not in the tree. Extend the recipe when a product asks. |
-| Compose `--apply` copies overlays | CLIs (`create-next-app`, `eve init`) still run by the agent from the printed plan. |
+| Scaffold execution | `--run` executes CLIs, overlays, install and verification; manual `--apply` remains pending until `--verify`. |
 | `check-evidence` | PR bodies name step IDs by convention; no script enforces it yet. Add one if a false "done" ever lands. |
 | Clerk orgs | Setup can flip the flag. No org UI until a product is B2B. |
 | Build-skill names | Closed. `plan` and `build` — not `game-plan` / `lets-cook`. No verbose ticket writer. |

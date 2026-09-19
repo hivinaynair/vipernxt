@@ -1,3 +1,7 @@
+> Optional question bank. Read only unresolved sections. `/next` and the shared
+> execution contract own progression: answers already accepted are not asked
+> again, and an artifact handoff does not require another “go”.
+
 # Question bank
 
 Not a questionnaire. Read this file; ask **one** question whose prerequisites are settled. Skip any the user already answered. Prefer the multiple-choice form in `SKILL.md`.
@@ -124,7 +128,7 @@ Ask this before any screen copy. Changing it later is a rewrite, not a change. A
 whose vocabulary is not English usually still wants the domain terms untranslated — see
 `ontology`.
 
-## F. Surfaces (record in the doc; do not compose)
+## F. Surfaces (record in the doc; do not scaffold)
 
 Canonical list for skill step 8. Ask only what is still unknown. One at a time.
 

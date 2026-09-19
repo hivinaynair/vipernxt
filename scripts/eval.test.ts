@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 import { describe, expect, test } from "bun:test";
-import { type EvalCase, duplicateIds, formatReport, runCases, summarise } from "./eval.ts";
+import { duplicateIds, type EvalCase, formatReport, runCases, summarise } from "./eval.ts";
 
 const ok: EvalCase = { id: "PBC-15", title: "Access review ties", run: () => true };
 const bad: EvalCase = {
@@ -73,7 +73,7 @@ describe("formatReport", () => {
     const out = formatReport(await runCases([ok, bad]));
     expect(out).toContain("FAIL  PBC-14");
     expect(out).toContain("J1.S3");
-    expect(out).toContain("score: 1 of 2 real cases handled");
+    expect(out).toContain("score: 1 of 2 cases handled");
   });
 
   test("says how many are out of scope rather than hiding them", async () => {
@@ -88,7 +88,7 @@ describe("formatReport", () => {
     ];
     const out = formatReport(await runCases(many));
     // The site has seven real cases; one is handled.
-    expect(out).toContain("1 of 7 real cases handled");
+    expect(out).toContain("1 of 7 cases handled");
     expect(out).not.toContain("1/1");
   });
 
@@ -115,5 +115,41 @@ describe("duplicateIds", () => {
 
   test("clean set has none", () => {
     expect(duplicateIds([ok, bad])).toEqual([]);
+  });
+});
+
+describe("CLI discovery failures", () => {
+  test("a broken module fails instead of hiding all cases", async () => {
+    const { mkdtempSync, mkdirSync, writeFileSync, rmSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const dir = mkdtempSync(`${tmpdir()}/eval-import-`);
+    try {
+      mkdirSync(`${dir}/apps`);
+      writeFileSync(`${dir}/apps/broken.eval.ts`, 'throw new Error("broken");');
+      const child = Bun.spawn(["bun", `${import.meta.dir}/eval.ts`, "--json"], {
+        cwd: dir,
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+      expect(await new Response(child.stderr).text()).toContain("Cannot load eval module");
+      expect(await child.exited).toBe(1);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+  test("empty case arrays cannot certify a checkpoint", async () => {
+    const { mkdtempSync, rmSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const dir = mkdtempSync(`${tmpdir()}/eval-empty-`);
+    try {
+      const child = Bun.spawn(["bun", `${import.meta.dir}/eval.ts`, "--require-cases"], {
+        cwd: dir,
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+      expect(await child.exited).toBe(1);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

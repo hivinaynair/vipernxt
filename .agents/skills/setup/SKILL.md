@@ -7,52 +7,20 @@ description: >-
   connections are missing.
 ---
 
-# setup
+# Provision the accepted product
 
-Provisions a new product's infrastructure **after they accept the first slice**
-(`clone.setup` is `pending`), or when they ask for a hosted preview. Not a gate
-before wave 0. Use `.env.local` for the clip if keys already exist.
+Input: accepted local slice, named clone, scaffold manifest and authorized cloud targets. Follow [execution contract](../CONTRACT.md). Setup creates external resources; scaffolding creates local code.
 
-Run the script. Do not do this with tool calls.
+For explicitly selected cloud implementation, create/link only the dedicated product GitHub repository before the first slice. Do not run full provisioning for that prerequisite; never reuse the inherited kit origin.
 
-```bash
+Read the script and verify the product remote/targets before running:
+
+```sh
 ./.agents/skills/setup/setup.sh
 ```
 
-It is idempotent and skips what exists. An agent improvising the same
-provisioning conversation against live infrastructure produces two Neon projects
-named slightly differently; the script creates **one**, with `staging` and
-`production` databases inside it.
+`docs/kit/scaffolded.yaml` selects services; `.env.playbook` records PRODUCT, region and resource IDs. Missing local DB credentials do not justify provisioning before the slice review. Keep secrets out of tool output and commits. Do not recreate a resource through another API after an uncertain script result; reconcile its ID first.
 
-Region is a flag, not a template. `NEON_REGION` from `.env.playbook` (customize
-question 9) is passed to `neonctl projects create --region`. Default
-`aws-us-east-1`. EU / Asia are values in [docs/kit/recipe.yaml](../../../docs/kit/recipe.yaml)
-`setup.neon.regions`. Env vars land in `.env.playbook` and `apps/web/.env.local`
-— do not invent keys; `apps/web/src/env.ts` is the schema.
+The script creates/links some resources, but its exit code is **not deployment verification**. Report created, skipped, failed and manual stages separately. Verify product repository identity, staging branch/protections, environment scopes, Vercel app root/runtime variables and migration workflow configuration before release. Never report vendors connected merely because dependencies or tokens exist.
 
-`docs/kit/composed.yaml` decides which stages run. No `db` surface → skip Neon.
-`--without auth` (or no `web`) → skip Clerk. `--without analytics` / `email` /
-`files` skip PostHog, Resend, and Blob. Those three **paste** a token; they do
-not create the cloud store. Blank is fine — the local clip runs without them.
-No composed file → every stage, same as before.
-
-`/next` should already have run `customize`, so `PRODUCT` is in `.env.playbook`.
-If it has not, the script asks once and records it. Confirm this is the right
-repo before starting.
-
-## Read but never echo
-
-`clerk env pull` writes the env file itself — development keys never pass
-through the script, never appear in output, and never reach your context.
-Production keys are pulled at deploy time with `--instance prod`. Do not read
-any of them into context.
-
-## After
-
-Read the summary back: what was created, what was skipped, what still needs
-their hands (Linear team creation has no API — the script prints the URL and
-records the key).
-
-If a stage failed, say which and why. Do not silently retry it with tool calls.
-Repeated failure is a `gather` item, not a puzzle to brute-force against
-someone's live infrastructure.
+On failure, return the exact stage and missing action to `/next`. Continue only independent authorized work. Cloud deployment and its smoke journey require their own evidence; do not mark setup or factory delivery complete from an untested local environment.

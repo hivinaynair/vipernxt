@@ -24,7 +24,7 @@ type Held = {
 type State = {
   size?: string;
   phases?: Record<string, Phase>;
-  clone?: { customized?: string; tickets?: string; composed?: string };
+  clone?: { customized?: string; tickets?: string; scaffolded?: string };
   engagement?: { site?: string; baseline?: string };
   eval_set?: string;
   outcome?: { kind?: string; why?: string };
@@ -32,7 +32,8 @@ type State = {
   idea?: string;
   idea_outdated?: boolean;
   reframe?: string;
-  clip?: { kind?: string };
+  clip?: { kind?: string; acceptance?: string; acceptance_decision?: string; evidence?: string };
+  decisions?: { id?: string; answer?: string }[];
   surfaces?: string[];
 };
 type Feature = { id?: string; title?: string; serves?: string[]; linear?: string };
@@ -65,7 +66,10 @@ try {
 // 1. A phase claiming done must have produced its artifact.
 for (const [key, phase] of Object.entries(state.phases ?? {})) {
   if (phase.status !== "done") continue;
-  if (!phase.artifact) continue;
+  if (!phase.artifact) {
+    findings.push(`phase ${key} (${phase.name}) is done but has no artifact reference`);
+    continue;
+  }
   if (!existsSync(phase.artifact)) {
     findings.push(`phase ${key} (${phase.name}) is done but ${phase.artifact} does not exist`);
   }
@@ -150,19 +154,36 @@ if (started(buildPhase)) {
   }
 }
 
-// 5d. Phases running out of order. Only the core chain is ordered: `structure`
-// (5a) and `linear` (4.5) are deliberately after the first slice, and `visual`
-// is optional, so a numeric comparison would flag all three wrongly.
-const CHAIN = ["salvage", "research", "field", "shape", "journeys", "build"];
+// Research and field may overlap; structure belongs before product implementation.
+const CHAIN = [
+  "salvage",
+  "research",
+  "field",
+  "shape",
+  "ontology",
+  "journeys",
+  "structure",
+  "build",
+];
 for (const [key, phase] of Object.entries(state.phases ?? {})) {
   const at = CHAIN.indexOf(phase.name ?? "");
   if (at < 1 || !started(phase) || phase.optional) continue;
   for (const [earlierKey, earlier] of Object.entries(state.phases ?? {})) {
     const earlierAt = CHAIN.indexOf(earlier.name ?? "");
     if (earlierAt < 0 || earlierAt >= at || earlier.optional) continue;
-    if (earlier.status === "pending") {
+    if (phase.name === "field" && earlier.name === "research") continue;
+    if (
+      phase.name === "shape" &&
+      phase.status !== "done" &&
+      ["research", "field"].includes(earlier.name ?? "")
+    )
+      continue;
+    const needsCompletion =
+      phase.status === "done" ||
+      ["ontology", "journeys", "structure", "build"].includes(phase.name ?? "");
+    if (earlier.status === "pending" || (needsCompletion && earlier.status !== "done")) {
       findings.push(
-        `phase ${key} (${phase.name}) is ${phase.status} but earlier phase ${earlierKey} (${earlier.name}) is still pending`,
+        `phase ${key} (${phase.name}) is ${phase.status} but earlier phase ${earlierKey} (${earlier.name}) is still ${earlier.status}`,
       );
     }
   }
@@ -210,12 +231,21 @@ if (shapePhase?.status === "done") {
   }
 }
 
+if (state.clip?.acceptance === "accepted") {
+  const decision = state.decisions?.find(
+    (d) => d.id === state.clip?.acceptance_decision && d.answer?.trim(),
+  );
+  if (!decision) findings.push("clip is accepted but has no recorded acceptance decision");
+  if (!state.clip.evidence || !existsSync(state.clip.evidence))
+    findings.push("clip is accepted but its evidence artifact is missing");
+}
+
 // 5c. Clip kind and surfaces against the kit recipe.
 if (state.clip?.kind && !CLIP_KINDS.has(state.clip.kind)) {
   findings.push(`clip.kind is ${state.clip.kind} — use replace or wrap`);
 }
-if (state.clone?.composed === "done" && (!state.surfaces || state.surfaces.length === 0)) {
-  findings.push("clone.composed is done but surfaces is empty");
+if (state.clone?.scaffolded === "done" && (!state.surfaces || state.surfaces.length === 0)) {
+  findings.push("clone.scaffolded is done but surfaces is empty");
 }
 if (existsSync(RECIPE) && state.surfaces && state.surfaces.length > 0) {
   try {
@@ -229,24 +259,29 @@ if (existsSync(RECIPE) && state.surfaces && state.surfaces.length > 0) {
       }
     }
   } catch {
-    // malformed recipe is compose's job
+    // malformed recipe is scaffold's job
   }
 }
 
-const COMPOSED = "docs/kit/composed.yaml";
-if (state.clone?.composed === "done" && existsSync(COMPOSED) && state.surfaces?.length) {
+const SCAFFOLDED = "docs/kit/scaffolded.yaml";
+if (state.clone?.scaffolded === "done" && !existsSync(SCAFFOLDED))
+  findings.push(`clone.scaffolded is done but ${SCAFFOLDED} does not exist`);
+if (state.clone?.scaffolded === "done" && existsSync(SCAFFOLDED)) {
   try {
-    const composed = Bun.YAML.parse(readFileSync(COMPOSED, "utf8")) as {
+    const scaffolded = Bun.YAML.parse(readFileSync(SCAFFOLDED, "utf8")) as {
       surfaces?: string[];
+      status?: string;
     };
-    const have = new Set(composed.surfaces ?? []);
-    for (const s of state.surfaces) {
+    if (scaffolded.status !== "verified")
+      findings.push(`clone.scaffolded is done but ${SCAFFOLDED} is not verified`);
+    const have = new Set(scaffolded.surfaces ?? []);
+    for (const s of state.surfaces ?? []) {
       if (!have.has(s)) {
-        findings.push(`state.surfaces includes ${s} which is not in ${COMPOSED}`);
+        findings.push(`state.surfaces includes ${s} which is not in ${SCAFFOLDED}`);
       }
     }
   } catch {
-    // malformed composed.yaml is compose's job
+    findings.push(`${SCAFFOLDED} cannot be parsed`);
   }
 }
 

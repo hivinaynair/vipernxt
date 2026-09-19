@@ -11,7 +11,8 @@ This document holds only what no other artifact holds. It does not repeat:
 | ID'd steps, screens, criteria | `docs/journeys/<name>.yaml` (after the journeys skill) |
 | Repo layout, package manager, boundaries | `AGENTS.md` |
 | Colour, type, density | `DESIGN.md` |
-| Build order | Linear |
+| Form fields, table columns, display rules | `docs/product/data-surfaces.md` |
+| Build order | Slice specs and factory manifest; Linear when enabled |
 
 Write it as the gates pass — section 1 when the claim is confirmed, the rest as they land.
 An unconfirmed section is absent, not stubbed. No `TBD` in a finished doc; go and ask.
@@ -62,6 +63,8 @@ Forbidden: <actor> never <posts / pings everyone / logs in>.
 Omit this section if the clip has no screen (script-only, judgment-only, or
 out-of-band human). Do not invent a screen to fill the table.
 
+Data-surface contract: <link and reviewed revision; approval decision recorded in state>.
+
 | Screen | Bands | States |
 | | | |
 
@@ -73,7 +76,7 @@ out-of-band human). Do not invent a screen to fill the table.
 
 ## Stack
 
-Surfaces come from [docs/kit/recipe.yaml](../../../docs/kit/recipe.yaml). Record which this clip needs; `/next` composes them after this doc is approved.
+Surfaces come from [docs/kit/recipe.yaml](../../../docs/kit/recipe.yaml). Record which this clip needs; `/next` scaffolds them after this doc is approved.
 
 | Choice | Decision | Why |
 |---|---|---|
@@ -87,7 +90,7 @@ Surfaces come from [docs/kit/recipe.yaml](../../../docs/kit/recipe.yaml). Record
 | Files | Vercel Blob / skip | |
 | Region | aws-us-east-1 / eu / asia | |
 
-Decisions recorded, not composed. Cite first-party docs where a choice turned on a fact.
+Decisions recorded, not scaffolded. Cite first-party docs where a choice turned on a fact.
 
 ## Honest limits
 

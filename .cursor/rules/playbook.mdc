@@ -15,7 +15,7 @@ Branches: cut from `staging`, land on `staging`. **You may not push to `main` or
 PR against it** — a hook denies both. Releasing is the user's move; ask them to run it.
 
 `status` is the glance (`bun scripts/status.ts`), `check-drift` the contradictions.
-`next` does the work. After U5, compose from `docs/kit/recipe.yaml` — do not invent a tree.
+`next` does the work. After U5, scaffold from `docs/kit/recipe.yaml` — do not invent a tree.
 For a shaping session, pin `/next` as a Custom Mode (Option+Enter / Alt+Enter on the skill) so it stays in context.
 
 Parallel child jobs are skills in `.agents/skills/<name>/SKILL.md` (Pi, Claude, Cursor

@@ -7,93 +7,18 @@ description: >-
   the user asks to push work to Linear, or to check Linear against the spine.
 ---
 
-# linear-sync
+# Publish the spine to the work board
 
-Linear holds the **state of the work**. The spine holds **what the product is**.
-
-```
-spine  ──publishes──►  Linear      (features become issues)
-spine  ◄──ids only───  Linear      (nothing else comes back)
-```
-
-Never edit the spine because Linear changed. If they disagree that is drift:
-report it and let the user decide which is wrong.
-
-The failure this prevents is specific. Someone files an issue straight into
-Linear, work happens, and the product grows a feature that traces to no journey
-step and no reason. A dozen of those and the spine no longer describes the
-product.
-
-## How to run it
+The Git spine owns behavior/scope; Linear owns human assignment and planning fields. Follow [execution contract](../CONTRACT.md). Input: validated spine and configured product team. Output: generated create/update plan and immediately recorded issue IDs.
 
 ```sh
-bun scripts/journey.ts validate docs/journeys/<name>.yaml   # never publish from an invalid spine
-bun scripts/linear-sync.ts plan  docs/journeys/<name>.yaml
+bun scripts/journey.ts validate docs/journeys/<name>.yaml
+bun scripts/linear-sync.ts plan docs/journeys/<name>.yaml
+bun scripts/linear-sync.ts record docs/journeys/<name>.yaml F2 TEAM-42
 ```
 
-The plan says, per feature, whether it is a create or an update and gives the
-exact title, labels and body. **Use it verbatim.** Issue bodies are generated,
-so re-running produces no diff unless the spine actually changed — that is what
-makes this safe to run many times.
+Use generated bodies verbatim. Before creation, reconcile the exact product/feature against existing issues; a bare F2 prefix across products is not enough. Record the returned ID immediately so retries do not create duplicates. Preserve state, assignee, cycle and estimate unless the current task explicitly owns them. Sub-issues arise from the actual slice plan, not a speculative backlog.
 
-Execute the plan through Linear's MCP, then record each new id:
+Use an available authenticated connector for interactive sync. Do not assume every host has it. An unattended supervisor needs an explicitly configured headless tracker adapter; until then repository job contracts can run locally without Linear. Do not request unnecessary API keys or pretend a connector is available. Team creation follows the adapter's actual capabilities and existing authorization.
 
-```sh
-bun scripts/linear-sync.ts record docs/journeys/<name>.yaml F2 KUB-42
-```
-
-Record it immediately, one at a time. An unrecorded id is a duplicate issue on
-the next run.
-
-**Before creating anything, search the team for an issue whose title starts with
-that feature id.** The script cannot see Linear, so this is the only thing
-standing between an interrupted run and a second `F2 · Reconciliation view`. If
-you find one, record its id instead of creating.
-
-**No Linear API key. This is settled — do not propose one.** Linear is reached
-through its MCP, which is already authenticated from local and cloud sessions
-alike. The script decides; the MCP writes. If you find yourself wanting a key,
-you are trying to make something continuous that is meant to be on demand — ask
-for a drift report instead.
-
-## Policy the script cannot enforce
-
-**One team per product**, never shared. The MCP cannot create teams, so if it
-does not exist, hold a `gather` item: ask for the team and its key. Two minutes
-for them, impossible for you.
-
-**Never touch** an issue's `state`, `assignee`, `cycle` or `estimate`. Those
-belong to whoever is doing the work. Overwriting them is how a sync tool becomes
-something people turn off.
-
-**Sub-issues come from `plan`**, not from splitting a feature arbitrarily, and
-they are created when the feature is picked up — a backlog of stale sub-issues
-is worse than none. Criteria live on the parent; sub-issues inherit them rather
-than restating them in looser words. Label a sub-issue **`ui`** when it
-introduces a screen, component or state — that label is the signal to run
-`prototype` first.
-
-## Drift
-
-`bun scripts/check-drift.ts` reports what it can see from the repo: a feature
-with no issue, a feature serving a step that no longer exists.
-
-Three kinds it **cannot** see, because the script never reads Linear. Check
-these through the MCP when they ask for a drift report:
-
-- an issue with no journey step — someone added work outside the spine; either
-  it earns a step or it should not be built
-- an issue whose criteria no longer match the spine's current text
-- a closed issue whose steps changed after it shipped
-
-Present drift as a short list with a recommendation each, and change nothing
-until they say which way it goes.
-
-## What never goes to Linear
-
-The design doc and the spine stay in the repo — not because agents cannot reach
-Linear, but because **a spec must be versioned with the code it specifies**.
-Check out last month's commit and the repo gives you the spine as it was when
-that code was written; Linear only ever gives you today.
-
-Linear gets status, assignment and cycles. The repo keeps truth.
+For drift, compare issue criteria, orphan issues and changed shipped steps against the spine; local `check-drift` cannot read the board. Report material product drift to `/next`; ticket edits do not silently redefine the product. Specs remain versioned with code. Setup/ticket publication wait until first slice acceptance unless already authorized.

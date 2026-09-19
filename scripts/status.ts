@@ -32,7 +32,7 @@ type State = {
   outcome?: { kind?: string; why?: string; date?: string };
   phase?: string | number;
   phases?: Record<string, Phase>;
-  clone?: { customized?: string; setup?: string; tickets?: string; composed?: string };
+  clone?: { customized?: string; setup?: string; tickets?: string; scaffolded?: string };
   held?: Held[];
   ui_writes?: "allow" | "deny";
   clip?: { kind?: string };
@@ -142,10 +142,12 @@ if (phases.length > 0) {
   }
   if (
     state.clone?.customized === "done" &&
-    state.clone?.composed === "pending" &&
+    state.clone?.scaffolded === "pending" &&
     phaseOf("shape")?.status === "done"
   ) {
-    out.push("`/next` composes the stack next — empty-path CLIs, then `--apply`.");
+    out.push(
+      "`/next` scaffolds the stack next — run the recipe with `--run`, or apply manually and finish with `--verify`.",
+    );
   }
   out.push("");
 }

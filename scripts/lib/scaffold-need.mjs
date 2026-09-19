@@ -2,16 +2,16 @@
 /**
  * setup.sh asks whether Neon / Clerk / PostHog / Resend / Blob stages run.
  *
- *   bun scripts/lib/compose-need.mjs db|auth|web|analytics|email|files
+ *   bun scripts/lib/scaffold-need.mjs db|auth|web|analytics|email|files
  *
- * Prints 1 or 0. No composed.yaml → 1 (fat provision, same as before).
+ * Prints 1 or 0. No scaffolded.yaml → 1 (fat provision, same as before).
  */
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const q = process.argv[2];
 const cwd = process.argv[3] ?? process.cwd();
-const p = join(cwd, "docs/kit/composed.yaml");
+const p = join(cwd, "docs/kit/scaffolded.yaml");
 
 if (!existsSync(p)) {
   process.stdout.write("1");

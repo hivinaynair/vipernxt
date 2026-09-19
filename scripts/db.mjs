@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 const repoRoot = join(import.meta.dir, "..");
 if (!existsSync(join(repoRoot, "packages/db/package.json"))) {
-  console.error("No packages/db yet. On the site clone: bun scripts/compose.mjs --add db --apply");
+  console.error("No packages/db yet. On the site clone: bun scripts/scaffold.mjs --add db --apply");
   process.exit(1);
 }
 

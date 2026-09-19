@@ -226,7 +226,7 @@ export function validateSpine(spine: Spine): { errors: string[]; warnings: strin
  * only ever touch their own folder.
  *
  * This prints what wave 0 has to create; it writes nothing, because the kit has
- * no apps/ until compose.
+ * no apps/ until scaffold.
  */
 export function routes(spine: Spine): string[] {
   const owner = new Map<string, Set<string>>();
@@ -527,7 +527,7 @@ if (import.meta.main) {
           texts.push(await Bun.file(`${dir}/${path}`).text());
         }
       } catch {
-        // empty kit may not have composed apps/ yet
+        // empty kit may not have scaffolded apps/ yet
       }
     }
     const cited = citedStepIds(texts);

@@ -6,29 +6,8 @@ description: >-
   generated markdown.
 ---
 
-Read [journeys](../journeys/SKILL.md) before working. The YAML is the source. Never
-edit a generated `docs/journeys/*.md`. Do not write files.
+Read the assigned YAML and its source design table/clip; no file writes. Run `bun scripts/journey.ts validate <file>` and `bun run check-journeys`. Do not use `--complete` for an unbuilt draft.
 
-Run:
+Check seat/beat fidelity, stable IDs, EARS, labeled outcome branches and valid terminal exits. Interactive steps need declared screen/state; headless script/judgment or out-of-band human steps do not. Report missing criteria even if the validator calls them warnings.
 
-```
-bun scripts/journey.ts validate <file>
-bun run check-journeys
-```
-
-A spine that does not validate is not a spine. Report every error. Warnings: say which
-steps have no criteria. `check-journeys` on a draft spine only checks that any
-existing test citations are real IDs — do not run `--complete` here; tests do
-not exist yet.
-
-Also check the YAML against the design doc the spine's `source:` points at:
-
-- every Journeys-table seat has a journey; no extra journeys the doc did not confirm
-- clip beats show up as steps on the seat the clip is about
-- IDs look stable (no renumber-to-close-gap)
-- criteria are EARS (`WHEN`/`IF` … `THE SYSTEM SHALL`)
-- every step has `screen` + `state` or you name the gap
-- forks the doc distinguishes use labeled `next: { to, when }`, not a bare list
-- if a journey declares `exits:`, every terminal step names one
-
-Return pass/fail, the command output, and a short list of gaps.
+Return pass/fail, concise command evidence and actionable gaps. Never edit generated markdown or invent a new product story to repair an expansion.
