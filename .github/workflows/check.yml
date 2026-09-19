@@ -24,6 +24,14 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Install Eve dependencies
+        working-directory: deploy/eve
+        run: bun install --frozen-lockfile
+
+      - name: Eve types and build
+        working-directory: deploy/eve
+        run: bun run check-types && bun run build
+
       - name: Feature-folder boundaries
         run: bun run check-boundaries
 
