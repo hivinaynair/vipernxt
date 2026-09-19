@@ -486,6 +486,27 @@ test("deadline wake still accepts a finished Cursor run", async () => {
   expect(f.state().batch!.active?.branch).toBe("cursor/select");
 });
 
+test("unreadable slice review returns to the builder once", async () => {
+  const f = fixture();
+  const b = f.state().batch!;
+  b.accepted = [];
+  f.setReview({ commit: "b".repeat(40), verdict: "approve", findings: [{ message: "x" }] });
+  b.active = {
+    agentId: "bc-review",
+    phase: "review",
+    base: "b".repeat(40),
+    candidate: "b".repeat(40),
+    branch: "cursor/loan",
+    startedAt: Date.now(),
+    posted: true,
+  };
+  await tick(f.deps);
+  expect(f.state().batch!.status).toBe("running");
+  expect(f.state().batch!.revisions?.loan).toBe(1);
+  expect(f.state().batch!.active).toBeUndefined();
+  expect(f.state().batch!.feedback).toBeTruthy();
+});
+
 test("slice review reject holds without another builder turn", async () => {
   const f = fixture();
   const b = f.state().batch!;

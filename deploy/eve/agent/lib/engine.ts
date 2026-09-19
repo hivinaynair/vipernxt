@@ -305,12 +305,25 @@ export async function tick(overrides: Partial<typeof live> = {}) {
       ?.trim()
       .replace(/^```(?:json)?\s*/, "")
       .replace(/\s*```$/, "");
-    const parsed = parseReview(
-      JSON.parse(raw ?? "null"),
-      b.active.base,
-      executionCommands(b, job),
-      reviewCriteria(b, job),
-    );
+    let parsed: ReturnType<typeof parseReview>;
+    try {
+      parsed = parseReview(
+        JSON.parse(raw ?? "null"),
+        b.active.base,
+        executionCommands(b, job),
+        reviewCriteria(b, job),
+      );
+    } catch (error) {
+      if (b.active.phase !== "review") throw error;
+      const revisions = (b.revisions?.[job.id] ?? 0) + 1;
+      if (revisions > 2) throw error;
+      b.revisions = { ...b.revisions, [job.id]: revisions };
+      b.feedback =
+        error instanceof Error ? error.message.slice(0, 500) : "Independent review was unreadable";
+      b.active = undefined;
+      await persist("request-changes");
+      return;
+    }
     if (parsed.verdict !== "approve") {
       if (b.active.phase === "review" && parsed.verdict === "request_changes") {
         const revisions = (b.revisions?.[job.id] ?? 0) + 1;

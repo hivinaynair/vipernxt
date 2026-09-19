@@ -191,6 +191,28 @@ test("reviewer cannot invent criterion IDs", () => {
   ).toThrow("invented criterion");
 });
 
+test("object findings coerce to strings so a reviewer verdict can be read", () => {
+  const commit = "a".repeat(40);
+  const parsed = parseReview(
+    {
+      commit,
+      verdict: "request_changes",
+      unchanged: true,
+      findings: [
+        { message: "selector order is wrong" },
+        { path: "desk.tsx", detail: "no Clear filters" },
+      ],
+      checks: [{ command: ["bun", "test"], exitCode: 1, evidence: "failed" }],
+      criteria: [{ step: "loan-created", passed: false, evidence: "missing row" }],
+    },
+    commit,
+    [["bun", "test"]],
+    ["loan-created"],
+  );
+  expect(parsed.verdict).toBe("request_changes");
+  expect(parsed.review.findings).toEqual(["selector order is wrong", "no Clear filters"]);
+});
+
 test("request_changes needs findings and is not an approval", () => {
   const commit = "a".repeat(40);
   const parsed = parseReview(

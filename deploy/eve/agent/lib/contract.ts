@@ -77,7 +77,22 @@ export function verificationCommands(m: Manifest, j: Job) {
   return [...m.setup, ...j.checks, ...(j.browser ? [j.browser] : []), ...m.combinedChecks];
 }
 export type ReviewVerdict = "approve" | "request_changes" | "reject";
+function findingText(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    for (const key of ["message", "text", "finding", "summary", "detail"]) {
+      if (typeof record[key] === "string" && record[key].trim()) return record[key];
+    }
+    return JSON.stringify(value);
+  }
+  return String(value);
+}
 export function parseReview(value: unknown, commit: string, commands: string[][], steps: string[]) {
+  const raw =
+    value && typeof value === "object" && "findings" in value && Array.isArray(value.findings)
+      ? { ...value, findings: value.findings.map(findingText) }
+      : value;
   const r = z
     .object({
       commit: sha,
@@ -93,7 +108,7 @@ export function parseReview(value: unknown, commit: string, commands: string[][]
       ),
     })
     .strict()
-    .parse(value);
+    .parse(raw);
   if (r.verdict === undefined && r.approved === undefined)
     throw new Error("Review must include verdict or approved");
   if (r.criteria.some((c) => !steps.includes(c.step)))
