@@ -12,8 +12,11 @@ The package is independent of the product application's dependencies.
 
 A trusted GitHub `factory` label event opens an Eve session. `start_batch` reads
 one `factory-batch` block containing an immutable commit and manifest path.
-It validates the manifest and pinned artifacts, then runs as a durable background
-workflow. Cursor implements each slice; a separate Cursor run verifies the exact
+The intake commit must sit on the target branch (HEAD or ancestor).
+`manifest.base` may be that intake or an earlier ancestor — it must not equal
+the moving branch tip. Workers start from the intake tree so pinned catalogs
+exist. It validates the manifest and pinned artifacts, then runs as a durable
+background workflow. Cursor implements each slice; a separate Cursor run verifies the exact
 commit. Accepted slices become the next slice's base. Delivery is a draft PR.
 
 There is **no cron schedule**. Before each Cursor launch the workflow registers
