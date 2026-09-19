@@ -77,7 +77,17 @@ writable environment. Reviewers explicitly initialize that environment with a
 temporary repository file, removed immediately; tracked files remain unchanged.
 A hosted probe of the corrected hook reached `/callbacks/cursor` automatically
 on 2026-09-20. This proves delivery, not acceptance or completion of the batch.
-The two-slice test remains held while the corrected protocol is rolled out.
+Automatic delivery has been observed on follow-up runs, but fresh first-run
+delivery remains unverified. A probe also found Bun missing from its runtime.
+The two-slice test remains blocked; this is not a production-ready replacement.
 
 References: [Cursor hooks](https://cursor.com/docs/hooks) and
 [Cursor identity](https://cursor.com/docs/cloud-agent/identity).
+
+Runtime preflight requires `.cursor/environment.json` and `.cursor/Dockerfile`
+alongside the three hook files in `specFiles`. Those five files must match the
+repository default branch because Cursor Builds use its configuration. The
+environment must declare its Dockerfile and install command. This source check
+does not prove the active Cursor Build is fresh: verify that Build separately
+before enabling dispatch. Hook diagnostics are also recorded without tokens in
+`/tmp/vipernxt-factory-hook.jsonl` inside the agent VM.

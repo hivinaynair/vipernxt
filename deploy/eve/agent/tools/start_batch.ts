@@ -5,6 +5,7 @@ import { enabled, repository, required } from "../lib/config.js";
 import { digest, intake, validateManifest } from "../lib/contract.js";
 import { tick } from "../lib/engine.js";
 import { file, github, head, type Issue } from "../lib/github.js";
+import { verifyRuntime } from "../lib/runtime.js";
 import { readState, saveState } from "../lib/store.js";
 import { intakeIssueNumber } from "../lib/trust.js";
 export default defineWorkflowTool({
@@ -93,23 +94,14 @@ async function register(ctx: WorkflowStepToolContext) {
   );
   if (manifest.base !== (await head(required("FACTORY_BASE_BRANCH"))))
     throw new Error("Approved base differs from target branch head");
-  const hookFiles = [
-    ".cursor/hooks.json",
-    ".cursor/hooks/factory-stop.mjs",
-    ".cursor/factory.json",
-  ];
-  if (hookFiles.some((p) => !manifest.specFiles.includes(p)))
-    throw new Error("Completion hook files must be pinned in specFiles");
-  const callbackConfig = JSON.parse((await file(".cursor/factory.json", manifest.base)).text);
-  if (callbackConfig.callbackUrl !== `${required("FACTORY_CALLBACK_AUDIENCE")}/callbacks/cursor`)
-    throw new Error("Product callback URL differs from this deployment");
-  const hooks = JSON.parse((await file(".cursor/hooks.json", manifest.base)).text);
-  if (
-    !hooks.hooks?.stop?.some(
-      (h: { command?: string }) => h.command === "node .cursor/hooks/factory-stop.mjs",
-    )
-  )
-    throw new Error("Cursor stop hook is not installed");
+  const repo = await github<{ default_branch: string }>("");
+  await verifyRuntime(
+    manifest.specFiles,
+    manifest.base,
+    repo.default_branch,
+    required("FACTORY_CALLBACK_AUDIENCE"),
+    file,
+  );
   // Every pinned artifact must exist in the actual worker base, not only in
   // a different manifest commit. A worker cannot silently lose requirements.
   for (const p of manifest.specFiles) {

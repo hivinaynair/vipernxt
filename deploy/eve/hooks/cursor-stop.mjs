@@ -1,12 +1,27 @@
 // Install as .cursor/hooks/factory-stop.mjs. Cursor invokes this command hook.
+import { appendFileSync, realpathSync } from "node:fs";
 import { readFile, stat } from "node:fs/promises";
 import { request } from "node:http";
+import { tmpdir } from "node:os";
 import { resolve } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
+
+function diagnostic(message) {
+  console.error(`Factory stop hook: ${message}`);
+  try {
+    appendFileSync(
+      resolve(tmpdir(), "vipernxt-factory-hook.jsonl"),
+      JSON.stringify({ at: new Date().toISOString(), message }) + "\n",
+      { mode: 0o600 },
+    );
+  } catch {
+    /* Diagnostics must not prevent delivery. */
+  }
+}
 
 export async function notifyStop(input, dependencies = {}) {
   const env = dependencies.env ?? process.env;
-  const log = dependencies.log ?? ((message) => console.error(`Factory stop hook: ${message}`));
+  const log = dependencies.log ?? diagnostic;
   const exists =
     dependencies.exists ??
     (async (path) =>
@@ -101,16 +116,19 @@ function mintToken(socket, audience) {
   });
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+if (process.argv[1] && fileURLToPath(import.meta.url) === realpathSync(process.argv[1])) {
+  diagnostic("process started");
   try {
     let raw = "";
     for await (const chunk of process.stdin) {
       raw += chunk;
       if (raw.length > 65536) throw new Error("Hook input too large");
     }
-    await notifyStop(JSON.parse(raw));
+    const input = JSON.parse(raw);
+    diagnostic("stdin parsed");
+    await notifyStop(input);
   } catch {
-    console.error("Factory stop hook: failed; durable deadline remains active");
+    diagnostic("failed; durable deadline remains active");
     process.exitCode = 1;
   } finally {
     // No followup_message: this hook must never cause another model turn.

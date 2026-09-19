@@ -87,3 +87,23 @@ test("standalone command consumes stdin and emits only hook JSON", async () => {
   expect(await child.exited).toBe(0);
   expect(await new Response(child.stderr).text()).toContain("socket unavailable");
 });
+test("command invoked through a symlink still consumes the hook event", async () => {
+  const { mkdtemp, symlink, rm } = await import("node:fs/promises");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const dir = await mkdtemp(join(tmpdir(), "vipernxt-hook-"));
+  try {
+    const alias = join(dir, "stop.mjs");
+    await symlink(new URL("../hooks/cursor-stop.mjs", import.meta.url).pathname, alias);
+    const child = Bun.spawn(["node", alias], {
+      env: { ...process.env, CURSOR_AGENT_SOCKET: "/tmp/vipernxt-no-such-socket" },
+      stdin: new Response(JSON.stringify({ hook_event_name: "stop", status: "completed" })),
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    expect(await new Response(child.stdout).text()).toBe("{}\n");
+    expect(await child.exited).toBe(0);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
