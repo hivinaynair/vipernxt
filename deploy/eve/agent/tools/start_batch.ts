@@ -127,7 +127,8 @@ async function register(ctx: WorkflowStepToolContext) {
     )
       return { status: state.batch.status };
     if (isAuthorizedResume(state.batch, issueNumber, digest(source))) {
-      if (Date.now() >= runDeadline(state.batch)) throw new Error("Original batch budget expired");
+      if (Date.now() >= runDeadline(state.batch) && !state.batch.active?.posted)
+        throw new Error("Original batch budget expired");
       state.batch.workflowOwner = ctx.callId;
       state.batch.status = "running";
       state.batch.error = undefined;
