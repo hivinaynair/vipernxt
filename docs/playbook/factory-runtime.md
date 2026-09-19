@@ -1,6 +1,6 @@
 # Running the product factory
 
-The serial supervisor is implemented in `scripts/factory.ts`. It runs independently of this chat on a POSIX host with Bun, Git and the configured worker credentials. Closing the chat does not stop a detached run; shutting down the machine stops local scheduling and verification. A dispatched cloud worker continues remotely. Resume explicitly after a machine restart. This version has one worker at a time, a Git integration branch, a persistent ledger and an optional delivery adapter. Linear synchronization and parallel scheduling are not implemented.
+The serial supervisor is implemented in `scripts/factory.ts`. It runs independently of this chat on a POSIX host with Bun, Git and the configured worker credentials. Closing the chat does not stop a detached run; shutting down the machine stops local scheduling and verification. A dispatched cloud worker continues remotely. Resume explicitly after a machine restart. This version has one worker at a time, a Git integration branch, a persistent ledger and an optional delivery adapter. The optional [hosted controller](controller.md) adds Linear commands, progress updates and automatic process recovery; it requires Cursor VM verification. Parallel scheduling remains unimplemented.
 
 ## Handoff from `/next`
 

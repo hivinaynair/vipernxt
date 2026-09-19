@@ -1,6 +1,6 @@
 # Unattended product factory
 
-The target is an approved product built and verified on staging without repeated human prompts. The user reviews the resulting product and starts a new change cycle. The [serial supervisor](factory-runtime.md) now supports local workers and a Cursor Cloud adapter, with controller-host verification. This document describes the wider target architecture; live cloud validation, remote delivery, tracker projection and parallel scheduling require their own adapters and validation.
+The target is an approved product built and verified on staging without repeated human prompts. The user reviews the resulting product and starts a new change cycle. The [serial supervisor](factory-runtime.md) supports local workers and Cursor Cloud. The optional [hosted controller](controller.md) adds Linear commands and separate Cursor verification; local execution can still use host verification. This document describes the wider target architecture. End-to-end hosted validation is in progress; automatic delivery and parallel scheduling remain separate work.
 
 ## Entry and completion
 
