@@ -448,6 +448,44 @@ test("slice review request_changes returns the builder twice then holds", async 
   expect(f.state().batch!.error).toContain("Review revision limit reached");
 });
 
+test("deadline wake still accepts a finished Cursor run", async () => {
+  const f = fixture();
+  const b = f.state().batch!;
+  b.accepted = [];
+  b.candidate = "a".repeat(40);
+  b.active = {
+    agentId: "bc-review",
+    phase: "build",
+    base: "a".repeat(40),
+    startedAt: 0,
+    posted: true,
+    startingRef: "factory/input/bc-review",
+  };
+  const github = f.deps.github;
+  f.deps.github = async <T>(path: string, method?: string) => {
+    if (path.startsWith("/compare/"))
+      return {
+        status: "ahead",
+        files: [{ filename: "apps/web/src/features/returns/domain.ts" }],
+      } as T;
+    if (path.startsWith("/git/refs")) return {} as T;
+    return github<T>(path, method);
+  };
+  f.deps.head = async (ref: string) => (ref === "staging" ? "a".repeat(40) : "b".repeat(40));
+  f.deps.advanceRemote = async () => ({
+    id: "run-1",
+    agentId: "bc-review",
+    status: "FINISHED",
+    git: {
+      branches: [{ repoUrl: "https://github.com/acme/product.git", branch: "cursor/select" }],
+    },
+  });
+  await tick(f.deps);
+  expect(f.state().batch!.status).toBe("running");
+  expect(f.state().batch!.active?.phase).toBe("review");
+  expect(f.state().batch!.active?.branch).toBe("cursor/select");
+});
+
 test("slice review reject holds without another builder turn", async () => {
   const f = fixture();
   const b = f.state().batch!;

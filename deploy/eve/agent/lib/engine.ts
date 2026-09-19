@@ -246,8 +246,6 @@ export async function tick(overrides: Partial<typeof live> = {}) {
       await persist("station-reserved");
       return; // Identity is committed BEFORE the next tick can launch.
     }
-    if (Date.now() >= b.active.startedAt + b.manifest.limits.jobSeconds * 1000)
-      throw new Error("Cursor stage time budget exhausted; remote may still be running");
     await assertLease(store, owner);
     if (!b.active.posted) {
       // Cursor v1 rejected raw commit startingRef in the live test. Give it a
@@ -264,6 +262,8 @@ export async function tick(overrides: Partial<typeof live> = {}) {
     }
     const run = await advanceRemote(b.active, workerPrompt(b, job));
     if (!run || ["CREATING", "RUNNING"].includes(run.status)) {
+      if (Date.now() >= b.active.startedAt + b.manifest.limits.jobSeconds * 1000)
+        throw new Error("Cursor stage time budget exhausted; remote may still be running");
       await checkpoint();
       return;
     }
