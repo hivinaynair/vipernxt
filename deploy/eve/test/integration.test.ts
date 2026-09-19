@@ -65,7 +65,7 @@ function fixture() {
           step: "J0.S1",
           criterion: "Signed out denied",
           dependsOn: [],
-          delivery: { kind: "existing", commit: base, evidence: "docs/auth-proof.md" },
+          delivery: { kind: "existing", evidence: "docs/auth-proof.md" },
         },
       ],
     },

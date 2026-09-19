@@ -7,7 +7,9 @@ spine; they cannot establish that discovery found every customer need.
 Plan the whole approved MVP before handing it to unattended execution. Set the
 manifest's `coverageFile` to a JSON catalog. Include that catalog, `spineFile`, data
 surfaces and verification artifacts in `specFiles`; registration compares their
-contents with the approved execution base. Workers cannot edit them.
+contents with the approved execution base. Workers cannot edit them. This version
+supports one authoritative MVP spine file, not a multi-file spine collection;
+consolidate the approved MVP journeys into that file before dispatch.
 
 ```json
 {
@@ -42,9 +44,11 @@ and missing jobs block dispatch.
 
 The assigned job must cite the step and depend transitively on prerequisite jobs.
 A coherent slice may implement a requirement and its prerequisite together.
-Existing behavior uses `delivery: {"kind":"existing","commit":"<approved base SHA>",
-"evidence":"docs/evidence.md"}`. Pin the evidence file; existing behavior must also
-pass final integrated review. Its declaration alone is not proof.
+Existing behavior uses `delivery: {"kind":"existing","evidence":"docs/evidence.md"}`.
+Pin the evidence file as historical supporting material. It does not certify the
+execution base, and must not embed that containing commit's own SHA (which would
+be circular). Final integrated review independently re-verifies existing behavior
+at the actual final candidate. A historical report or declaration is not acceptance.
 
 All four foundation decisions are required. Applicable foundations name requirement
 IDs and every consumer; each consumer must explicitly depend on those requirements.

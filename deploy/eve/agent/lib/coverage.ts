@@ -45,7 +45,6 @@ export const coverageSchema = z
               z
                 .object({
                   kind: z.literal("existing"),
-                  commit: z.string().regex(/^[a-f0-9]{40}$/),
                   evidence: id,
                 })
                 .strict(),
@@ -134,8 +133,8 @@ export function validateCoverage(value: unknown, manifest: Manifest, spine: unkn
     if (d.kind === "job") {
       if (!jobs.get(d.job)?.steps.includes(r.step))
         throw new Error(`Uncovered requirement: ${r.id}`);
-    } else if (d.commit !== manifest.base || !manifest.specFiles.includes(d.evidence)) {
-      throw new Error(`Existing requirement needs pinned evidence at approved base: ${r.id}`);
+    } else if (!manifest.specFiles.includes(d.evidence)) {
+      throw new Error(`Existing requirement needs pinned historical evidence: ${r.id}`);
     }
     for (const depId of r.dependsOn) {
       const dep = requirements.get(depId)!;

@@ -108,7 +108,7 @@ test("unknown and cyclic requirement dependencies are rejected", () => {
   c.requirements[0].dependsOn = ["create-loan"];
   expect(() => check(c, manifest())).toThrow("cycle");
 });
-test("existing implementation needs evidence pinned at this base", () => {
+test("existing implementation needs pinned historical evidence without a circular base SHA", () => {
   const m = manifest();
   m.jobs.shift();
   m.jobs[0].dependsOn = [];
@@ -118,7 +118,7 @@ test("existing implementation needs evidence pinned at this base", () => {
     requirements: [
       {
         ...c.requirements[0],
-        delivery: { kind: "existing", commit: base, evidence: "docs/evidence.md" },
+        delivery: { kind: "existing", evidence: "docs/evidence.md" },
       },
       c.requirements[1],
     ],
@@ -126,10 +126,9 @@ test("existing implementation needs evidence pinned at this base", () => {
   expect(check(existing, m).requirements).toHaveLength(2);
   existing.requirements[0].delivery = {
     kind: "existing",
-    commit: "b".repeat(40),
-    evidence: "docs/evidence.md",
+    evidence: "docs/unpinned-evidence.md",
   };
-  expect(() => check(existing, m)).toThrow("pinned evidence");
+  expect(() => check(existing, m)).toThrow("pinned historical evidence");
 });
 
 test("omitting a criterion from both jobs and catalog fails against spine", () => {
@@ -185,4 +184,19 @@ test("all cross-cutting applicability decisions are required", () => {
   const c = catalog();
   delete c.foundations.authentication;
   expect(() => check(c, manifest())).toThrow();
+});
+
+test("old self-referential existing commit field is rejected", () => {
+  const c = catalog();
+  const old = {
+    ...c,
+    requirements: [
+      {
+        ...c.requirements[0],
+        delivery: { kind: "existing", commit: base, evidence: "docs/evidence.md" },
+      },
+      c.requirements[1],
+    ],
+  };
+  expect(() => check(old, manifest())).toThrow();
 });
