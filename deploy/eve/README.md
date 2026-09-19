@@ -19,9 +19,9 @@ There is **no cron schedule**. Before each Cursor launch the workflow registers
 `cursor:<agent-id>` as a durable hook. The product's stop hook sends a short-lived
 Cursor-signed OIDC token to `/callbacks/cursor`. The endpoint checks issuer,
 audience, expiry and the registered agent identity, then wakes that hook.
-Workers also invoke the same callback script immediately before their final reply.
-The first hosted trial did not deliver automatic stop callbacks, despite a working
-identity socket; the explicit invocation provides a second delivery path.
+The command consumes Cursor stop-event JSON on stdin and returns `{}` on stdout.
+It never asks the model to invoke itself or emits a follow-up message. Safe
+stderr diagnostics distinguish hook invocation, socket absence and HTTP status.
 The callback body cannot approve anything. The workflow reads Cursor's actual
 run status and checks the diff and independent review evidence.
 
@@ -69,3 +69,15 @@ not a cryptographic proof that tests ran.
 
 Based on the MIT-licensed Vercel Foreman template at
 `0d630a284b84e5be38fe7eceec7b231a7e79bfd0`; see `FOREMAN-LICENSE`.
+
+## Hook verification
+
+Cursor documents that project command hooks run only after the agent enters a
+writable environment. Reviewers explicitly initialize that environment with a
+temporary repository file, removed immediately; tracked files remain unchanged.
+A hosted probe of the corrected hook reached `/callbacks/cursor` automatically
+on 2026-09-20. This proves delivery, not acceptance or completion of the batch.
+The two-slice test remains held while the corrected protocol is rolled out.
+
+References: [Cursor hooks](https://cursor.com/docs/hooks) and
+[Cursor identity](https://cursor.com/docs/cloud-agent/identity).

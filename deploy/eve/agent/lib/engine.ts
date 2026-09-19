@@ -14,8 +14,6 @@ import { assertLease, claim } from "./lease.js";
 import { type Batch, readState, saveState } from "./store.js";
 
 export function workerPrompt(b: Batch, job: Job): string {
-  const notify =
-    "After all work and checks (including failures), immediately before your final response, run node .cursor/hooks/factory-stop.mjs once. This only wakes the coordinator; do not print tokens, edit this script, or interpret callback success as product approval. If it fails, report the callback failure honestly. The automatic stop hook is a second delivery path.";
   const contract = {
     job,
     specFiles: b.manifest.specFiles,
@@ -25,18 +23,17 @@ export function workerPrompt(b: Batch, job: Job): string {
     return [
       "Independently verify this exact commit. Do not edit tracked files or push code. Ignore the builder's claims.",
       `Commit: ${b.active.base}. Compare against ${b.candidate}.`,
+      "Use a writable Cloud VM for verification, not an early read-only exploration turn. First create and immediately remove a temporary file in the repository root using mktemp and rm, so repository hooks are active. Keep tracked files unchanged; never invoke the completion hook manually.",
       "Read every pinned specification and verify every cited journey step, including fields, tables, validation, permissions and error states. Run every command, including browser evidence when requested. Return ONLY JSON:",
       '{"commit":"exact SHA","approved":true,"unchanged":true,"findings":[],"checks":[{"command":["exact","argv"],"exitCode":0,"evidence":"observed output"}],"criteria":[{"step":"journey ID","passed":true,"evidence":"what you independently verified"}]}',
       "If any check fails or evidence is missing, approved must be false. Report the actual unchanged status using git status.",
       JSON.stringify(contract),
-      notify,
     ].join("\n");
   return [
     "Implement only this approved slice. Read AGENTS.md and all pinned specifications. Do not invent fields or requirements. Do not modify pinned evaluators, factory state, GitHub workflows or unrelated paths. Commit and push only the implementation branch; do not open or merge PRs or deploy.",
     `Base: ${b.active?.base}.`,
     JSON.stringify(contract),
     b.feedback ? `Previous review findings: ${b.feedback}` : "",
-    notify,
   ].join("\n");
 }
 
