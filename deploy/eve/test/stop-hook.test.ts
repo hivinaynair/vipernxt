@@ -77,15 +77,15 @@ test("transient callback failure retries but authorization denial does not", asy
 test("standalone command consumes stdin and emits only hook JSON", async () => {
   const child = Bun.spawn(["node", new URL("../hooks/cursor-stop.mjs", import.meta.url).pathname], {
     env: { ...process.env, CURSOR_AGENT_SOCKET: "/tmp/vipernxt-no-such-socket" },
-    stdin: new Response(
+    stdin: new TextEncoder().encode(
       JSON.stringify({ hook_event_name: "stop", status: "completed", workspace_roots: ["/tmp"] }),
     ),
     stdout: "pipe",
     stderr: "pipe",
   });
-  expect(await new Response(child.stdout).text()).toBe("{}\n");
+  expect(await Bun.readableStreamToText(child.stdout)).toBe("{}\n");
   expect(await child.exited).toBe(0);
-  expect(await new Response(child.stderr).text()).toContain("socket unavailable");
+  expect(await Bun.readableStreamToText(child.stderr)).toContain("socket unavailable");
 });
 test("command invoked through a symlink still consumes the hook event", async () => {
   const { mkdtemp, symlink, rm } = await import("node:fs/promises");
@@ -103,7 +103,7 @@ test("command invoked through a symlink still consumes the hook event", async ()
       stdout: "pipe",
       stderr: "pipe",
     });
-    expect(await new Response(child.stdout).text()).toBe("{}\n");
+    expect(await Bun.readableStreamToText(child.stdout)).toBe("{}\n");
     expect(await child.exited).toBe(0);
   } finally {
     await rm(dir, { recursive: true, force: true });
