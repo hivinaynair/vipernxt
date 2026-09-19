@@ -1,10 +1,10 @@
 import { randomUUID } from "node:crypto";
-import { enabled, repository, required } from "./config.js";
+import { repository, required } from "./config.js";
 import {
-  checkReview,
   digest,
   intake,
   type Job,
+  parseReview,
   validateDiff,
   verificationCommands,
 } from "./contract.js";
@@ -12,6 +12,7 @@ import { advanceRemote } from "./cursor.js";
 import { deploymentReceipt, runDeadline, verifyDeployment } from "./deployment.js";
 import { GitHubError, github, head, type Issue, isAncestor } from "./github.js";
 import { assertLease, claim } from "./lease.js";
+import { postReceipt } from "./receipt.js";
 import { type Batch, readState, saveState } from "./store.js";
 
 export function deployedJob(b: Batch): Job {
@@ -103,8 +104,8 @@ export function workerPrompt(b: Batch, job: Job): string {
       "Use a writable Cloud VM for verification, not an early read-only exploration turn. First create and immediately remove a temporary file in the repository root using mktemp and rm, so repository hooks are active. Keep tracked files unchanged; never invoke the completion hook manually.",
       "For authentication, use dedicated Clerk development identities and runtime secrets with the pinned approved access matrix. Never bypass authentication or output credentials. Verify signed-out, role and cross-tenant denials where applicable.",
       "Read every pinned specification and verify every cited journey step, including fields, tables, validation, permissions and error states. Run every command, including browser evidence when requested. Return ONLY JSON:",
-      '{"commit":"exact SHA","approved":true,"unchanged":true,"findings":[],"checks":[{"command":["exact","argv"],"exitCode":0,"evidence":"observed output"}],"criteria":[{"step":"exact requirement ID from criterionIds","passed":true,"evidence":"what you independently verified"}]}',
-      "If any check fails or evidence is missing, approved must be false. Report the actual unchanged status using git status.",
+      '{"commit":"exact SHA","verdict":"approve|request_changes|reject","unchanged":true,"findings":[],"checks":[{"command":["exact","argv"],"exitCode":0,"evidence":"observed output"}],"criteria":[{"step":"exact requirement ID from criterionIds","passed":true,"evidence":"what you independently verified"}]}',
+      "Use only criterionIds. Do not invent steps. request_changes returns the slice to the builder within the attempt budget. reject holds for the owner. If any required check fails or evidence is missing, verdict must not be approve. Report the actual unchanged status using git status.",
       JSON.stringify(contract),
     ].join("\n");
   return [
@@ -115,13 +116,21 @@ export function workerPrompt(b: Batch, job: Job): string {
   ].join("\n");
 }
 
-const live = { enabled, repository, required, readState, saveState, github, head, advanceRemote };
+const live = {
+  repository,
+  required,
+  readState,
+  saveState,
+  github,
+  head,
+  advanceRemote,
+  postReceipt,
+};
 export async function tick(overrides: Partial<typeof live> = {}) {
-  const { enabled, repository, required, readState, saveState, github, head, advanceRemote } = {
+  const { repository, required, readState, saveState, github, head, advanceRemote, postReceipt } = {
     ...live,
     ...overrides,
   };
-  if (!enabled()) return;
   const store = { read: readState, save: saveState };
   const current = await store.read();
   if (!current.state.batch || current.state.batch.status !== "running") return;
@@ -132,6 +141,27 @@ export async function tick(overrides: Partial<typeof live> = {}) {
   const checkpoint = () => {
     state.lease = undefined;
     return saveState(state, sha);
+  };
+  const persist = async (event: string) => {
+    await checkpoint();
+    if (!b) return;
+    await postReceipt(
+      b.issue,
+      {
+        event,
+        status: b.status,
+        phase: b.active?.phase,
+        agentId: b.active?.agentId,
+        runId: b.active?.runId,
+        candidate: b.active?.candidate ?? b.candidate,
+        deadline: b.active
+          ? Math.min(runDeadline(b), b.active.startedAt + b.manifest.limits.jobSeconds * 1000)
+          : undefined,
+        error: b.error,
+        pr: b.pr,
+      },
+      github,
+    );
   };
   if (!b || b.status !== "running") {
     await checkpoint();
@@ -149,7 +179,7 @@ export async function tick(overrides: Partial<typeof live> = {}) {
       b.status = "paused";
       b.error =
         "Issue closed, factory label removed, or approved contract changed. No new dispatch.";
-      await checkpoint();
+      await persist("paused");
       return;
     }
     if (Date.now() >= runDeadline(b))
@@ -192,15 +222,20 @@ export async function tick(overrides: Partial<typeof live> = {}) {
         }));
       b.pr = pr.html_url;
       b.status = "review";
-      await checkpoint();
+      await persist("draft-pr");
       return;
     }
     if (!job.dependsOn.every((id) => b.accepted.includes(id)))
       throw new Error("Dependency not accepted");
     if (!b.active) {
       const count = b.attempts[job.id] ?? 0;
-      if (count >= b.manifest.limits.attempts) throw new Error("Slice attempt budget exhausted");
-      b.attempts[job.id] = count + 1;
+      const revisions = b.revisions?.[job.id] ?? 0;
+      if (revisions > 2) throw new Error("Review revision limit reached");
+      if (count === 0) b.attempts[job.id] = 1;
+      else if (revisions === 0) {
+        if (count >= b.manifest.limits.attempts) throw new Error("Slice attempt budget exhausted");
+        b.attempts[job.id] = count + 1;
+      }
       b.active = {
         agentId: `bc-${randomUUID()}`,
         phase: b.deployment ? "deployed-review" : nextJob ? "build" : "integrated-review",
@@ -208,7 +243,7 @@ export async function tick(overrides: Partial<typeof live> = {}) {
         base: b.candidate,
         startedAt: Date.now(),
       };
-      await checkpoint();
+      await persist("station-reserved");
       return; // Identity is committed BEFORE the next tick can launch.
     }
     if (Date.now() >= b.active.startedAt + b.manifest.limits.jobSeconds * 1000)
@@ -259,19 +294,42 @@ export async function tick(overrides: Partial<typeof live> = {}) {
         branch,
         startedAt: Date.now(),
       };
-      await checkpoint();
+      await persist("review-station");
       return;
+    }
+    if (b.active.phase !== "deployed-review") {
+      if (!b.active.branch || (await head(b.active.branch)) !== b.active.base)
+        throw new Error("Worker branch changed during independent review");
     }
     const raw = run.result
       ?.trim()
       .replace(/^```(?:json)?\s*/, "")
       .replace(/\s*```$/, "");
-    const review = checkReview(
+    const parsed = parseReview(
       JSON.parse(raw ?? "null"),
       b.active.base,
       executionCommands(b, job),
       reviewCriteria(b, job),
     );
+    if (parsed.verdict !== "approve") {
+      if (b.active.phase === "review" && parsed.verdict === "request_changes") {
+        const revisions = (b.revisions?.[job.id] ?? 0) + 1;
+        if (revisions > 2) {
+          throw new Error(
+            `Review revision limit reached: ${parsed.review.findings.join("; ") || "contract not met"}`,
+          );
+        }
+        b.revisions = { ...b.revisions, [job.id]: revisions };
+        b.feedback = parsed.review.findings.join("\n") || "Independent review requested changes";
+        b.active = undefined;
+        await persist("request-changes");
+        return;
+      }
+      throw new Error(
+        `Independent review ${parsed.verdict}: ${parsed.review.findings.join("; ") || "contract not met"}`,
+      );
+    }
+    const review = parsed.review;
     if (b.active.phase === "deployed-review") {
       const verified = await verifyDeployment(b, b.deployment!, github);
       if (verified.url !== b.deployment!.url)
@@ -279,15 +337,13 @@ export async function tick(overrides: Partial<typeof live> = {}) {
       b.deployedReview = { commit: b.active.base, url: verified.url, review };
       b.active = undefined;
       b.status = b.coverage.scope === "mvp" ? "mvp-complete" : "slice-complete";
-      await checkpoint();
+      await persist(b.status);
       return;
     }
-    if (!b.active.branch || (await head(b.active.branch)) !== b.active.base)
-      throw new Error("Worker branch changed during independent review");
     if (b.active.phase === "integrated-review") {
       b.integratedReview = { commit: b.active.base, review };
       b.active = undefined;
-      await checkpoint();
+      await persist("integrated-review");
       return;
     }
     b.evidence.push({ job: job.id, commit: b.active.base, review });
@@ -295,12 +351,12 @@ export async function tick(overrides: Partial<typeof live> = {}) {
     b.candidate = b.active.base;
     b.resultBranch = b.active.branch;
     b.active = undefined;
-    await checkpoint();
+    await persist("slice-accepted");
   } catch (e) {
     // A lost checkpoint race is retried from fresh state. Never overwrite a
     // concurrent pause/cancel with the older in-memory snapshot.
     b.status = "blocked";
     b.error = e instanceof Error ? e.message.slice(0, 500) : "Factory transition failed";
-    await checkpoint();
+    await persist("blocked");
   }
 }

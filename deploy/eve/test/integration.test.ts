@@ -268,6 +268,41 @@ test("final review cannot escape the original batch budget", async () => {
   expect(f.prs()).toBe(0);
 });
 
+test("slice request_changes returns to the builder instead of blocking", async () => {
+  const f = fixture();
+  const b = f.state().batch!;
+  b.accepted = [];
+  b.manifest.limits.attempts = 3;
+  b.candidate = "a".repeat(40);
+  b.active = {
+    agentId: "bc-review",
+    phase: "review",
+    base: "b".repeat(40),
+    candidate: "b".repeat(40),
+    branch: "cursor/loan",
+    startedAt: Date.now(),
+    posted: true,
+  };
+  const job = b.manifest.jobs[0];
+  f.setReview({
+    commit: "b".repeat(40),
+    verdict: "request_changes",
+    unchanged: true,
+    findings: ["empty state missing"],
+    checks: verificationCommands(b.manifest, job).map((command) => ({
+      command,
+      exitCode: 1,
+      evidence: "failed",
+    })),
+    criteria: [{ step: "loan-created", passed: false, evidence: "missing row" }],
+  });
+  await tick(f.deps);
+  expect(f.state().batch!.status).toBe("running");
+  expect(f.state().batch!.feedback).toContain("empty state");
+  expect(f.state().batch!.active).toBeUndefined();
+  expect(f.state().batch!.revisions?.loan).toBe(1);
+});
+
 test("slice prompts carry assigned requirements and prerequisites, not the whole MVP", () => {
   const f = fixture();
   const b = f.state().batch!;
@@ -352,4 +387,95 @@ test("deployment is rechecked after the reviewer finishes", async () => {
   expect(statusReads).toBe(2);
   expect(f.state().batch!.status).toBe("blocked");
   expect(f.state().batch!.deployedReview).toBeUndefined();
+});
+
+test("slice review request_changes returns the builder twice then holds", async () => {
+  const f = fixture();
+  const b = f.state().batch!;
+  b.accepted = [];
+  b.candidate = "a".repeat(40);
+  const job = b.manifest.jobs[0];
+  const request = {
+    commit: "b".repeat(40),
+    verdict: "request_changes" as const,
+    unchanged: true,
+    findings: ["empty state missing"],
+    checks: verificationCommands(b.manifest, job).map((command) => ({
+      command,
+      exitCode: 0,
+      evidence: "ran",
+    })),
+    criteria: [{ step: "loan-created", passed: false, evidence: "missing empty state" }],
+  };
+  f.setReview(request);
+  b.active = {
+    agentId: "bc-review",
+    phase: "review",
+    base: "b".repeat(40),
+    candidate: "b".repeat(40),
+    branch: "cursor/loan",
+    startedAt: Date.now(),
+    posted: true,
+  };
+  await tick(f.deps);
+  expect(f.state().batch!.status).toBe("running");
+  expect(f.state().batch!.revisions?.loan).toBe(1);
+  expect(f.state().batch!.active).toBeUndefined();
+  await tick(f.deps);
+  expect(f.state().batch!.active?.phase).toBe("build");
+  f.state().batch!.active = {
+    agentId: "bc-review",
+    phase: "review",
+    base: "b".repeat(40),
+    candidate: "b".repeat(40),
+    branch: "cursor/loan",
+    startedAt: Date.now(),
+    posted: true,
+  };
+  await tick(f.deps);
+  expect(f.state().batch!.revisions?.loan).toBe(2);
+  f.state().batch!.active = {
+    agentId: "bc-review",
+    phase: "review",
+    base: "b".repeat(40),
+    candidate: "b".repeat(40),
+    branch: "cursor/loan",
+    startedAt: Date.now(),
+    posted: true,
+  };
+  await tick(f.deps);
+  expect(f.state().batch!.status).toBe("blocked");
+  expect(f.state().batch!.error).toContain("Review revision limit reached");
+});
+
+test("slice review reject holds without another builder turn", async () => {
+  const f = fixture();
+  const b = f.state().batch!;
+  b.accepted = [];
+  const job = b.manifest.jobs[0];
+  f.setReview({
+    commit: "b".repeat(40),
+    verdict: "reject",
+    unchanged: true,
+    findings: ["wrong entity"],
+    checks: verificationCommands(b.manifest, job).map((command) => ({
+      command,
+      exitCode: 0,
+      evidence: "ran",
+    })),
+    criteria: [{ step: "loan-created", passed: false, evidence: "wrong entity" }],
+  });
+  b.active = {
+    agentId: "bc-review",
+    phase: "review",
+    base: "b".repeat(40),
+    candidate: "b".repeat(40),
+    branch: "cursor/loan",
+    startedAt: Date.now(),
+    posted: true,
+  };
+  await tick(f.deps);
+  expect(f.state().batch!.status).toBe("blocked");
+  expect(f.state().batch!.error).toContain("reject");
+  expect(f.state().batch!.accepted).toEqual([]);
 });

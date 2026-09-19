@@ -76,11 +76,13 @@ export function validateManifest(value: unknown, repo: string): Manifest {
 export function verificationCommands(m: Manifest, j: Job) {
   return [...m.setup, ...j.checks, ...(j.browser ? [j.browser] : []), ...m.combinedChecks];
 }
-export function checkReview(value: unknown, commit: string, commands: string[][], steps: string[]) {
+export type ReviewVerdict = "approve" | "request_changes" | "reject";
+export function parseReview(value: unknown, commit: string, commands: string[][], steps: string[]) {
   const r = z
     .object({
       commit: sha,
-      approved: z.boolean(),
+      approved: z.boolean().optional(),
+      verdict: z.enum(["approve", "request_changes", "reject"]).optional(),
       unchanged: z.boolean(),
       findings: z.array(z.string()),
       checks: z.array(
@@ -92,21 +94,46 @@ export function checkReview(value: unknown, commit: string, commands: string[][]
     })
     .strict()
     .parse(value);
+  if (r.verdict === undefined && r.approved === undefined)
+    throw new Error("Review must include verdict or approved");
+  if (r.criteria.some((c) => !steps.includes(c.step)))
+    throw new Error("Review invented criterion IDs");
   const expected = commands.map((c) => JSON.stringify(c)).sort();
   const actual = r.checks.map((c) => JSON.stringify(c.command)).sort();
   if (
     r.commit !== commit ||
-    !r.approved ||
-    !r.unchanged ||
-    r.findings.length ||
-    r.checks.some((c) => c.exitCode !== 0) ||
     JSON.stringify(actual) !== JSON.stringify(expected) ||
-    r.criteria.some((c) => !c.passed) ||
     JSON.stringify(r.criteria.map((c) => c.step).sort()) !== JSON.stringify([...steps].sort())
   ) {
     throw new Error("Independent review did not satisfy the pinned acceptance contract");
   }
-  return r;
+  const verdict: ReviewVerdict = r.verdict ?? (r.approved ? "approve" : "request_changes");
+  if (verdict === "approve") {
+    if (
+      r.approved === false ||
+      !r.unchanged ||
+      r.findings.length ||
+      r.checks.some((c) => c.exitCode !== 0) ||
+      r.criteria.some((c) => !c.passed)
+    ) {
+      throw new Error("Independent review did not satisfy the pinned acceptance contract");
+    }
+  }
+  if (
+    verdict === "request_changes" &&
+    !r.findings.length &&
+    r.criteria.every((c) => c.passed) &&
+    r.checks.every((c) => c.exitCode === 0)
+  ) {
+    throw new Error("request_changes requires findings");
+  }
+  return { verdict, review: r };
+}
+export function checkReview(value: unknown, commit: string, commands: string[][], steps: string[]) {
+  const parsed = parseReview(value, commit, commands, steps);
+  if (parsed.verdict !== "approve")
+    throw new Error("Independent review did not satisfy the pinned acceptance contract");
+  return parsed.review;
 }
 export function validateDiff(
   files: { filename: string; previous_filename?: string }[],

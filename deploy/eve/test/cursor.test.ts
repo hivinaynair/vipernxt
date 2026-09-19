@@ -72,10 +72,12 @@ test("dispatch uses the pinned input branch and configured execution model", asy
         repos: { startingRef: string }[];
         model: { id: string };
         autoCreatePR: boolean;
+        mode: string;
       };
       expect(payload.repos[0]?.startingRef).toBe(a.startingRef);
       expect(payload.model.id).toBe("grok-4.6");
       expect(payload.autoCreatePR).toBe(false);
+      expect(payload.mode).toBe("agent");
       return {
         agent: { id: a.agentId },
         run: { id: "run-1", agentId: a.agentId, status: "CREATING" },
@@ -84,6 +86,24 @@ test("dispatch uses the pinned input branch and configured execution model", asy
     await advanceRemote(a, "task", request);
     expect(a.runId).toBe("run-1");
     expect(a.posted).toBe(true);
+
+    const review = {
+      ...attempt(),
+      phase: "review" as const,
+      startingRef: "factory/input/bc-review",
+    };
+    review.agentId = "bc-review";
+    const reviewRequest = transport(async (_, method, body) => {
+      if (method !== "POST") throw new CursorError(404);
+      const payload = body as { mode: string; model: { id: string } };
+      expect(payload.mode).toBe("plan");
+      expect(payload.model.id).toBe("claude-4.5-sonnet");
+      return {
+        agent: { id: review.agentId },
+        run: { id: "run-2", agentId: review.agentId, status: "CREATING" },
+      };
+    });
+    await advanceRemote(review, "review", reviewRequest);
   } finally {
     if (old === undefined) delete process.env.FACTORY_REPO;
     else process.env.FACTORY_REPO = old;

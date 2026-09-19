@@ -32,6 +32,7 @@ export type Batch = {
   candidate: string;
   accepted: string[];
   attempts: Record<string, number>;
+  revisions?: Record<string, number>;
   active?: Attempt;
   error?: string;
   pr?: string;
@@ -40,7 +41,49 @@ export type Batch = {
   triage?: { key: string; result: Recommendation };
   evidence: { job: string; commit: string; review: unknown }[];
 };
-export type State = { version: 1; batch?: Batch; lease?: { owner: string; until: number } };
+export type HistoryEntry = {
+  archivedAt: number;
+  reason: string;
+  issue: number;
+  status: Batch["status"];
+  error?: string;
+  candidate?: string;
+  accepted?: string[];
+};
+export type LastFailure = {
+  at: number;
+  issue: number;
+  stage: "dispatch" | "build" | "review" | "integration";
+  error: string;
+  commit?: string;
+  manifestPath?: string;
+};
+export type State = {
+  version: 1;
+  batch?: Batch;
+  history?: HistoryEntry[];
+  lastFailure?: LastFailure;
+  lease?: { owner: string; until: number };
+};
+
+export function archiveBatch(state: State, reason: string) {
+  if (!state.batch) return;
+  const batch = state.batch;
+  state.history = [
+    {
+      archivedAt: Date.now(),
+      reason,
+      issue: batch.issue,
+      status: batch.status,
+      error: batch.error,
+      candidate: batch.candidate,
+      accepted: batch.accepted,
+    },
+    ...(state.history ?? []),
+  ].slice(0, 20);
+  state.batch = undefined;
+  state.lease = undefined;
+}
 const branch = "factory/state";
 const path = "factory-state.json";
 export async function readState(): Promise<{ state: State; sha?: string }> {

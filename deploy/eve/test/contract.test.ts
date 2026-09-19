@@ -3,6 +3,7 @@ import {
   checkReview,
   intake,
   type Job,
+  parseReview,
   validateDiff,
   validateManifest,
 } from "../agent/lib/contract.js";
@@ -110,6 +111,22 @@ describe("scope and graph guards", () => {
         "acme/product",
       ),
     ).toThrow();
+  });
+  test("review cannot invent criterion IDs", () => {
+    const r = report();
+    r.criteria.push({ step: "invented", passed: true, evidence: "no" });
+    expect(() => parseReview(r, commit, commands, ["J1.S1"])).toThrow("invented");
+  });
+  test("request_changes is a structured verdict, not an approval", () => {
+    const r = {
+      ...report(),
+      approved: undefined,
+      verdict: "request_changes" as const,
+      findings: ["empty state missing"],
+    };
+    delete (r as { approved?: boolean }).approved;
+    expect(parseReview(r, commit, commands, ["J1.S1"]).verdict).toBe("request_changes");
+    expect(() => checkReview(r, commit, commands, ["J1.S1"])).toThrow();
   });
   test("intake requires one immutable commit and manifest", () => {
     const block =

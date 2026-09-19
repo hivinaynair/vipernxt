@@ -39,6 +39,17 @@ test("missing environment pin cannot dispatch", async () => {
     verifyRuntime(runtimeFiles.slice(0, 3), "approved", "default", "https://factory.example", read),
   ).rejects.toThrow("must be pinned");
 });
+test("npm install is not an approved Cursor setup", async () => {
+  await expect(
+    verifyRuntime(runtimeFiles, "approved", "default", "https://factory.example", async (path) => ({
+      text:
+        path === ".cursor/environment.json"
+          ? JSON.stringify({ build: { dockerfile: "Dockerfile" }, install: "npm ci" })
+          : files[path],
+      sha: path,
+    })),
+  ).rejects.toThrow("bun install --frozen-lockfile");
+});
 test("wrong callback origin cannot dispatch", async () => {
   await expect(
     verifyRuntime(runtimeFiles, "approved", "default", "https://other.example", read),

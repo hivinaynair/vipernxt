@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { classifyFailure, type Failure } from "../agent/lib/jev.js";
+import { attentionFor, classifyFailure, eveMayResume, type Failure } from "../agent/lib/jev.js";
 
 const failure: Failure = {
   stage: "build",
@@ -16,10 +16,20 @@ describe("Jev shadow boundary", () => {
       probabilities: { retry_read: 0, repair: 1, investigate: 0, ask_owner: 0, stop: 0 },
     }));
     expect(result.recommendation).toBe("repair");
+    expect(result.attention).toBe("eve");
     expect(result.execution).toBe("hold");
     expect(result.mode).toBe("shadow");
+    expect(eveMayResume(result)).toBe(true);
   });
-  test("scope and budget failures bypass the model", async () => {
+  test("ask_owner and stop need the owner; other routes go to Eve", () => {
+    expect(attentionFor("ask_owner")).toBe("owner");
+    expect(attentionFor("stop")).toBe("owner");
+    expect(attentionFor("repair")).toBe("eve");
+    expect(attentionFor("retry_read")).toBe("eve");
+    expect(attentionFor("investigate")).toBe("eve");
+    expect(eveMayResume({ attention: "eve", recommendation: "investigate" })).toBe(false);
+  });
+  test("scope and budget failures bypass the model and need the owner", async () => {
     let calls = 0;
     for (const patch of [{ scopeValid: false }, { budgetAvailable: false }]) {
       const result = await classifyFailure({ ...failure, ...patch }, async () => {
@@ -27,6 +37,7 @@ describe("Jev shadow boundary", () => {
         return { choice: "repair" };
       });
       expect(result.recommendation).toBe("stop");
+      expect(result.attention).toBe("owner");
     }
     expect(calls).toBe(0);
   });

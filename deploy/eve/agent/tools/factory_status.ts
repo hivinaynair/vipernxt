@@ -10,7 +10,12 @@ export default defineTool({
     if (!isTrusted(auth) && intakeIssueNumber(auth) === null) throw new Error("Access denied");
     const { state } = await readState();
     const b = state.batch;
-    if (!b) return { status: "idle" };
+    if (!b)
+      return {
+        status: "idle",
+        lastFailure: state.lastFailure,
+        attention: state.lastFailure ? "owner" : undefined,
+      };
     if (!isTrusted(auth) && intakeIssueNumber(auth) !== b.issue)
       throw new Error("Batch access denied");
     return {
@@ -24,7 +29,9 @@ export default defineTool({
       candidate: b.candidate,
       deployment: b.deployment,
       deployedAcceptance: b.deployedReview,
+      attention: b.triage?.result.attention,
       triage: b.triage?.result,
+      lastFailure: state.lastFailure,
     };
   },
 });

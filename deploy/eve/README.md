@@ -1,8 +1,9 @@
 # Eve factory
 
-Experimental Vercel-hosted factory. Dispatch defaults to disabled.
-The legacy Fly controller has been removed from the kit. Hosted batch and recovery
-validation remain required before unattended use.
+Experimental Vercel-hosted factory. A trusted `factory` label plus a valid
+coverage catalog starts a batch. There is no `FACTORY_ENABLED` deploy switch.
+The legacy Fly controller has been removed from the kit. Hosted two-slice
+recovery remains required before treating this as unattended production.
 
 Install and validate with `bun install --frozen-lockfile`, `bun test`,
 `bun run check-types`, and `bun run build`. Vercel uses Node.js 24 at runtime.
@@ -16,23 +17,24 @@ The intake commit must sit on the target branch (HEAD or ancestor).
 `manifest.base` may be that intake or an earlier ancestor — it must not equal
 the moving branch tip. Workers start from the intake tree so pinned catalogs
 exist. It validates the manifest and pinned artifacts, then runs as a durable
-background workflow. Cursor implements each slice; a separate Cursor run verifies the exact
-commit. Accepted slices become the next slice's base. Delivery is a draft PR.
+background workflow. Cursor Grok 4.6 implements each slice from a pinned
+`factory/input/<agent-id>` ref and must push one `cursor/` branch. A separate
+Claude plan-mode run reviews that exact commit. Slice review may
+`request_changes` at most twice, then holds. Delivery is a draft PR. Every
+transition posts an issue receipt.
 
 There is **no cron schedule**. Before each Cursor launch the workflow registers
 `cursor:<agent-id>` as a durable hook. The product's stop hook sends a short-lived
 Cursor-signed OIDC token to `/callbacks/cursor`. The endpoint checks issuer,
 audience, expiry and the registered agent identity, then wakes that hook.
 The command consumes Cursor stop-event JSON on stdin and returns `{}` on stdout.
-It never asks the model to invoke itself or emits a follow-up message. Safe
-stderr diagnostics distinguish hook invocation, socket absence and HTTP status.
-The callback body cannot approve anything. The workflow reads Cursor's actual
-run status and checks the diff and independent review evidence.
+The callback body cannot approve anything. **Deadline or callback is enough.**
+The workflow then reads Cursor's actual run status and the branch SHA.
 
-A stop hook can arrive before the terminal API status. A bounded settling window
-handles that race. A durable deadline wakes a run even when the VM crashes or
-the callback is lost. Deadline exhaustion holds execution rather than silently
-granting more time. Completed workflow steps are replayed, not rerun.
+A stop hook can arrive before the terminal API status. A short settling window
+handles that race. A missed first-turn hook is not a failed slice. Deadline
+exhaustion holds execution rather than silently granting more time. Completed
+workflow steps are replayed, not rerun.
 
 ## Product hook
 
@@ -53,18 +55,23 @@ GitHub's `factory/state` branch holds checkpoints with compare-and-swap writes.
 One batch is supported per deployment. A fresh authorized `factory` label event
 can resume a blocked batch with the same issue and intake, within its original
 time budget. Agent identity, attempts, clocks and accepted evidence are retained.
-Automatic archive and repair are not implemented.
+A new authorized label for a different batch archives the previous checkpoint
+automatically. Register failures persist `lastFailure` and an issue receipt so
+the next label can start.
 
 Cursor starts from a dedicated `factory/input/<agent-id>` branch whose head is
 checked against the approved commit. This works around a raw-SHA launch rejected
-by the live Cursor v1 API. Execution uses Cursor Grok 4.6.
+by the live Cursor v1 API. Implementers use Grok 4.6 in agent mode. Reviewers
+use Claude 4.5 Sonnet in plan mode.
 
 The build limits generated Vercel function invocations to 60 seconds, shorter
 than the five-minute lease expiry.
 
-Jev classifies blocked failures in shadow mode. It cannot accept a slice, retry
-an agent, change scope or reset budgets. Its live synthetic smoke test succeeded;
-mocked contract tests do not establish its accuracy on real failures.
+Jev classifies blocked failures in shadow mode. It cannot accept a slice, change
+scope or reset budgets. It does decide **attention**: `owner` (you need to look)
+or `eve` (the coordinator may continue inside the approved contract).
+`retry_read` and `repair` are Eve-delegable; `ask_owner` and `stop` hold.
+`classify_failure` never 403s — missing state returns `no_batch`.
 
 Local tests cover acceptance, scope, dispatch reconciliation, leases and callback
 authentication. Hosted workflow replay, real stop-hook delivery and end-to-end
@@ -96,7 +103,8 @@ alongside the three hook files in `specFiles`. Those five files must match the
 repository default branch because Cursor Builds use its configuration. The
 environment must declare its Dockerfile and install command. This source check
 does not prove the active Cursor Build is fresh: verify that Build separately
-before enabling dispatch. Hook diagnostics are also recorded without tokens in
+before dispatch. The install command must include `bun install --frozen-lockfile`.
+Hook diagnostics are also recorded without tokens in
 `/tmp/vipernxt-factory-hook.jsonl` inside the agent VM.
 
 ## Scope coverage

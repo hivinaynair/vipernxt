@@ -39,7 +39,9 @@ export async function verifyRuntime(
   if (
     environment.build?.dockerfile !== "Dockerfile" ||
     typeof environment.install !== "string" ||
-    !environment.install.trim()
+    !environment.install.includes("bun install --frozen-lockfile")
   )
-    throw new Error("Cursor environment must declare the pinned Dockerfile and install command");
+    throw new Error(
+      "Cursor environment must declare the pinned Dockerfile and bun install --frozen-lockfile",
+    );
 }
