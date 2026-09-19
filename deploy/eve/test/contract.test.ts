@@ -37,6 +37,7 @@ const manifest = () => ({
   approval: "approved",
   verification: "cursor-cloud",
   specFiles: ["docs/spec.md"],
+  coverageFile: "docs/spec.md",
   setup: [],
   worker: { kind: "cursor", repository: "https://github.com/acme/product" },
   limits: { attempts: 2, jobSeconds: 600, runSeconds: 3600 },

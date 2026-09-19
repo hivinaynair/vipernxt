@@ -14,6 +14,7 @@ export const manifestSchema = z.object({
   approval: z.string().min(1),
   verification: z.literal("cursor-cloud"),
   specFiles: z.array(path).min(1),
+  coverageFile: path,
   setup: z.array(command),
   worker: z.object({ kind: z.literal("cursor"), repository: z.string() }),
   limits: z.object({
@@ -54,8 +55,11 @@ export function validateManifest(value: unknown, repo: string): Manifest {
   const m = manifestSchema.parse(value);
   if (m.worker.repository !== `https://github.com/${repo}`)
     throw new Error("Manifest repository differs from deployment");
+  if (!m.specFiles.includes(m.coverageFile))
+    throw new Error("Coverage catalog must be pinned in specFiles");
   const seen = new Set<string>();
   for (const job of m.jobs) {
+    if (job.id === "__integrated_review__") throw new Error("Reserved job ID");
     if (seen.has(job.id) || job.dependsOn.some((id) => !seen.has(id)))
       throw new Error("Jobs must be unique and ordered after dependencies");
     if (job.requiresBrowser && !job.browser) throw new Error("Browser evidence command missing");

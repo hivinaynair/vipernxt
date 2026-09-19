@@ -13,19 +13,63 @@ import { GitHubError, github, head, type Issue } from "./github.js";
 import { assertLease, claim } from "./lease.js";
 import { type Batch, readState, saveState } from "./store.js";
 
+export function integratedJob(b: Batch): Job {
+  if (!b.coverage)
+    throw new Error("Batch predates required coverage contract; create a newly approved batch");
+  return {
+    id: "__integrated_review__",
+    title: "Integrated journey acceptance",
+    instructions:
+      "Verify every in-scope requirement together on the final candidate, including existing behavior and applicable signed-out, forbidden and cross-tenant cases.",
+    steps: b.coverage.requirements.map((r) => r.id),
+    dependsOn: [],
+    paths: [],
+    checks: b.coverage.integrated.checks,
+    requiresBrowser: Boolean(b.coverage.integrated.browser),
+    browser: b.coverage.integrated.browser,
+  };
+}
+
+export function reviewCriteria(b: Batch, job: Job): string[] {
+  if (!b.coverage) throw new Error("Missing coverage contract");
+  return b.active?.phase === "integrated-review"
+    ? b.coverage.requirements.map((r) => r.id)
+    : b.coverage.requirements
+        .filter((r) => r.delivery.kind === "job" && r.delivery.job === job.id)
+        .map((r) => r.id);
+}
+
+export function promptRequirements(b: Batch, job: Job) {
+  if (!b.coverage) throw new Error("Missing coverage contract");
+  if (b.active?.phase === "integrated-review") return b.coverage.requirements;
+  const catalog = new Map(b.coverage.requirements.map((r) => [r.id, r]));
+  const included = new Set<string>();
+  const visit = (id: string) => {
+    if (included.has(id)) return;
+    const requirement = catalog.get(id);
+    if (!requirement) throw new Error(`Missing prerequisite requirement: ${id}`);
+    included.add(id);
+    requirement.dependsOn.forEach(visit);
+  };
+  reviewCriteria(b, job).forEach(visit);
+  return b.coverage.requirements.filter((r) => included.has(r.id));
+}
+
 export function workerPrompt(b: Batch, job: Job): string {
   const contract = {
     job,
+    requirements: promptRequirements(b, job),
+    criterionIds: b.coverage ? reviewCriteria(b, job) : job.steps,
     specFiles: b.manifest.specFiles,
     commands: verificationCommands(b.manifest, job),
   };
-  if (b.active?.phase === "review")
+  if (b.active?.phase === "review" || b.active?.phase === "integrated-review")
     return [
       "Independently verify this exact commit. Do not edit tracked files or push code. Ignore the builder's claims.",
-      `Commit: ${b.active.base}. Compare against ${b.candidate}.`,
+      `Commit: ${b.active.base}. Compare against ${b.active.phase === "integrated-review" ? b.manifest.base : b.candidate}.`,
       "Use a writable Cloud VM for verification, not an early read-only exploration turn. First create and immediately remove a temporary file in the repository root using mktemp and rm, so repository hooks are active. Keep tracked files unchanged; never invoke the completion hook manually.",
       "Read every pinned specification and verify every cited journey step, including fields, tables, validation, permissions and error states. Run every command, including browser evidence when requested. Return ONLY JSON:",
-      '{"commit":"exact SHA","approved":true,"unchanged":true,"findings":[],"checks":[{"command":["exact","argv"],"exitCode":0,"evidence":"observed output"}],"criteria":[{"step":"journey ID","passed":true,"evidence":"what you independently verified"}]}',
+      '{"commit":"exact SHA","approved":true,"unchanged":true,"findings":[],"checks":[{"command":["exact","argv"],"exitCode":0,"evidence":"observed output"}],"criteria":[{"step":"exact requirement ID from criterionIds","passed":true,"evidence":"what you independently verified"}]}',
       "If any check fails or evidence is missing, approved must be false. Report the actual unchanged status using git status.",
       JSON.stringify(contract),
     ].join("\n");
@@ -37,7 +81,12 @@ export function workerPrompt(b: Batch, job: Job): string {
   ].join("\n");
 }
 
-export async function tick() {
+const live = { enabled, repository, required, readState, saveState, github, head, advanceRemote };
+export async function tick(overrides: Partial<typeof live> = {}) {
+  const { enabled, repository, required, readState, saveState, github, head, advanceRemote } = {
+    ...live,
+    ...overrides,
+  };
   if (!enabled()) return;
   const store = { read: readState, save: saveState };
   const current = await store.read();
@@ -55,6 +104,8 @@ export async function tick() {
     return;
   }
   try {
+    if (!b.coverage)
+      throw new Error("Batch predates required coverage contract; create a newly approved batch");
     const issue = await github<Issue>(`/issues/${b.issue}`);
     if (
       issue.state !== "open" ||
@@ -71,8 +122,9 @@ export async function tick() {
       throw new Error(
         "Batch time budget exhausted; reconcile any active Cursor run before resuming",
       );
-    const job = b.manifest.jobs.find((j) => !b.accepted.includes(j.id));
-    if (!job) {
+    const nextJob = b.manifest.jobs.find((j) => !b.accepted.includes(j.id));
+    const job = nextJob ?? integratedJob(b);
+    if (!nextJob && b.integratedReview?.commit === b.candidate) {
       const branch = b.resultBranch;
       if (!branch || (await head(branch)) !== b.candidate)
         throw new Error("Final branch no longer matches verified candidate");
@@ -92,7 +144,7 @@ export async function tick() {
           head: branch,
           base,
           draft: true,
-          body: `Implements approved batch #${b.issue}.\n\nJourney steps: ${[...new Set(b.manifest.jobs.flatMap((j) => j.steps))].join(", ")}\n\nIndependent verification receipts: [factory checkpoint](https://github.com/${repository()}/blob/factory/state/factory-state.json).\n\nNo staging merge or product deployment was performed.`,
+          body: `Implements approved batch #${b.issue}.\n\nScope: ${b.coverage?.scope}. Integrated acceptance verified at ${b.candidate}.\n\nJourney steps: ${[...new Set(b.manifest.jobs.flatMap((j) => j.steps))].join(", ")}\n\nIndependent verification receipts: [factory checkpoint](https://github.com/${repository()}/blob/factory/state/factory-state.json).\n\nNo staging merge or product deployment was performed.`,
         }));
       b.pr = pr.html_url;
       b.status = "review";
@@ -107,7 +159,8 @@ export async function tick() {
       b.attempts[job.id] = count + 1;
       b.active = {
         agentId: `bc-${randomUUID()}`,
-        phase: "build",
+        phase: nextJob ? "build" : "integrated-review",
+        branch: nextJob ? undefined : b.resultBranch,
         base: b.candidate,
         startedAt: Date.now(),
       };
@@ -173,10 +226,16 @@ export async function tick() {
       JSON.parse(raw ?? "null"),
       b.active.base,
       verificationCommands(b.manifest, job),
-      job.steps,
+      reviewCriteria(b, job),
     );
     if (!b.active.branch || (await head(b.active.branch)) !== b.active.base)
       throw new Error("Worker branch changed during independent review");
+    if (b.active.phase === "integrated-review") {
+      b.integratedReview = { commit: b.active.base, review };
+      b.active = undefined;
+      await checkpoint();
+      return;
+    }
     b.evidence.push({ job: job.id, commit: b.active.base, review });
     b.accepted.push(job.id);
     b.candidate = b.active.base;

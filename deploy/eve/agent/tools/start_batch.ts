@@ -1,8 +1,10 @@
 import { defineWorkflowTool, type WorkflowStepToolContext } from "eve/tools";
 import { createHook, sleep } from "workflow";
+import { parse as parseYaml } from "yaml";
 import { z } from "zod";
 import { enabled, repository, required } from "../lib/config.js";
 import { digest, intake, validateManifest } from "../lib/contract.js";
+import { coverageSchema, validateCoverage } from "../lib/coverage.js";
 import { tick } from "../lib/engine.js";
 import { file, github, head, type Issue } from "../lib/github.js";
 import { verifyRuntime } from "../lib/runtime.js";
@@ -108,6 +110,16 @@ async function register(ctx: WorkflowStepToolContext) {
     if ((await file(p, source.commit)).sha !== (await file(p, manifest.base)).sha)
       throw new Error(`Pinned artifact differs from execution base: ${p}`);
   }
+  const catalog = coverageSchema.parse(
+    JSON.parse((await file(manifest.coverageFile, manifest.base)).text),
+  );
+  if (!manifest.specFiles.includes(catalog.spineFile))
+    throw new Error("Journey spine must be pinned");
+  const coverage = validateCoverage(
+    catalog,
+    manifest,
+    parseYaml((await file(catalog.spineFile, manifest.base)).text),
+  );
   state.batch = {
     workflowOwner: ctx.callId,
     issue: issueNumber,
@@ -115,6 +127,7 @@ async function register(ctx: WorkflowStepToolContext) {
     commit: source.commit,
     manifestPath: source.manifest,
     manifest,
+    coverage,
     startedAt: Date.now(),
     status: "running",
     candidate: manifest.base,

@@ -1,11 +1,12 @@
 import { required } from "./config.js";
 import type { Manifest } from "./contract.js";
+import type { Coverage } from "./coverage.js";
 import { file, GitHubError, github, head } from "./github.js";
 import type { Recommendation } from "./jev.js";
 
 export type Attempt = {
   agentId: string;
-  phase: "build" | "review";
+  phase: "build" | "review" | "integrated-review";
   base: string;
   startingRef?: string;
   startedAt: number;
@@ -21,6 +22,8 @@ export type Batch = {
   commit: string;
   manifestPath: string;
   manifest: Manifest;
+  coverage?: Coverage;
+  integratedReview?: { commit: string; review: unknown };
   startedAt: number;
   status: "running" | "paused" | "blocked" | "review";
   candidate: string;

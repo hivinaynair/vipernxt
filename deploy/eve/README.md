@@ -1,7 +1,8 @@
 # Eve factory
 
-Experimental replacement for the Fly controller. Dispatch defaults to disabled.
-Do not retire the old service until a hosted batch and recovery test have passed.
+Experimental Vercel-hosted factory. Dispatch defaults to disabled.
+The legacy Fly controller has been removed from the kit. Hosted batch and recovery
+validation remain required before unattended use.
 
 Install and validate with `bun install --frozen-lockfile`, `bun test`,
 `bun run check-types`, and `bun run build`. Vercel uses Node.js 24 at runtime.
@@ -91,3 +92,14 @@ environment must declare its Dockerfile and install command. This source check
 does not prove the active Cursor Build is fresh: verify that Build separately
 before enabling dispatch. Hook diagnostics are also recorded without tokens in
 `/tmp/vipernxt-factory-hook.jsonl` inside the agent VM.
+
+## Scope coverage
+
+New batches require a pinned `coverageFile`; see [coverage planning](COVERAGE.md).
+It reconciles every pinned journey criterion with a job or existing evidence,
+enforces declared cross-cutting prerequisites, and distinguishes first-slice scope
+from the entire MVP. A separate final Cursor review must verify all requirements
+on the combined candidate before draft-PR delivery. Interactive journeys require
+browser verification. Older manifests and registered batches without coverage
+fail closed and need a newly approved batch; they are not retroactively certified.
+These local checks do not replace the still-pending hosted end-to-end test.
