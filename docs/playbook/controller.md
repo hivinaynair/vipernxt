@@ -22,7 +22,7 @@ Use `deploy/controller/Dockerfile` and `deploy/controller/fly.toml`. Set the app
 
 Set Fly secrets: `FACTORY_CONTROL_TOKEN` (random, at least 32 characters), `CURSOR_API_KEY`, `GITHUB_TOKEN`, `LINEAR_CLIENT_ID`, `LINEAR_CLIENT_SECRET`, `LINEAR_WEBHOOK_SECRET`, and `FACTORY_CONFIG_JSON` (contents of the example config, adjusted for your account). Alternatively mount the nonsecret config at `/data/controller.json`. Never put secrets in Git, tickets, logs or worker prompts. GitHub access must allow reading and pushing factory branches, including workflow files. Do not give Cursor workers Linear write access.
 
-`deploy/controller/config.example.json` records the verified Bridge workspace, Return Desk team and status IDs. Revalidate after changing workspaces. `/healthz` is liveness, not proof of provider connectivity. Back up SQLite consistently with its backup API and preserve `.factory` evidence and Git objects; volume snapshots alone are not a tested recovery plan. Restoring on another host requires fencing the previous host first. Reboot and restore tests remain deployment gates.
+`deploy/controller/config.example.json` is a template: replace every placeholder with your workspace, permitted operator, team, repository and workflow state IDs. Account-specific configuration belongs in deployment secrets, not the reusable kit. Revalidate after changing workspaces. `/healthz` is liveness, not proof of provider connectivity. Back up SQLite consistently with its backup API and preserve `.factory` evidence and Git objects; volume snapshots alone are not a tested recovery plan. Restoring on another host requires fencing the previous host first. Reboot and restore tests remain deployment gates.
 
 ## Register approved scope
 

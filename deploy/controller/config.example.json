@@ -1,13 +1,13 @@
 {
-  "workspace": "7a210a51-94da-4e64-b1f9-914b24b31c96",
-  "users": ["364f6318-60b5-4f43-b573-032269feab9e"],
+  "workspace": "LINEAR_WORKSPACE_ID",
+  "users": ["LINEAR_OPERATOR_USER_ID"],
   "teams": {
-    "004a7893-ffdd-4c25-8a3d-2ab733141c9f": {
-      "repository": "hivinaynair/return-desk-cloud-test",
+    "LINEAR_TEAM_ID": {
+      "repository": "OWNER/PRODUCT_REPOSITORY",
       "states": {
-        "running": "7780b9a2-f0f4-45fa-9d6c-2a27bd5de7d7",
-        "review": "7d330936-3873-4a0f-ab06-ef9167a76f60",
-        "canceled": "c4e46d82-45de-4264-bd1b-23babec61676"
+        "running": "LINEAR_IN_PROGRESS_STATE_ID",
+        "review": "LINEAR_IN_REVIEW_STATE_ID",
+        "canceled": "LINEAR_CANCELED_STATE_ID"
       }
     }
   }
