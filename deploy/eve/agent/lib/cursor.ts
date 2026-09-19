@@ -1,5 +1,30 @@
 import { repository, required } from "./config.js";
 import type { Attempt } from "./store.js";
+
+export function stationFor(phase: Attempt["phase"]) {
+  if (phase === "build") {
+    return {
+      mode: "agent" as const,
+      model: {
+        id: "grok-4.6",
+        params: [
+          { id: "effort", value: "medium" },
+          { id: "fast", value: "false" },
+        ],
+      },
+    };
+  }
+  return {
+    mode: "plan" as const,
+    model: {
+      id: "claude-4.5-sonnet",
+      params: [
+        { id: "effort", value: "medium" },
+        { id: "fast", value: "false" },
+      ],
+    },
+  };
+}
 export class CursorError extends Error {
   constructor(public status: number) {
     super(`Cursor HTTP ${status}`);
@@ -39,20 +64,15 @@ export async function advanceRemote(
     agent = await request(`/agents/${a.agentId}`);
   } catch (e) {
     if (!(e instanceof CursorError && e.status === 404) || a.posted) throw e;
+    const station = stationFor(a.phase);
     const created = await request<{ agent: { id: string }; run: Run }>("/agents", "POST", {
       agentId: a.agentId,
       prompt: { text: prompt },
       repos: [{ url: `https://github.com/${repository()}`, startingRef: a.startingRef ?? a.base }],
-      model: {
-        id: "grok-4.6",
-        params: [
-          { id: "effort", value: "medium" },
-          { id: "fast", value: "false" },
-        ],
-      },
+      model: station.model,
       workOnCurrentBranch: false,
       autoCreatePR: false,
-      mode: "agent",
+      mode: station.mode,
     });
     if (created.agent.id !== a.agentId || created.run.agentId !== a.agentId)
       throw new Error("Cursor identity mismatch");

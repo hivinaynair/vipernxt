@@ -8,6 +8,7 @@ export function repository(): string {
   if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repo)) throw new Error("Invalid FACTORY_REPO");
   return repo;
 }
+/** Dispatch is gated by a trusted factory label and a valid catalog, not a deploy switch. */
 export function enabled() {
-  return process.env.FACTORY_ENABLED === "true";
+  return true;
 }
