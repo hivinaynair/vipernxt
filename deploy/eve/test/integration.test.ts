@@ -303,6 +303,16 @@ test("slice request_changes returns to the builder instead of blocking", async (
   expect(f.state().batch!.revisions?.loan).toBe(1);
 });
 
+test("slice review asks for job commands, not the combined suite", () => {
+  const f = fixture();
+  const b = f.state().batch!;
+  b.manifest.setup = [["bun", "install"]];
+  b.manifest.combinedChecks = [["bun", "run", "build"]];
+  const job = b.manifest.jobs[0];
+  expect(executionCommands(b, job)).toEqual([["bun", "test"]]);
+  expect(executionCommands(b, integratedJob(b))).toContainEqual(["bun", "run", "build"]);
+});
+
 test("slice prompts carry assigned requirements and prerequisites, not the whole MVP", () => {
   const f = fixture();
   const b = f.state().batch!;
@@ -476,6 +486,7 @@ test("deadline wake still accepts a finished Cursor run", async () => {
     id: "run-1",
     agentId: "bc-review",
     status: "FINISHED",
+    result: "",
     git: {
       branches: [{ repoUrl: "https://github.com/acme/product.git", branch: "cursor/select" }],
     },
@@ -515,6 +526,7 @@ test("expired batch clock still accepts a finished posted run", async () => {
     id: "run-1",
     agentId: "bc-review",
     status: "FINISHED",
+    result: "",
     git: {
       branches: [{ repoUrl: "https://github.com/acme/product.git", branch: "cursor/select" }],
     },
@@ -540,9 +552,59 @@ test("unreadable slice review returns to the builder once", async () => {
   };
   await tick(f.deps);
   expect(f.state().batch!.status).toBe("running");
-  expect(f.state().batch!.revisions?.loan).toBe(1);
+  expect(f.state().batch!.unreadable?.loan).toBe(1);
+  expect(f.state().batch!.revisions?.loan).toBeUndefined();
   expect(f.state().batch!.active).toBeUndefined();
   expect(f.state().batch!.feedback).toBeTruthy();
+});
+
+test("builder ERROR returns to a new station instead of blocking", async () => {
+  const f = fixture();
+  const b = f.state().batch!;
+  b.accepted = [];
+  b.active = {
+    agentId: "bc-build",
+    phase: "build",
+    base: "a".repeat(40),
+    startedAt: Date.now(),
+    posted: true,
+    startingRef: "factory/input/bc-build",
+  };
+  f.deps.advanceRemote = async () => ({
+    id: "run-1",
+    agentId: "bc-build",
+    status: "ERROR",
+    result: "",
+  });
+  await tick(f.deps);
+  expect(f.state().batch!.status).toBe("running");
+  expect(f.state().batch!.active).toBeUndefined();
+  expect(f.state().batch!.feedback).toContain("ERROR");
+});
+
+test("review ERROR returns to a new station instead of blocking", async () => {
+  const f = fixture();
+  const b = f.state().batch!;
+  b.accepted = [];
+  b.active = {
+    agentId: "bc-review",
+    phase: "review",
+    base: "b".repeat(40),
+    candidate: "b".repeat(40),
+    branch: "cursor/loan",
+    startedAt: Date.now(),
+    posted: true,
+  };
+  f.deps.advanceRemote = async () => ({
+    id: "run-2",
+    agentId: "bc-review",
+    status: "ERROR",
+    result: "",
+  });
+  await tick(f.deps);
+  expect(f.state().batch!.status).toBe("running");
+  expect(f.state().batch!.active).toBeUndefined();
+  expect(f.state().batch!.feedback).toContain("ERROR");
 });
 
 test("slice review reject holds without another builder turn", async () => {

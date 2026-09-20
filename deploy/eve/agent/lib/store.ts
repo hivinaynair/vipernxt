@@ -33,6 +33,7 @@ export type Batch = {
   accepted: string[];
   attempts: Record<string, number>;
   revisions?: Record<string, number>;
+  unreadable?: Record<string, number>;
   active?: Attempt;
   error?: string;
   pr?: string;
@@ -50,6 +51,13 @@ export type HistoryEntry = {
   candidate?: string;
   accepted?: string[];
 };
+export type OwnerPing = {
+  key: string;
+  issue: number;
+  channel?: string;
+  ts?: string;
+  command?: "hold" | "retry" | "reject";
+};
 export type LastFailure = {
   at: number;
   issue: number;
@@ -64,6 +72,7 @@ export type State = {
   history?: HistoryEntry[];
   lastFailure?: LastFailure;
   lease?: { owner: string; until: number };
+  ownerPing?: OwnerPing;
 };
 
 export function archiveBatch(state: State, reason: string) {
@@ -85,11 +94,16 @@ export function archiveBatch(state: State, reason: string) {
   state.lease = undefined;
 }
 
-/** Same issue and intake may resume a blocked/paused batch, or a Jev-orphaned running one. */
+/** Same issue and intake may resume a blocked/paused batch, or take over a running one after a new authorized label. */
 export function isAuthorizedResume(batch: Batch, issue: number, intakeHash: string) {
   if (batch.issue !== issue || batch.intakeHash !== intakeHash) return false;
   if (batch.status === "blocked" || batch.status === "paused") return true;
-  return batch.status === "running" && Boolean(batch.triage) && !batch.error;
+  return batch.status === "running" && !batch.error;
+}
+
+/** A different issue or intake replaces the current checkpoint, even while it is running. */
+export function supersedesBatch(batch: Batch, issue: number, intakeHash: string) {
+  return !isAuthorizedResume(batch, issue, intakeHash);
 }
 const branch = "factory/state";
 const path = "factory-state.json";

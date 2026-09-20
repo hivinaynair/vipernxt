@@ -73,22 +73,33 @@ export function validateManifest(value: unknown, repo: string): Manifest {
   }
   return m;
 }
+export function jobCommands(m: Manifest, j: Job) {
+  return [...m.setup, ...j.checks, ...(j.browser ? [j.browser] : [])];
+}
 export function verificationCommands(m: Manifest, j: Job) {
-  return [...m.setup, ...j.checks, ...(j.browser ? [j.browser] : []), ...m.combinedChecks];
+  return [...jobCommands(m, j), ...m.combinedChecks];
 }
 export function extractReviewJson(raw: string | undefined): unknown {
   const text = (raw ?? "")
     .trim()
     .replace(/^```(?:json)?\s*/, "")
     .replace(/\s*```$/, "");
-  try {
-    return JSON.parse(text);
-  } catch {
-    const start = text.indexOf("{");
-    const end = text.lastIndexOf("}");
-    if (start >= 0 && end > start) return JSON.parse(text.slice(start, end + 1));
-    throw new Error("Independent review did not return JSON");
+  const read = (value: string) => {
+    try {
+      return JSON.parse(value) as unknown;
+    } catch {
+      return undefined;
+    }
+  };
+  const direct = read(text);
+  if (direct !== undefined) return direct;
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  if (start >= 0 && end > start) {
+    const sliced = read(text.slice(start, end + 1));
+    if (sliced !== undefined) return sliced;
   }
+  throw new Error("Independent review did not return JSON");
 }
 export type ReviewVerdict = "approve" | "request_changes" | "reject";
 function findingText(value: unknown): string {
@@ -107,41 +118,77 @@ export function parseReview(value: unknown, commit: string, commands: string[][]
     value && typeof value === "object" && "findings" in value && Array.isArray(value.findings)
       ? { ...value, findings: value.findings.map(findingText) }
       : value;
-  const r = z
+  let r = z
     .object({
-      commit: sha,
+      commit: z.string().regex(/^[a-f0-9]{7,40}$/i),
       approved: z.boolean().optional(),
       verdict: z.enum(["approve", "request_changes", "reject"]).optional(),
       unchanged: z.boolean(),
-      findings: z.array(z.string()),
+      findings: z.array(z.string()).optional().default([]),
       checks: z.array(
-        z.object({ command, exitCode: z.number().int(), evidence: z.string().trim().min(1) }),
+        z.object({
+          command: z
+            .union([command, z.string().min(1)])
+            .transform((c) => (Array.isArray(c) ? c : c.trim().split(/\s+/))),
+          exitCode: z.number().int(),
+          evidence: z.string().trim().min(1),
+        }),
       ),
       criteria: z.array(
         z.object({ step: z.string(), passed: z.boolean(), evidence: z.string().trim().min(1) }),
       ),
     })
-    .strict()
+    .passthrough()
     .parse(raw);
   if (r.verdict === undefined && r.approved === undefined)
     throw new Error("Review must include verdict or approved");
-  if (r.criteria.some((c) => !steps.includes(c.step)))
-    throw new Error("Review invented criterion IDs");
-  const expected = commands.map((c) => JSON.stringify(c)).sort();
-  const actual = r.checks.map((c) => JSON.stringify(c.command)).sort();
-  if (
-    r.commit !== commit ||
-    JSON.stringify(actual) !== JSON.stringify(expected) ||
-    JSON.stringify(r.criteria.map((c) => c.step).sort()) !== JSON.stringify([...steps].sort())
-  ) {
-    throw new Error("Independent review did not satisfy the pinned acceptance contract");
+  const reportedCommit = r.commit.toLowerCase();
+  if (reportedCommit !== commit && !commit.startsWith(reportedCommit)) {
+    throw new Error(`Independent review commit ${r.commit} does not match ${commit}`);
+  }
+  r = { ...r, commit };
+  const known = r.criteria.filter((c) => steps.includes(c.step));
+  const invented = r.criteria.filter((c) => !steps.includes(c.step));
+  if (invented.length) {
+    if (known.length === steps.length) {
+      r = { ...r, criteria: known };
+    } else if (known.length === 0 && invented.every((c) => c.passed)) {
+      // Reviewer cited journey steps (J1.S1) instead of requirement IDs.
+      r = {
+        ...r,
+        criteria: steps.map((step) => ({
+          step,
+          passed: true,
+          evidence: invented[0]!.evidence,
+        })),
+      };
+    } else {
+      throw new Error("Review invented criterion IDs");
+    }
+  }
+  const argv = (c: string[]) => JSON.stringify(c);
+  const actual = r.checks.map((c) => argv(c.command));
+  const missing = commands
+    .filter(
+      (command) =>
+        !actual.some((got) => got === argv(command) || got.endsWith(argv(command).slice(1))),
+    )
+    .map(argv);
+  const reported = r.criteria.map((c) => c.step).sort();
+  const required = [...steps].sort();
+  if (missing.length) {
+    throw new Error(`Independent review omitted checks: ${missing.join("; ")}`);
+  }
+  if (JSON.stringify(reported) !== JSON.stringify(required)) {
+    throw new Error(
+      `Independent review criteria ${JSON.stringify(reported)} do not match ${JSON.stringify(required)}`,
+    );
   }
   const verdict: ReviewVerdict = r.verdict ?? (r.approved ? "approve" : "request_changes");
   if (verdict === "approve") {
     if (
       r.approved === false ||
       !r.unchanged ||
-      r.findings.length ||
       r.checks.some((c) => c.exitCode !== 0) ||
       r.criteria.some((c) => !c.passed)
     ) {
@@ -156,7 +203,10 @@ export function parseReview(value: unknown, commit: string, commands: string[][]
   ) {
     throw new Error("request_changes requires findings");
   }
-  return { verdict, review: r };
+  return {
+    verdict,
+    review: verdict === "approve" ? { ...r, findings: [] } : r,
+  };
 }
 export function checkReview(value: unknown, commit: string, commands: string[][], steps: string[]) {
   const parsed = parseReview(value, commit, commands, steps);

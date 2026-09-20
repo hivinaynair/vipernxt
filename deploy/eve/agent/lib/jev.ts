@@ -61,6 +61,20 @@ const evaluateFailure: Evaluator = async (failure) => {
   return result.answers.route;
 };
 
+export function routeFromEvidence(failure: Failure): Route | undefined {
+  if (!failure.scopeValid || !failure.budgetAvailable) return "stop";
+  if (/invalid_model/i.test(failure.summary)) return "ask_owner";
+  if (/ended with (ERROR|EXPIRED)/i.test(failure.summary)) return "repair";
+  if (
+    /did not return JSON/i.test(failure.summary) ||
+    /not valid JSON/i.test(failure.summary) ||
+    /Unexpected token/i.test(failure.summary)
+  )
+    return "retry_read";
+  if (/Workflow ownership changed|another_workflow_owns/i.test(failure.summary))
+    return "retry_read";
+}
+
 export function attentionFor(route: Route): Attention {
   return route === "ask_owner" || route === "stop" ? "owner" : "eve";
 }
@@ -96,9 +110,8 @@ export async function classifyFailure(
   if (!failure.scopeValid || !failure.budgetAvailable) {
     return recommend(base, "stop");
   }
-  if (/invalid_model/i.test(failure.summary)) {
-    return recommend(base, "ask_owner");
-  }
+  const known = routeFromEvidence(failure);
+  if (known) return recommend(base, known);
   try {
     const answer = answerSchema.parse(await evaluator(failure));
     if (

@@ -103,3 +103,10 @@ test("blocked batch records Jev attention without requiring a principal", async 
   expect(result).toMatchObject({ attention: "eve", recommendation: "repair" });
   expect(state.batch?.triage?.result.attention).toBe("eve");
 });
+
+test("Eve resume continues the durable station loop", async () => {
+  const { continuesStations } = await import("../agent/lib/triage.js");
+  expect(continuesStations({ ...repair, resumed: true })).toBe(true);
+  expect(continuesStations({ ...repair, resumed: false })).toBe(false);
+  expect(continuesStations({ status: "no_batch", attention: "owner" })).toBe(false);
+});

@@ -34,14 +34,15 @@ export default defineWorkflowTool({
       if (snapshot.status !== "running") return snapshot;
       if (!snapshot.agentId) continue;
       using done = createHook({ token: `cursor:${snapshot.agentId}` });
-      if (await done.getConflict()) return { status: "another_workflow_owns_stage" };
+      const hookHeld = await done.getConflict();
       const registeredAgent = snapshot.agentId;
       snapshot = await advance(ctx);
       if (snapshot.status !== "running") return snapshot;
       if (snapshot.agentId !== registeredAgent) continue;
       const waitingAgent = snapshot.agentId;
       const deadline = new Date(snapshot.deadline!);
-      await Promise.race([done, sleep(deadline)]);
+      // A previous workflow may still hold the wake token. Deadline is enough.
+      await (hookHeld ? sleep(deadline) : Promise.race([done, sleep(deadline)]));
       snapshot = await advance(ctx);
       if (snapshot.status !== "running") return snapshot;
       if (snapshot.agentId !== waitingAgent) continue;
@@ -143,8 +144,6 @@ async function register(ctx: WorkflowStepToolContext) {
       });
       return { status: "resuming" };
     }
-    if (state.batch.status === "running")
-      throw new Error("Another workflow owns the running batch");
     archiveBatch(state, "New authorized factory label");
   }
   try {
