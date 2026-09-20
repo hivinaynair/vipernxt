@@ -6,79 +6,16 @@ description: >-
   feature, or when next is about to build. Do not reopen the product interview.
 ---
 
-# plan
+# Plan one spine feature
 
-One feature from the spine becomes a spec, then slices. The spine already has
-the acceptance criteria. This skill does not rewrite them and does not invent a
-product story.
+Input: feature ID, valid spine, accepted design and ontology. Follow [execution contract](../CONTRACT.md). Output: `docs/plans/F<n>-<slug>-spec.md`, target 250 words, maximum 400.
 
-`/next` invokes this. They may also ask to plan a feature by id (`F2`).
+Validate the spine; read the feature's served steps/EARS and eval-set IDs. The spec is a delta, not a duplicate Problem/Outcome/criteria document. Record only additional behavior, slice dependencies, cases covered and exclusions not already stated. If a needed step or product decision is missing, return it to `/next`; do not hide new scope in implementation notes.
 
-## Host
+For forms, tables or detail views, read the approved `docs/product/data-surfaces.md` using [the contract guide](../shape/data-surfaces.md). Each slice references affected surface IDs and maps their rules to acceptance cases. Missing fields, column meanings, validation or permissions are unresolved product decisions: return them to `/next` before wave 0 or implementation. Do not squeeze the field inventory into the 400-word spec; link it. Unaffected/headless slices record non-applicability.
 
-This skill does not care which product, model, or machine is running. Do not
-refuse because the session is local, remote, or a different vendor. Do not tell
-them to switch hosts. Do the work here, or stop on a real blocker (a product
-decision the spine does not settle).
+Before the unattended MVP handoff, reconcile every criterion in the pinned journey spine against the [coverage catalog](../../../deploy/eve/COVERAGE.md), not just this feature. Identify identity, tenancy and authorization dependencies before feature slices; the first useful journey exercises the real access model. Shared foundations run before their consumers. Record every foundation as applicable with prerequisite/consumer IDs, or give a non-applicability reason. Mark the batch `first-slice` or `mvp`; only first-slice batches may exclude criteria with explicit reasons. Plan integrated journey commands and browser checks before dispatch; the final independent review rechecks every criterion, including existing behavior, on the combined candidate.
 
-## Before you write
+Split into small coherent slices by default. The first walks one actor through useful behavior. About three steps is a sizing prompt, not an arbitrary hard cap. Each slice names served steps, eval cases and shared-surface dependencies. Wave 0 owns schema/routes/seed; feature slices do not invent missing columns or pages.
 
-1. The spine validates: `bun scripts/journey.ts validate docs/journeys/<name>.yaml`.
-2. Read the feature's `serves` steps and their EARS lines. Those lines **are**
-   the acceptance criteria.
-3. If a step the feature needs is missing, or the clip is the wrong story, stop.
-   `/next` reopens `shape` / `journeys`. Do not paper over it in the spec.
-4. Read `AGENTS.md` and the design doc the spine points at. Inspect code only to
-   fill a gap (does this screen exist yet?). Judgment and script steps often
-   have no screen — do not invent one in the spec.
-5. The first slice is scored against the eval set (`docs/research/eval-set.md`),
-   not "tests pass". Name the eval ids the slice covers. The score comes from
-   `bun scripts/eval.ts`, which runs the `*.eval.ts` cases sitting beside the
-   code. A case the slice does not cover is `skip:` with a reason — never a
-   silent omission, because a skip that vanishes reads as a pass.
-
-## Spec
-
-A **delta** on the spine, not a replacement. Target 250 words, never more than
-400. Do not restate Problem / Outcome / the EARS lines.
-
-Write `docs/plans/<feature-id>-<slug>-spec.md` (e.g. `F2-reconciliation-spec.md`).
-If the feature has `linear:`, also put the same spec on that issue as a comment
-and do not paraphrase the criteria.
-
-```markdown
-# F2 · Reconciliation view
-
-Spine: docs/journeys/<name>.yaml — serves J1.S3, J2.S1
-Criteria: the EARS on those steps (not restated).
-
-## Behavior
-- Only contracts the spine did not already say.
-
-## Slices
-1. **F2.1** — thin slice: one actor, those steps, real data, one test per
-   cited step (`it("J1.S3: …")`).
-2. **F2.2** — hardening only if F2.1 cannot carry it.
-
-## Out of scope
-- Only exclusions not already in the design doc.
-```
-
-One slice when the feature is one dependency-free path. Several slices only when
-order matters or one agent context cannot hold the whole thing. First slice is
-always the walking skeleton through the served steps.
-
-Show a multi-slice list and wait for one confirmation. A single slice: write it
-and continue.
-
-## Do not
-
-- Dump tickets, file paths, or implementation walkthroughs.
-- Create a backlog of sub-issues “in case”. Sub-issues happen when `build`
-  picks up a slice — see `linear-sync`.
-- Name a host or a model as the place this must run.
-- Vendor a second story of the product. If Linear and the spec disagree, the
-  spine wins.
-
-When the spec is written, `/next` runs `build` on the first slice unless they
-stop you.
+Confirm only unsettled scope/tradeoffs, not the mechanical ticket split of accepted behavior. If Linear is enabled, attach the exact spec to its issue without rewriting EARS. Do not create speculative sub-issues. Return the plan to `/next`, which invokes build; no additional go is needed.

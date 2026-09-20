@@ -1,0 +1,139 @@
+import { required } from "./config.js";
+import type { Manifest } from "./contract.js";
+import type { Coverage } from "./coverage.js";
+import type { VerifiedDeployment } from "./deployment.js";
+import { file, GitHubError, github, head } from "./github.js";
+import type { Recommendation } from "./jev.js";
+
+export type Attempt = {
+  agentId: string;
+  phase: "build" | "review" | "integrated-review" | "deployed-review";
+  base: string;
+  startingRef?: string;
+  startedAt: number;
+  runId?: string;
+  posted?: boolean;
+  candidate?: string;
+  branch?: string;
+};
+export type Batch = {
+  workflowOwner?: string;
+  issue: number;
+  intakeHash: string;
+  commit: string;
+  manifestPath: string;
+  manifest: Manifest;
+  coverage?: Coverage;
+  deployment?: VerifiedDeployment & { startedAt: number };
+  deployedReview?: { commit: string; url: string; review: unknown };
+  integratedReview?: { commit: string; review: unknown };
+  startedAt: number;
+  status: "running" | "paused" | "blocked" | "review" | "mvp-complete" | "slice-complete";
+  candidate: string;
+  accepted: string[];
+  attempts: Record<string, number>;
+  revisions?: Record<string, number>;
+  unreadable?: Record<string, number>;
+  active?: Attempt;
+  error?: string;
+  pr?: string;
+  feedback?: string;
+  resultBranch?: string;
+  triage?: { key: string; result: Recommendation };
+  evidence: { job: string; commit: string; review: unknown }[];
+};
+export type HistoryEntry = {
+  archivedAt: number;
+  reason: string;
+  issue: number;
+  status: Batch["status"];
+  error?: string;
+  candidate?: string;
+  accepted?: string[];
+};
+export type OwnerPing = {
+  key: string;
+  issue: number;
+  channel?: string;
+  ts?: string;
+  command?: "hold" | "retry" | "reject";
+};
+export type LastFailure = {
+  at: number;
+  issue: number;
+  stage: "dispatch" | "build" | "review" | "integration";
+  error: string;
+  commit?: string;
+  manifestPath?: string;
+};
+export type State = {
+  version: 1;
+  batch?: Batch;
+  history?: HistoryEntry[];
+  lastFailure?: LastFailure;
+  lease?: { owner: string; until: number };
+  ownerPing?: OwnerPing;
+};
+
+export function archiveBatch(state: State, reason: string) {
+  if (!state.batch) return;
+  const batch = state.batch;
+  state.history = [
+    {
+      archivedAt: Date.now(),
+      reason,
+      issue: batch.issue,
+      status: batch.status,
+      error: batch.error,
+      candidate: batch.candidate,
+      accepted: batch.accepted,
+    },
+    ...(state.history ?? []),
+  ].slice(0, 20);
+  state.batch = undefined;
+  state.lease = undefined;
+}
+
+/** Same issue and intake may resume a blocked/paused batch, or take over a running one after a new authorized label. */
+export function isAuthorizedResume(batch: Batch, issue: number, intakeHash: string) {
+  if (batch.issue !== issue || batch.intakeHash !== intakeHash) return false;
+  if (batch.status === "blocked" || batch.status === "paused") return true;
+  return batch.status === "running" && !batch.error;
+}
+
+/** A different issue or intake replaces the current checkpoint, even while it is running. */
+export function supersedesBatch(batch: Batch, issue: number, intakeHash: string) {
+  return !isAuthorizedResume(batch, issue, intakeHash);
+}
+const branch = "factory/state";
+const path = "factory-state.json";
+export async function readState(): Promise<{ state: State; sha?: string }> {
+  try {
+    const f = await file(path, branch);
+    return { state: JSON.parse(f.text), sha: f.sha };
+  } catch (e) {
+    if (e instanceof GitHubError && e.status === 404) return { state: { version: 1 } };
+    throw e;
+  }
+}
+export async function saveState(state: State, previous?: string) {
+  if (!previous) {
+    try {
+      await github("/git/refs", "POST", {
+        ref: `refs/heads/${branch}`,
+        sha: await head(required("FACTORY_BASE_BRANCH")),
+      });
+    } catch (e) {
+      if (!(e instanceof GitHubError && e.status === 422)) throw e;
+    }
+  }
+  // GitHub's contents SHA is the compare-and-swap token. Competing transitions
+  // cannot both win. Remote identities are saved before their side effects.
+  const result = await github<{ content: { sha: string } }>(`/contents/${path}`, "PUT", {
+    branch,
+    message: "factory: checkpoint batch",
+    sha: previous,
+    content: Buffer.from(JSON.stringify(state, null, 2)).toString("base64"),
+  });
+  return result.content.sha;
+}

@@ -216,6 +216,41 @@ export function validateSpine(spine: Spine): { errors: string[]; warnings: strin
   return { errors, warnings };
 }
 
+/**
+ * Route shells for wave 0.
+ *
+ * `src/app` is shared surface, and a slice touching shared surface runs alone.
+ * Every feature also needs a route, so if feature slices create their own pages
+ * the whole factory serialises on `src/app` and parallel agents are fiction.
+ * Wave 0 therefore lands one placeholder page per screen, and feature slices
+ * only ever touch their own folder.
+ *
+ * This prints what wave 0 has to create; it writes nothing, because the kit has
+ * no apps/ until scaffold.
+ */
+export function routes(spine: Spine): string[] {
+  const owner = new Map<string, Set<string>>();
+  for (const j of spine.journeys ?? []) {
+    for (const st of j.steps ?? []) {
+      if (!st.screen) continue;
+      const feature = (spine.features ?? []).find((f) => f.serves?.includes(st.id));
+      if (!owner.has(st.screen)) owner.set(st.screen, new Set());
+      if (feature?.id) owner.get(st.screen)?.add(feature.id);
+    }
+  }
+  const out: string[] = [];
+  for (const sc of spine.screens ?? []) {
+    const route = sc.route ?? `/${sc.id}`;
+    const path = `apps/web/src/app${route.replace(/\/$/, "")}/page.tsx`;
+    const serves = [...(owner.get(sc.id) ?? [])].sort();
+    const states = sc.states?.length ? sc.states.join(", ") : "—";
+    out.push(
+      `${path}\n  screen ${sc.id} · states: ${states} · features: ${serves.join(", ") || "none yet"}`,
+    );
+  }
+  return out;
+}
+
 const esc = (t: string) => t.replace(/"/g, "'").replace(/\|/g, "\\|");
 const cell = (t?: string) => (t ? esc(t) : "—");
 
@@ -433,15 +468,27 @@ async function loadSpine(path: string): Promise<Spine> {
 
 if (import.meta.main) {
   const [cmd, file, ...rest] = process.argv.slice(2);
-  if (!cmd || !["validate", "render", "ids"].includes(cmd)) {
+  if (!cmd || !["validate", "render", "ids", "routes"].includes(cmd)) {
     console.error(
-      "usage: bun journey.ts <validate|render|ids> [spine.yaml|docs/journeys] [--out <file.md>] [--complete]",
+      "usage: bun journey.ts <validate|render|ids|routes> [spine.yaml|docs/journeys] [--out <file.md>] [--complete]",
     );
     process.exit(2);
   }
-  if ((cmd === "validate" || cmd === "render") && !file) {
-    console.error("usage: bun journey.ts <validate|render> <spine.yaml> [--out <file.md>]");
+  if ((cmd === "validate" || cmd === "render" || cmd === "routes") && !file) {
+    console.error("usage: bun journey.ts <validate|render|routes> <spine.yaml> [--out <file.md>]");
     process.exit(2);
+  }
+
+  if (cmd === "routes") {
+    const spine = await loadSpine(file as string);
+    const lines = routes(spine);
+    if (!lines.length) {
+      console.log("no screens on this spine — nothing for wave 0 to shell.");
+      process.exit(0);
+    }
+    console.log("wave 0 route shells (create these before any feature slice):\n");
+    for (const l of lines) console.log(`  ${l}\n`);
+    process.exit(0);
   }
 
   if (cmd === "ids") {
@@ -480,7 +527,7 @@ if (import.meta.main) {
           texts.push(await Bun.file(`${dir}/${path}`).text());
         }
       } catch {
-        // empty kit may not have composed apps/ yet
+        // empty kit may not have scaffolded apps/ yet
       }
     }
     const cited = citedStepIds(texts);

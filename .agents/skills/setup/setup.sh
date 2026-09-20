@@ -27,11 +27,11 @@ env_put() { # env_put FILE KEY VALUE — idempotent upsert
 
 # ── 0. preflight ─────────────────────────────────────────────────────────────
 stage "Checking tools"
-NEED_DB="$(bun scripts/lib/compose-need.mjs db)"
-NEED_AUTH="$(bun scripts/lib/compose-need.mjs auth)"
-NEED_ANALYTICS="$(bun scripts/lib/compose-need.mjs analytics)"
-NEED_EMAIL="$(bun scripts/lib/compose-need.mjs email)"
-NEED_FILES="$(bun scripts/lib/compose-need.mjs files)"
+NEED_DB="$(bun scripts/lib/scaffold-need.mjs db)"
+NEED_AUTH="$(bun scripts/lib/scaffold-need.mjs auth)"
+NEED_ANALYTICS="$(bun scripts/lib/scaffold-need.mjs analytics)"
+NEED_EMAIL="$(bun scripts/lib/scaffold-need.mjs email)"
+NEED_FILES="$(bun scripts/lib/scaffold-need.mjs files)"
 missing=0
 for t in gh vercel git; do
   if have "$t"; then good "$t"; else warn "$t not found"; missing=1; fi
@@ -39,7 +39,7 @@ done
 if [ "$NEED_DB" = 1 ]; then
   if have neonctl; then good "neonctl"; else warn "neonctl not found"; missing=1; fi
 else
-  good "neonctl skipped — no db surface in docs/kit/composed.yaml"
+  good "neonctl skipped — no db surface in docs/kit/scaffolded.yaml"
 fi
 if [ "$missing" = 1 ]; then
   say "Install what is missing, then re-run."
@@ -91,7 +91,7 @@ fi
 # ── 2. neon ──────────────────────────────────────────────────────────────────
 stage "Neon (one project, staging + production databases)"
 if [ "$NEED_DB" != 1 ]; then
-  say "skipped — composed.yaml has no db surface"
+  say "skipped — scaffolded.yaml has no db surface"
 else
 if [ -z "$NEON_REGION" ]; then
   NEON_REGION="$(ask 'Neon region [aws-us-east-1]:')"
@@ -165,52 +165,20 @@ fi
 # ── 4. clerk ─────────────────────────────────────────────────────────────────
 stage "Clerk"
 if [ "$NEED_AUTH" != 1 ]; then
-  say "skipped — composed.yaml has --without auth, or no web surface"
+  say "skipped — scaffolded.yaml has --without auth, or no web surface"
 else
-if ! have clerk; then
-  warn "clerk CLI not found — skipping"
-  say "Install with: bun add -g @clerk/clerk-cli   (then: clerk auth login)"
-elif ! clerk whoami >/dev/null 2>&1; then
-  warn "clerk not authenticated"
-  say "Run: clerk auth login   then re-run this script"
-else
-  good "clerk authenticated"
-  linked=$(clerk whoami 2>/dev/null | bun scripts/lib/json-pick.mjs clerk-linked 2>/dev/null || echo no)
-  if [ "$linked" = yes ]; then
-    good "project already linked to a Clerk application"
-  else
-    say "This project is not linked to a Clerk application yet."
-    if confirm "Create a new Clerk app named ${PRODUCT}?"; then
-      clerk apps create "$PRODUCT" && good "created $PRODUCT" || warn "create failed"
-      clerk link 2>/dev/null && good "linked" || warn "link failed — run 'clerk link' manually"
-    elif confirm "Link an existing app instead?"; then
-      clerk link 2>/dev/null && good "linked" || warn "link failed"
-    else
-      say "skipped"
-    fi
+  # Runtime keys are written by Clerk; never echoed into the agent context.
+  if ! bun scripts/lib/setup-clerk.ts "$PRODUCT"; then
+    warn "Clerk setup incomplete. Run bunx clerk@3.3.0 auth login, or reconcile .clerk/provisioning.json."
+    exit 1
   fi
-
-  # The CLI writes the env file itself: keys never pass through this script,
-  # never appear in output, and never reach an agent's context.
-  if clerk whoami 2>/dev/null | grep -q '"linked": *true'; then
-    clerk env pull --file "$ENVFILE" >/dev/null 2>&1 \
-      && good "development keys written to $ENVFILE" \
-      || warn "env pull failed — run: clerk env pull --file $ENVFILE"
-    have clerk && clerk doctor >/dev/null 2>&1 && good "clerk doctor passed" || true
-
-    if confirm "Enable organizations (B2B — teams, seats, roles)?"; then
-      clerk enable orgs && good "organizations enabled" || warn "enable orgs failed"
-    else
-      say "organizations off — enable later with: clerk enable orgs"
-    fi
-  fi
-fi
+  say "Next: configure dedicated test users and Cursor Runtime Secrets using docs/kit/cloud-auth.md."
 fi
 
 # ── 5. posthog ───────────────────────────────────────────────────────────────
 stage "PostHog (errors + analytics)"
 if [ "$NEED_ANALYTICS" != 1 ]; then
-  say "skipped — composed.yaml has --without analytics, or no web surface"
+  say "skipped — scaffolded.yaml has --without analytics, or no web surface"
 else
   say "Create a project at https://app.posthog.com (EU: https://eu.posthog.com)."
   say "Exception autocapture is a PostHog project setting. Keys stay in $ENVFILE."
@@ -229,7 +197,7 @@ fi
 # ── 6. resend ────────────────────────────────────────────────────────────────
 stage "Resend (email)"
 if [ "$NEED_EMAIL" != 1 ]; then
-  say "skipped — composed.yaml has --without email, or no web surface"
+  say "skipped — scaffolded.yaml has --without email, or no web surface"
 else
   say "Create an API key at https://resend.com/api-keys. Do not invent a from-address here."
   key="$(ask 'RESEND_API_KEY, or blank to skip:')"
@@ -244,7 +212,7 @@ fi
 # ── 7. blob ──────────────────────────────────────────────────────────────────
 stage "Vercel Blob (files)"
 if [ "$NEED_FILES" != 1 ]; then
-  say "skipped — composed.yaml has --without files, or no web surface"
+  say "skipped — scaffolded.yaml has --without files, or no web surface"
 else
   say "Create a Blob store on the Vercel project, then paste the read-write token."
   say "Dashboard: Storage → Blob. Do not create the store from this script."

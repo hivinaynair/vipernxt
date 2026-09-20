@@ -6,30 +6,8 @@ description: >-
   normalised pile. Not the salvage phase itself.
 ---
 
-Read [pile.md](../salvage/pile.md) before working. One page named in the task, from
-`docs/research/salvage-inbox/pages/`. Do not open a second page. Do not write files —
-the parent writes the transcript.
+Transcribe the one assigned page; no file writes or unrelated pages. Use [pile.md](../salvage/pile.md) for input conventions.
 
-## Transcribe, do not interpret
+Preserve original-language labels and values, blank fields, corrections, crossed-out entries, marginal notes, stamps and footer text. Do not translate, tidy away ambiguity or guess unreadable values. Name cut-off/rotated/unreadable regions.
 
-An image cannot be cited by line, so the transcript is what makes every later phase able
-to point at a fact. Return the page as text:
-
-- Field names and labels **exactly as written**, in the original language, untranslated.
-  If the form says *pick ticket*, the transcript says *pick ticket*.
-- Every filled-in value, including the ones that look like mistakes.
-- Crossings-out, corrections, and anything handwritten in a margin — these are the most
-  valuable marks on the page. Someone worked around the system there.
-- Stamps, printed numbers, registration ids, statutory text in the footer.
-- Note which fields are **blank**. An always-empty "required" field is a finding.
-
-If the image is unreadable, sideways, or cut off, say so and name the file. Do not guess
-at a value. Do not translate. Do not tidy the layout into something neater than it is.
-
-## Return
-
-1. The transcript, numbered by line, so facts can cite `receipt-03.jpg → line 7`.
-2. A one-line caption for `INVENTORY.md`.
-3. What this page proves about the domain — facts only, never structure. Its layout is
-   not a specification for a screen.
-4. What it raises that it cannot answer.
+Return numbered transcript lines, one INVENTORY caption, sourced domain facts and unanswered questions. Layout is evidence, not a UI specification. The parent saves the transcript with provenance and appropriate privacy controls.

@@ -6,9 +6,8 @@ committed, because cloud agents get a fresh clone and nothing else.
 ```yaml
 product: acme
 started: 2026-09-11
-size: engagement           # engagement (default) | idea | new-feature | small-change
+size: engagement           # engagement (default) | new-feature | small-change
                            # new-product is an alias of engagement
-                           # idea = a claim with no site; phases 2+ stay shut
 
 engagement:
   site: North depot
@@ -37,7 +36,10 @@ outcome:                   # optional; set only when the engagement stops for go
 
 clip:
   kind: replace              # replace | wrap — set at U5
-surfaces: [web]              # web and/or agent; compose reads this
+  acceptance: pending        # pending | accepted
+  # acceptance_decision: H8   # decision containing the user's acceptance
+  # evidence: docs/plans/first-slice-evidence.md
+surfaces: [web]              # web and/or agent; scaffold reads this
 
 prior_art:                   # optional; miners run on create
   - path: /abs/path/to-legacy
@@ -49,6 +51,7 @@ phases:
   1: { name: research,     status: done,    artifact: docs/research/before-we-build.md }
   2: { name: field,        status: blocked, mode: pile, artifact: docs/product/homework/02-site-visit.md }
   3: { name: shape,        status: pending }
+  3.5: { name: ontology,    status: pending }
   4: { name: journeys,     status: pending }
   5a: { name: structure,   status: pending }
   5b: { name: visual,      status: pending, optional: true }
@@ -56,7 +59,7 @@ phases:
 
 clone:
   customized: pending
-  composed: pending            # compose.mjs --apply on a named clone
+  scaffolded: pending            # scaffold.mjs --run or --verify succeeds
   setup: deferred              # not before they accept the clip
   tickets: deferred            # Linear after the clip
 
@@ -122,11 +125,11 @@ If it does not, that is a contradiction to report, not to fix silently.
 `done` but the package is still `vipernxt`, that is drift — report it, do not
 silently flip the flag.
 
-**`clone.composed`.** `pending` until `compose.mjs --apply` on the named clone.
-That script flips it to `done`.
+**`clone.scaffolded`.** `--apply` leaves it `pending`. Only successful `--run` or
+`--verify` sets it to `done`, with `status: verified` in `docs/kit/scaffolded.yaml`.
 
 **`clip.kind` / `surfaces`.** Set at U5. `replace` or `wrap`. Surfaces are keys in
-`docs/kit/recipe.yaml` (`web`, `agent`, `db`, `ui`). `clone.composed: done` with
+`docs/kit/recipe.yaml` (`web`, `agent`, `db`, `ui`). `clone.scaffolded: done` with
 an empty `surfaces` list is drift.
 
 **`clone.setup` / `clone.tickets`.** Default `deferred` on a new engagement. The first
@@ -139,10 +142,12 @@ vs **Waiting on the site**. "Go and find a customer" is `kind: gather`, `who: fd
 it is a fact about the real world and finding it is the FDE's job. There is no third
 persona.
 
-**`size: idea`.** A claim with no site. Phase 0 may run as a category scan; phases 2
-and later stay `pending` and `shape` may not be `done`. `check-drift` fails on an idea
-that has been shaped, because a design doc written against nobody is the failure the
-whole loop exists to prevent. Leaving `size:` blank is not the same thing — set it.
+**`engagement.site` is the entry condition.** A named person other than the builder independently has the
+problem. This can be a remote participant; it does not require a physical site. Without it, phase 0 and bounded category research may run; field and product phases stay pending:
+`check-drift` fails on any of `field`, `shape`, `journeys`, `build` that is not
+`pending` while the site is empty, because no customer means no last-ten-cases, which
+means no eval set, which means there is nothing to score a slice against. A design doc
+written against nobody is the failure the whole loop exists to prevent.
 
 **`outcome:`.** Set only when the engagement stops for good: `parked` (no customer, or
 not now) or `buy-instead` (the category already sells it). Always with a `why`. An
@@ -155,5 +160,7 @@ If `idea:` contradicts it, rewrite `idea:` or set `idea_outdated: true`.
 **`ui_writes`.** Optional. When omitted, a Cursor hook denies writes under
 `apps/*/src/app` and `apps/*/src/features` until `shape` is `done`. Set
 `ui_writes: allow` to open that tree early, or `ui_writes: deny` to keep it closed
-after shape. No state file = boilerplate, not gated. A **probe** (eval replay,
-baseline count) is not product UI — keep it out of those trees.
+after shape. No state file = boilerplate, not gated. An **instrument** (eval replay,
+baseline count — U4) is not product UI — keep it out of those trees.
+
+**`clip.acceptance`.** Set `accepted` only after the user accepts the working slice (or explicitly authorizes a synthetic review). Record `acceptance_decision` and an existing `evidence` artifact. An approved design alone does not accept the implementation.

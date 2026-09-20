@@ -17,7 +17,7 @@ Do not add a vendor because a 2026 stack blog named it. Add one when a dry-run p
 | Judgment step | Probe replay on the eval set; human-in-the-loop before the SoR write | Untraced prompt in a route |
 | Human-only step | Leave it with the person; log that it happened | "AI assist" chrome |
 | Clip UI | One journey, seeded with the eval set | The incumbent's full menu |
-| Compose the stack | `bun scripts/compose.mjs --add web` (recipe + overlays). CLIs first, then `--apply`. | A second GitHub template; free-hand `create-next-app`; overlay copy before the CLI |
+| Scaffold the stack | `bun scripts/scaffold.mjs --add web` (recipe + overlays). Use `--run`, or CLIs → `--apply` → install → `--verify`. | A second GitHub template; free-hand `create-next-app`; overlay copy before the CLI |
 | Hosted preview | `setup.sh` after they accept the clip (`NEON_REGION` for EU/Asia) | Provisioning before U5; a per-region template repo |
 | Kit improvement | A playbook/script change with no site name | Copying a customer's ontology into this repo |
 

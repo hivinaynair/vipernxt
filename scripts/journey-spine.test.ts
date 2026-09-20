@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { nextEdges, render, validateSpine } from "./journey.ts";
+import { nextEdges, render, routes, validateSpine } from "./journey.ts";
 
 const base = {
   product: "ledgerly",
@@ -237,5 +237,55 @@ describe("kit examples", () => {
       const { errors } = validateSpine(spine as Parameters<typeof validateSpine>[0]);
       expect(errors, name).toEqual([]);
     }
+  });
+});
+
+describe("routes", () => {
+  const spine = {
+    ...base,
+    screens: [
+      { id: "period", route: "/s/[society]/[period]", states: ["open", "complete"] },
+      { id: "queue", route: "/queue", states: ["empty"] },
+    ],
+    journeys: [
+      {
+        id: "J1",
+        title: "Close",
+        steps: [
+          { id: "J1.S1", title: "open", screen: "period" },
+          { id: "J1.S2", title: "review", screen: "period" },
+          { id: "J1.S3", title: "no screen" },
+          { id: "J1.S4", title: "queued", screen: "queue" },
+        ],
+      },
+    ],
+    features: [
+      { id: "F1", title: "Checklist", serves: ["J1.S1"] },
+      { id: "F2", title: "Proposals", serves: ["J1.S2"] },
+      { id: "F3", title: "Queue", serves: ["J1.S4"] },
+    ],
+  };
+
+  it("emits one shell per screen, under src/app", () => {
+    const out = routes(spine as never);
+    expect(out).toHaveLength(2);
+    expect(out[0]).toContain("apps/web/src/app/s/[society]/[period]/page.tsx");
+    expect(out[1]).toContain("apps/web/src/app/queue/page.tsx");
+  });
+
+  it("names every feature that lands on a shared screen", () => {
+    // The reason wave 0 owns the shell: two features on one route would
+    // otherwise both have to touch src/app, and src/app runs alone.
+    const out = routes(spine as never);
+    expect(out[0]).toContain("features: F1, F2");
+  });
+
+  it("says so when a screen has no feature yet", () => {
+    const out = routes({ ...spine, features: [] } as never);
+    expect(out[0]).toContain("none yet");
+  });
+
+  it("is empty when the spine has no screens", () => {
+    expect(routes({ ...spine, screens: [] } as never)).toHaveLength(0);
   });
 });

@@ -56,21 +56,21 @@ describe("status", () => {
     const path = join(dir, "state.yaml");
     writeFileSync(
       path,
-      `engagement:\n  site: North depot\nclone:\n  customized: pending\n  composed: pending\nphases:\n  3: { name: shape, status: done }\n`,
+      `engagement:\n  site: North depot\nclone:\n  customized: pending\n  scaffolded: pending\nphases:\n  3: { name: shape, status: done }\n`,
     );
     const out = run(["--state", path]);
     expect(out).toContain("names the clone next");
   });
 
-  test("after customize, points at compose", () => {
+  test("after customize, points at scaffold", () => {
     dir = mkdtempSync(join(tmpdir(), "status-"));
     const path = join(dir, "state.yaml");
     writeFileSync(
       path,
-      `engagement:\n  site: North depot\nclip:\n  kind: wrap\nsurfaces: [web, agent]\nclone:\n  customized: done\n  composed: pending\nphases:\n  3: { name: shape, status: done }\n`,
+      `engagement:\n  site: North depot\nclip:\n  kind: wrap\nsurfaces: [web, agent]\nclone:\n  customized: done\n  scaffolded: pending\nphases:\n  3: { name: shape, status: done }\n`,
     );
     const out = run(["--state", path]);
-    expect(out).toContain("composes the stack next");
+    expect(out).toContain("scaffolds the stack next");
   });
 });
 
@@ -86,7 +86,7 @@ describe("a stopped engagement", () => {
     // It used to print Stopped and then carry on with "Waiting on you" and
     // "next: research", which contradicts the stop.
     const out = state(
-      `size: idea\noutcome:\n  kind: buy-instead\n  why: seven vendors already ship this\n  date: 2026-09-11\nheld:\n  - id: H1\n    kind: gather\n    who: fde\n    what: Who is the customer?\n    status: open\nphases:\n  0: { name: salvage, status: blocked }\n  1: { name: research, status: pending }\n`,
+      `size: engagement\noutcome:\n  kind: buy-instead\n  why: seven vendors already ship this\n  date: 2026-09-11\nheld:\n  - id: H1\n    kind: gather\n    who: fde\n    what: Who is the customer?\n    status: open\nphases:\n  0: { name: salvage, status: blocked }\n  1: { name: research, status: pending }\n`,
     );
     expect(out).toContain("**Stopped**");
     expect(out).toContain("buy-instead (2026-09-11)");
@@ -97,16 +97,8 @@ describe("a stopped engagement", () => {
   });
 
   test("says so when a stop has no recorded reason", () => {
-    const out = state(`size: idea\noutcome:\n  kind: parked\nphases: {}\n`);
+    const out = state(`size: engagement\noutcome:\n  kind: parked\nphases: {}\n`);
     expect(out).toContain("no reason recorded");
-  });
-
-  test("does not advertise a phase the idea route keeps shut", () => {
-    const out = state(
-      `size: idea\nphases:\n  0: { name: salvage, status: blocked }\n  1: { name: research, status: done }\n  2: { name: field, status: pending }\n`,
-    );
-    expect(out).not.toContain("next: field");
-    expect(out).toContain("next: name a site");
   });
 
   test("an engagement still gets its real next phase", () => {
@@ -116,11 +108,11 @@ describe("a stopped engagement", () => {
     expect(out).toContain("next: field");
   });
 
-  test("an idea that has not stopped still reports normally", () => {
+  test("an engagement that has not stopped still reports normally", () => {
     const out = state(
-      `size: idea\nphases:\n  0: { name: salvage, status: blocked }\n  1: { name: research, status: pending }\n`,
+      `size: engagement\nengagement:\n  site: North depot\nphases:\n  0: { name: salvage, status: blocked }\n  1: { name: research, status: pending }\n`,
     );
     expect(out).not.toContain("**Stopped**");
-    expect(out).toContain("not an engagement yet");
+    expect(out).toContain("site: North depot");
   });
 });

@@ -7,142 +7,44 @@ description: >-
   bug fixes against a cited step. Not for shaping or rewriting the journey.
 ---
 
-# build
+# Implement one planned slice
 
-Implement **one** slice. Do not widen it. The contract is the feature's served
-steps and the spec `plan` wrote — or, on the fast path, the EARS on those steps.
+Read [execution contract](../CONTRACT.md), AGENTS.md, the served spine criteria, spec and ontology. Output: implementation, checks, eval evidence and a reviewable branch/PR tied to the tested commit. Do not change the accepted story or expand the slice.
 
-`/next` invokes this. They may also name a feature id or a slice (`F2.1`).
+Read the slice’s approved data-surface contract before edits. Do not invent business fields, displayed columns, calculations or validation rules. Missing material detail returns to `/next`; ordinary technical choices within the contract remain yours.
 
-## Host
+## Isolation and dependencies
 
-Does not matter which product, model or machine is running. Never refuse because
-the session is local, remote or a different vendor, and never tell them to
-switch hosts. If a tool is missing (browser, preview URL, a vendor CLI), skip it
-and say what you could not verify. The merge bar is the gate, not a cloud.
+Use an isolated worktree. With a verified product remote, fetch and branch from staging, then rebase onto latest staging before final verification. For the first local clip before provisioning, use a local staging branch/worktree; do not push to an inherited kit origin. One shared-surface slice at a time; parallel feature work needs disjoint ownership. Ports and databases also need isolation.
 
-## Before the first edit
+Wave 0 owns schema, route shells, seed data and minimal layout. A missing column/page is a dependency to return to `/next`, not permission to edit shared surface from a feature worker. Integration wiring belongs to a scheduled shared-surface step. Feature folders never import each other; hoist a reusable mechanic on its second caller without moving domain policy or hidden DB access into shared utilities.
 
-1. `shape` is `done` (or `ui_writes: allow`). Do not bypass the UI gate.
-2. Read the spec (`docs/plans/F<n>-*-spec.md`) if it exists. No spec and one
-   obvious slice is the fast path — build from the spine EARS. If the story is
-   loose, stop; `/next` reopens `journeys`.
-3. Read `AGENTS.md`, the served steps, and the code you will touch.
-4. Read `docs/product/ontology.md`. Its canonical terms are the **only** names
-   allowed — tables, types, components, routes, UI copy. A rejected synonym in
-   the code is a defect, not a style preference.
-5. New screen, component or state with its shape still open: run `prototype`
-   first. Do not invent the layout in production.
+Use accepted terminology in tables, types, routes and copy. A material unresolved component choice may use `prototype`; ordinary implementation choices do not need three variants.
 
-## Isolate
+## Verify
 
-One slice, one branch, one agent; up to five at once.
+For affected forms/tables, verify the approved surface IDs: fields and columns, conditional/required rules, permissions, error recovery, search/sort/filter behavior and persisted effects. Check realistic missing/long values and the representative exception; visual presence alone is insufficient.
 
-1. `git fetch origin`, then **scope check**: `gh pr list` and `gh pr diff <n>
-   --name-only`. If another slice is editing the files you need, stop and say
-   so. Do not race it.
-2. Branch from `staging` — never `main`. One branch per slice, not per file.
-3. **Rebase onto latest `staging` before the merge bar**, not just at branch
-   time. Five parallel agents means your base went stale while you worked.
+Tests exercise actual behavior and cite journey step IDs. Run the merge bar:
 
-`AGENTS.md` has the parallel rules: a slice touching shared surface runs alone.
-Schema is not your job — tables land in wave 0. If your slice needs a column
-that does not exist, stop and hand back.
+```sh
+bun run check-types && bun run check-boundaries && bun run check-tokens && bun run check-journeys && bun test
+```
 
-Worktrees isolate files, not ports, databases or lockfiles. Confirm a dev server
-is *your* process; regenerate a conflicted lockfile rather than hand-merging.
+Also run the affected production build and a real critical browser path for an app slice. Use `next-dev-loop` or another available real-browser adapter. Missing required behavior evidence leaves the slice unverified. Optional capabilities may be skipped with a reason, never described as passing.
 
-## Do
+Run `bun scripts/eval.ts --require-cases`; cases live beside implementation in `*.eval.ts`. Each declared case runs or has an explicit skip reason. Report score, denominator, failures, skips and real/synthetic provenance. Domain unit checks do not prove persistence or business improvement. A low outcome score is a review finding; a broken/missing harness is not a successful check.
 
-1. Implement only this slice, in `apps/*/src/features/<slug>/`. Do not import
-   another feature.
-2. Tests name the step: `it("J1.S3: …")`. Cite the steps this slice landed.
-   Later `features.serves` steps stay uncited until they are built.
-3. Merge bar before you offer a PR:
+Final clip: `bun run check-journeys -- --complete`, combined-product browser journeys and outcome review. For bug fixes capture the failing behavior before editing. Screenshot comparisons use identical seeded data. Repeated green command exit without complete test output is not evidence.
 
-   ```sh
-   bun run check-types && bun run check-boundaries && bun run check-tokens && bun run check-journeys && bun test
-   ```
+## Integrate and return
 
-4. Then score it: `bun scripts/eval.ts`. The bar above says the code does what
-   the spine specified; the score says whether the product would have caught
-   what actually went wrong. A slice can be green and score 2/10 — that is a
-   finding for the checkpoint, not a merge blocker, so the score never gates
-   the PR. Put it in the PR body.
+If remote delivery is authorized, open the PR against staging; cite step IDs, eval IDs, tested commit and evidence. Use a body file/structured argument for multiline text. A reviewer push invalidates prior evidence: rerun against the current head. Integration is serial and the merged combination must be tested. Production promotion follows the configured release policy.
 
-   `check-journeys` accepts real IDs. Do not pass `--complete` on a slice that
-   left later served steps unbuilt. The last slice of the clip does:
+Return completed, needs-input or blocked with concrete evidence. Two failed repair/check rounds, recurring same-theme fixes, or an unsettled product decision return to `/next` for diagnosis; do not continue an unlimited rewrite loop. Do not call an unmerged/unverified branch a finished product.
 
-   ```sh
-   bun run check-journeys -- --complete
-   ```
+When Cursor Cloud is selected, `/next` dispatches this contract through the factory; local sessions prepare the handoff and inspect evidence.
 
-## Hoisting
+When launched by the factory, the attempt contract owns file scope and verification. Implement only that slice and return; Cursor may commit to its own result branch for transport; the supervisor owns acceptance, review, integration and delivery. Do not open a competing PR or independently publish.
 
-Feature folders are the vertical boundary and a script enforces them. Layering
-inside a feature is your judgement, with one rule:
-
-> **A `check-boundaries` failure is the signal to hoist — never a reason to
-> weaken the rule.**
-
-The trigger is the second caller. The first lives inside a feature; when the
-second appears in a different one, that mechanic has earned promotion to
-`src/shared` (app-local) or a package. Extract the operational "how"; leave the
-domain "why/when" where it belongs.
-
-| Do | Don't |
-|---|---|
-| Extract when a second caller appears | Extract for one caller |
-| Explicit parameters, structured returns | Hidden global state |
-| Return data to the caller | Reach into `@repo/db` from a hoisted module |
-
-## Prove
-
-Evidence, not prose. "It works" is not a claim you make unbacked.
-
-| Have | Capture |
-|---|---|
-| Always | merge-bar output, a test per cited step |
-| Playwright | traces and screenshots |
-| A running app | walk the steps (`next-dev-loop` or equivalent) |
-| A preview URL | `before-and-after` on the changed screen |
-| Nothing visual | measured numbers, output pairs |
-
-Fixing a bug: **capture the "before" while reproducing it, before you fix it.**
-Cheap then, impossible afterwards.
-
-`before-and-after` needs identical seeded data on both sides or every pair reads
-as a change. Authenticated screens are meant to be reachable through
-`/api/preview-login` — **that route is not in the kit yet**, so until it is,
-capture before/after on screens the first slice leaves unauthenticated. State
-what you could not verify. Do not fake a screenshot.
-
-## Ship
-
-Draft PR onto `staging`, never `main`. The body names the **step IDs** that
-landed and links the evidence — a PR that cannot name a step is building
-something the spine does not describe, so stop and hand back.
-
-The bug board may push fixes to your branch. Auto-merge must require green
-**after the last push**, and evidence regenerates if the board pushed —
-otherwise your screenshots describe a build that no longer exists.
-
-## Stop and return
-
-| Stop | Hand back to |
-|---|---|
-| The clip or table is the wrong story | `/next` → `shape` / `journeys` |
-| A product decision the spine did not settle | `/next` (do not invent it) |
-| A column your slice needs is missing | `/next` (schema is wave 0) |
-| The component's look is still open | `prototype`, then continue |
-| Merge bar fails twice | `/next`. Stop editing |
-| Third fix on the same theme | `/next`. The abstraction is wrong |
-| Checks fail | Fix here. Do not declare done |
-
-## Do not
-
-- Implement two features "while you are in there".
-- Rewrite EARS into looser ticket language, or rename a domain term.
-- Leave a `/prototypes/` route after they picked a variant.
-- Merge to `main`, or open a PR against it.
-- Name a host as a requirement or a reason to refuse.
+For authenticated journeys, follow [cloud authentication](../../../docs/kit/cloud-auth.md). Pin the approved access matrix and test actor variable names in the handoff. Use Clerk development identities, verify server-side role and tenant denial, and report missing credentials as blocked rather than bypassing auth.

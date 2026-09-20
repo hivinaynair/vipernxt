@@ -16,131 +16,21 @@ allowed-tools:
   - Bash(which gh)
 ---
 
-## In this repo — read before running
+# Compare the same state before and after
 
-Vendored from [vercel-labs/before-and-after](https://github.com/vercel-labs/before-and-after)
-via [michaelshimeles/skills](https://github.com/michaelshimeles/skills). Four house rules
-override the defaults below:
+Vendored from [vercel-labs/before-and-after](https://github.com/vercel-labs/before-and-after) via [michaelshimeles/skills](https://github.com/michaelshimeles/skills). Use `@vercel/before-and-after`, not the similarly named package.
 
-1. **Never upload to the default host.** `0x0.st` is a public paste server, and these
-   captures carry whatever the seed data shows — names, amounts, phone numbers. Use
-   `IMAGE_ADAPTER=gist`, or attach the PNGs to the PR with `gh`.
-2. **Authenticated screens go through `/api/preview-login`** — which **is not in the kit
-   yet**. `PREVIEW_LOGIN_SECRET` and `SEED_USERS` are the hooks waiting for it. Until it
-   exists, capture screens that do not require a session; the first slice runs before auth
-   lands, so this is usually all of them. When it does exist: `agent-browser` only takes a
-   URL, so the signed-in state has to be addressable as
-   `?key=$K&as=<seat>&next=/screen`, and behind Vercel Deployment Protection add
-   `&x-vercel-protection-bypass=$V&x-vercel-set-bypass-cookie=true` — the cookie param is
-   what keeps the redirect authorised.
-3. **Both sides need identical seeded data.** Before is the `staging` deployment, after is
-   the PR preview. Different data means every pair reads as a change. Dates are frozen in
-   the seed for the same reason.
-4. **Install with `bunx`, not a global npm install.** This repo is Bun-only.
+Establish both URLs/images from the task or verified deployment context. Ask only for a missing baseline. Do not switch branches/stash/start servers merely to invent one. Use identical seed, frozen date, viewport and authentication state. Never assume a preview-login route exists.
 
-# Before-After Screenshot Skill
+Preflight: `which before-and-after` or `bunx @vercel/before-and-after@latest --help`. For protected deployments, use existing authorized test access; never disable protection or expose bypass secrets in artifacts.
 
-> **Package:** `@vercel/before-and-after`
-> Never use `before-and-after` (wrong package).
-
-## Agent Behavior Rules
-
-**DO NOT:**
-- Switch git branches, stash changes, start dev servers, or assume what "before" is
-- Use `--full` unless user explicitly asks for full page / full scroll capture
-
-**DO:**
-- Use `--markdown` when user wants PR integration or markdown output
-- Use `--mobile` / `--tablet` if user mentions phone, mobile, tablet, responsive, etc.
-- Assume current state is **After**
-- If user provides only one URL or says "PR screenshots" without URLs, **ASK**: "What URL should I use for the 'before' state? (production URL, preview deployment, or another local port)"
-
-## Execution Order (MUST follow)
-
-1. **Pre-flight** — `which before-and-after || bunx @vercel/before-and-after@latest --help`
-2. **Protection check** — if `.vercel.app` URL: `curl -s -o /dev/null -w "%{http_code}" "<url>"` (401/403 = protected)
-3. **Capture** — `before-and-after "<before-url>" "<after-url>"`
-4. **Upload** — `./scripts/upload-and-copy.sh <before.png> <after.png> --markdown`
-5. **PR integration** — optionally `gh pr edit` to append markdown
-
-**Never skip steps 1-2.**
-
-## Quick Reference
-
-```bash
-# Basic usage
-before-and-after <before-url> <after-url>
-
-# With selector
-before-and-after url1 url2 ".hero-section"
-
-# Different selectors for each
-before-and-after url1 url2 ".old-card" ".new-card"
-
-# Viewports
-before-and-after url1 url2 --mobile    # 375x812
-before-and-after url1 url2 --tablet    # 768x1024
-before-and-after url1 url2 --full      # full scroll
-
-# From existing images
-before-and-after before.png after.png --markdown
-
-# Via bunx (use full package name!)
-bunx @vercel/before-and-after url1 url2
+```sh
+bunx @vercel/before-and-after <before-url> <after-url>
+# Optional: selector(s), --mobile, --tablet, --size WxH
 ```
 
-| Flag | Description |
-|------|-------------|
-| `-m, --mobile` | Mobile viewport (375x812) |
-| `-t, --tablet` | Tablet viewport (768x1024) |
-| `--size <WxH>` | Custom viewport |
-| `-f, --full` | Full scrollable page |
-| `-s, --selector` | CSS selector to capture |
-| `-o, --output` | Output directory (default: ~/Downloads) |
-| `--markdown` | Upload images & output markdown table |
-| `--upload-url <url>` | Custom upload endpoint (default: 0x0.st) |
+Use full scroll capture only when requested. Existing image pairs are also supported. Read installed help for capture/output flags. Do not use automatic upload flags that send captures to the public 0x0.st default. Local PNGs are the default deliverable; inspect both before returning.
 
-## Image Upload
+Only upload or edit a PR when authorized for that destination. The bundled uploader lives at `.agents/skills/before-and-after/scripts/upload-and-copy.sh`; choose an explicitly permitted adapter/destination rather than its default. A gist is not automatically appropriate for sensitive customer data. Use a body file for PR markdown; preserve existing content.
 
-```bash
-# Default (0x0.st - no signup needed)
-./scripts/upload-and-copy.sh before.png after.png --markdown
-
-# GitHub Gist
-IMAGE_ADAPTER=gist ./scripts/upload-and-copy.sh before.png after.png --markdown
-```
-
-## Vercel Deployment Protection
-
-If `.vercel.app` URL returns 401/403:
-
-1. Check Vercel CLI: `which vercel && vercel whoami`
-2. If available: `vercel inspect <url>` to get bypass token
-3. If not: Tell user to provide bypass token, take manual screenshots, or disable protection
-
-## PR Integration
-
-```bash
-# Check for gh CLI
-which gh
-
-# Get current PR
-gh pr view --json number,body
-
-# Append screenshots to PR body
-gh pr edit <number> --body "<existing-body>
-
-## Before and After
-<generated-markdown>"
-```
-
-If no `gh` CLI: output markdown and tell user to paste manually.
-
-## Error Reference
-
-| Error | Fix |
-|-------|-----|
-| `command not found` | `bunx @vercel/before-and-after@latest` |
-| `could not determine executable` | Use `bunx @vercel/before-and-after` (full name) |
-| 401/403 on .vercel.app | See Vercel protection section |
-| Element not found | Verify selector exists on page |
+Report what changed and any inaccessible state. Different data or missing authentication is a comparison limitation, not a passing visual test.

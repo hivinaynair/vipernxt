@@ -22,6 +22,7 @@
  */
 
 type EvalCaseBase = {
+  evidence?: "real" | "synthetic";
   /** The site's own id for this case (`PBC-14`, `job-2291`). Not an index. */
   id: string;
   title: string;
@@ -83,10 +84,11 @@ export function formatReport(outcomes: EvalOutcome[]): string {
   // slice that skipped six of the site's ten real cases reads as a perfect
   // score, which is the opposite of what happened.
   lines.push(
-    `score: ${s.pass} of ${s.total} real cases handled` +
+    `score: ${s.pass} of ${s.total} cases handled` +
       (s.skip ? ` — ${s.scored} attempted, ${s.skip} out of this slice` : ""),
   );
-  if (s.error) lines.push(`${s.error} case(s) could not run — fix the harness before reading the score.`);
+  if (s.error)
+    lines.push(`${s.error} case(s) could not run — fix the harness before reading the score.`);
   return lines.join("\n");
 }
 
@@ -99,7 +101,8 @@ export async function runCases(cases: EvalCase[]): Promise<EvalOutcome[]> {
       continue;
     }
     try {
-      const ok = await c.run!();
+      if (!c.run) throw new Error("Eval case has neither run nor a skip reason");
+      const ok = await c.run();
       outcomes.push({ ...base, status: ok ? "pass" : "fail" });
     } catch (e) {
       outcomes.push({ ...base, status: "error", detail: (e as Error).message });
@@ -119,19 +122,40 @@ export function duplicateIds(cases: EvalCase[]): string[] {
   return [...dupes].sort();
 }
 
-async function discover(root: string): Promise<EvalCase[]> {
+export async function discover(root: string): Promise<EvalCase[]> {
   const glob = new Bun.Glob("**/*.eval.ts");
   const found: EvalCase[] = [];
+  const { existsSync } = await import("node:fs");
   for (const dir of ["apps", "packages", "e2e"]) {
-    try {
-      for await (const rel of glob.scan(`${root}/${dir}`)) {
-        if (rel.includes("node_modules")) continue;
-        const mod = await import(`${root}/${dir}/${rel}`);
-        const cases = mod.default ?? mod.cases;
-        if (Array.isArray(cases)) found.push(...cases);
+    if (!existsSync(`${root}/${dir}`)) continue;
+    for (const rel of [...glob.scanSync(`${root}/${dir}`)].sort()) {
+      if (rel.split("/").includes("node_modules")) continue;
+      const file = `${root}/${dir}/${rel}`;
+      let cases: unknown;
+      try {
+        const mod = await import(file);
+        cases = mod.default ?? mod.cases;
+      } catch {
+        throw new Error(`Cannot load eval module ${file}`);
       }
-    } catch {
-      // surface not composed yet
+      if (!Array.isArray(cases)) throw new Error(`${file} must export EvalCase[]`);
+      for (const c of cases) {
+        if (
+          !c ||
+          typeof c.id !== "string" ||
+          !c.id.trim() ||
+          typeof c.title !== "string" ||
+          !(
+            (typeof c.run === "function" && c.skip === undefined) ||
+            (typeof c.skip === "string" && c.skip.trim() && c.run === undefined)
+          )
+        ) {
+          throw new Error(
+            `Invalid eval case in ${file}: require id, title, and either run or a nonempty skip reason`,
+          );
+        }
+      }
+      found.push(...cases);
     }
   }
   return found;
@@ -139,7 +163,13 @@ async function discover(root: string): Promise<EvalCase[]> {
 
 if (import.meta.main) {
   const root = process.cwd();
-  const cases = await discover(root);
+  let cases: EvalCase[];
+  try {
+    cases = await discover(root);
+  } catch (error) {
+    console.error((error as Error).message);
+    process.exit(1);
+  }
 
   if (!cases.length) {
     console.log(
@@ -147,7 +177,7 @@ if (import.meta.main) {
         "cases, then a *.eval.ts beside the code that handles them. The first slice\n" +
         "is scored on these, not on the test suite.",
     );
-    process.exit(0);
+    process.exit(process.argv.includes("--require-cases") ? 1 : 0);
   }
 
   const dupes = duplicateIds(cases);

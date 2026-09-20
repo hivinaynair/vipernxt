@@ -1,37 +1,20 @@
-# Kit recipe
+# Stack scaffolding
 
-You do not need a second GitHub template for Next, Clerk, Neon, shadcn, or Eve.
-This folder is the stack. Edit [recipe.yaml](recipe.yaml) when it should change.
-Compose downloads **latest within the pinned majors** and then applies
-[overlays.md](overlays.md).
-
-A site clone after U5:
+[recipe.yaml](recipe.yaml) defines the supported surfaces and vendors; [overlays.md](overlays.md) describes the kit conventions. Name the product clone and approve its design before scaffolding.
 
 ```sh
-bun scripts/compose.mjs --add web --add db          # plan
-# empty-path CLIs from the plan, then:
-bun scripts/compose.mjs --add web --add db --apply  # overlays + env.ts
-# then `commands (after --apply)` — bun add --cwd packages/db / apps/web
+bun run scaffold -- --add web --add db          # read-only plan
+bun run scaffold -- --add web --add db --run    # CLIs, overlays, install, checks
 ```
 
-`--apply` refuses while this repo is still named `vipernxt`. Run the printed
-empty-path CLIs first, then `--apply` to copy `overlays/` and write
-`composed.yaml`, then the `commands (after --apply)` (`bun add --cwd …`).
-`--without auth` drops Clerk from `apps/web/src/env.ts`.
-`--without analytics` / `--without email` / `--without files` drop PostHog,
-Resend, and Vercel Blob the same way. Those keys are optional until setup —
-the local clip runs without them. Setup pastes tokens; it does not create
-the PostHog project, Resend domain, or Blob store.
-The lockfile belongs on the site, not here. This kit does not ship a Next app.
+For manual execution, run the printed empty-path CLIs, repeat the selection with `--apply`, install the printed dependencies, then run `bun run scaffold -- --verify`. `--apply` records `status: configured`; only successful verification sets `clone.scaffolded: done`. Runtime behavior and deployment require separate evidence.
 
-| Want | Do |
-|---|---|
-| Latest Next / shadcn / Eve | Leave `command:` as `@latest`; bump `majors:` when you accept a breaking line |
-| Clerk, Neon, Workflows, PostHog, Resend, Blob | Surfaces + facets in the recipe; `--without auth` / `jobs` / `analytics` / `email` / `files` to drop them |
-| Feature folders, `@/env`, UI gate | Overlays. CLIs will not do this. |
-| EU / Asia | `NEON_REGION` at setup (`aws-eu-central-1`, `aws-ap-southeast-1`, …). Not a template. |
-| Env vars | `setup.sh` writes `.env.playbook` and `.env.local`. Schema stays `apps/web/src/env.ts`. |
-| Agents | `--add agent` → `bunx eve@latest init apps/agent`. Only if U5 named judgment steps. |
+Selection is additive: adding `db` later preserves `web`, `ui`, and previous exclusions. Use `--without auth,jobs,analytics,email,files` at initial selection to omit unwanted facets. Removing an installed facet requires an explicit code/data removal plan. Unknown selections fail.
 
-Do not free-hand `create-next-app` in chat. The script is the plan so two clones
-in the same week get the same layout even if package patch versions differ.
+The Next CLI is pinned and disables its linter and initial install explicitly. The script validates Next/React majors; the generated product lockfile records resolved dependencies. Eve and vendor dependencies still resolve from their recipe specifications, so this is not a fully frozen dependency snapshot.
+
+`src/env.generated.ts` contains vendor keys; `src/env.ts` is the product extension point. Edited generated files fail preflight. Custom entrypoints are preserved; adding new keys to one needs explicit integration. Other edited overlay files are kept and reported.
+
+Selecting `db` generates `.github/workflows/migrate.yml` from [the template](workflows/migrate.yml), ready for Drizzle migrations on staging/main. The bare kit has no active migration workflow. Setup supplies each environment's `DATABASE_URL_UNPOOLED`; CI never falls back to a local database.
+
+Regions are setup flags. Provisioning follows acceptance of the first working slice. Installing a vendor dependency does not prove authentication, background jobs, analytics or deployment works; the relevant slice must wire and test its behavior.
