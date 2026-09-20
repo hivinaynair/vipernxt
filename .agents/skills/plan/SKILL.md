@@ -8,14 +8,12 @@ description: >-
 
 # Plan one spine feature
 
-Input: feature ID, valid spine, accepted design and ontology. Follow [execution contract](../CONTRACT.md). Output: `docs/plans/F<n>-<slug>-spec.md`, target 250 words, maximum 400.
+Input: feature ID, valid spine, accepted design and ontology. Follow [CONTRACT.md](../CONTRACT.md). Output: `docs/plans/F<n>-<slug>-spec.md`, target 250 words, max 400.
 
-Validate the spine; read the feature's served steps/EARS and eval-set IDs. The spec is a delta, not a duplicate Problem/Outcome/criteria document. Record only additional behavior, slice dependencies, cases covered and exclusions not already stated. If a needed step or product decision is missing, return it to `/next`; do not hide new scope in implementation notes.
+Validate the spine. The spec is a delta: extra behavior, slice dependencies, cases, exclusions. Missing steps or product decisions return to `/next`. Forms/tables: link surface IDs from [data-surfaces.md](../shape/data-surfaces.md); do not paste the inventory. Unaffected slices record non-applicability.
 
-For forms, tables or detail views, read the approved `docs/product/data-surfaces.md` using [the contract guide](../shape/data-surfaces.md). Each slice references affected surface IDs and maps their rules to acceptance cases. Missing fields, column meanings, validation or permissions are unresolved product decisions: return them to `/next` before wave 0 or implementation. Do not squeeze the field inventory into the 400-word spec; link it. Unaffected/headless slices record non-applicability.
+Unattended MVP handoff: reconcile every spine criterion in the [coverage catalog](../../../deploy/eve/COVERAGE.md). Foundations before consumers. Mark `first-slice` or `mvp`; only first-slice may exclude criteria with reasons. Plan integrated checks before dispatch.
 
-Before the unattended MVP handoff, reconcile every criterion in the pinned journey spine against the [coverage catalog](../../../deploy/eve/COVERAGE.md), not just this feature. Identify identity, tenancy and authorization dependencies before feature slices; the first useful journey exercises the real access model. Shared foundations run before their consumers. Record every foundation as applicable with prerequisite/consumer IDs, or give a non-applicability reason. Mark the batch `first-slice` or `mvp`; only first-slice batches may exclude criteria with explicit reasons. Plan integrated journey commands and browser checks before dispatch; the final independent review rechecks every criterion, including existing behavior, on the combined candidate.
+Small coherent slices. First slice walks one actor through useful behavior. Each names served steps, eval cases and shared-surface deps. Wave 0 owns schema/routes/seed.
 
-Split into small coherent slices by default. The first walks one actor through useful behavior. About three steps is a sizing prompt, not an arbitrary hard cap. Each slice names served steps, eval cases and shared-surface dependencies. Wave 0 owns schema/routes/seed; feature slices do not invent missing columns or pages.
-
-Confirm only unsettled scope/tradeoffs, not the mechanical ticket split of accepted behavior. If Linear is enabled, attach the exact spec to its issue without rewriting EARS. Do not create speculative sub-issues. Return the plan to `/next`, which invokes build; no additional go is needed.
+Confirm only unsettled scope. Linear: attach the spec, do not rewrite EARS. Return to `/next` — no extra go.
