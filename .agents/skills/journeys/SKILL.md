@@ -12,32 +12,22 @@ description: >-
 
 # Journey spine
 
-Input: approved design doc's Actors, numbered Clip, Journeys table and Screens (if interactive). Output: `docs/journeys/<name>.yaml`; its markdown is generated. Follow [execution contract](../CONTRACT.md). Load [schema](spine-schema.md) when authoring; examples: [screens](example.yaml), [headless wrap](example-wrap.yaml).
+Input: approved design Actors, numbered Clip, Journeys table, Screens. Output: `docs/journeys/<name>.yaml` (markdown is generated). Follow [CONTRACT.md](../CONTRACT.md). Schema: [spine-schema.md](spine-schema.md). Examples: [screens](example.yaml), [headless](example-wrap.yaml).
 
-## Expand accepted behavior
+## Expand
 
-1. One journey per accepted seat row; one stable ID per meaningful beat (`J1.S1`). Do not invent an actor, click or product promise.
-2. Tag every step `script | judgment | human`. Interactive steps name a declared screen/state; headless or out-of-band steps need no screen. `sees`/`does` describe observable behavior.
-3. `next` follows the accepted story. Distinct outcomes use labeled `{to, when}` edges. If declaring journey exits, each terminal step names one. A reused multi-step opening can use a reusable journey; do not abstract one shared step for style.
-4. Give behavioral criteria in EARS (`WHEN`/`IF … THE SYSTEM SHALL …`). Criteria describe the result, not an implementation or click script. All implemented steps need criteria, including model-assisted ones.
-5. Cut features as coherent modules serving step IDs. If two features require each other's internals, reconsider the boundary or shared contract.
-6. Validate and render before review:
+1. One journey per accepted seat; one stable ID per beat (`J1.S1`). Do not invent an actor, click or promise.
+2. Tag `script | judgment | human`. Interactive steps name a declared screen/state. `sees`/`does` are observable.
+3. `next` follows the accepted story. Distinct outcomes use `{to, when}`. Terminals name one exit if exits are declared.
+4. Behavioral EARS only (`WHEN`/`IF … THE SYSTEM SHALL …`). Result, not click script. Every implemented step needs criteria.
+5. Cut features as modules serving step IDs.
 
-```sh
-bun scripts/journey.ts validate docs/journeys/<name>.yaml
-bun scripts/journey.ts render docs/journeys/<name>.yaml --out docs/journeys/<name>.md
-```
+Validate/render with `bun scripts/journey.ts` (`validate`, `render --out`). Independent check: `spine-checker`. Faithful expansion of approved content returns to `/next` with no extra gate.
 
-Show the diagram; ask only about unresolved or newly introduced behavior. Faithful mechanical expansion of approved content returns to `/next` without another permission gate. Use `spine-checker` for an independent structural check when useful.
+Reconcile [data-surfaces.md](../shape/data-surfaces.md) to step IDs. Keep the inventory in the contract, not the YAML. Missing information requirements return to shape/plan.
 
-Before returning, reconcile `docs/product/data-surfaces.md` with the spine: resolve design beat references to stable step IDs, account for each in-scope form/table/detail view, and carry material rules into EARS or linked acceptance cases. Keep the detailed inventory in the contract, not duplicated in YAML. Missing information requirements return to shape/plan before implementation; mechanical ID mapping does not reopen approval.
+## Stable IDs
 
-## Stable contract
+Never hand-edit generated markdown, renumber to close gaps, or reuse a retired ID. Insert `J1.S2b`. Same meaning keeps its ID. Wrong story → shape; wrong expansion → YAML only. Tests cite step IDs. `check-journeys` is citation coverage, not behavior proof.
 
-Never hand-edit generated markdown, renumber to close gaps or reuse a retired ID. Insert `J1.S2b` for a new moment. Same meaning keeps its ID. A wrong product story returns to shape's clip/table; a wrong expansion changes YAML only. Remove dropped steps from serves and retire dependent citations/tickets together.
-
-Tests cite step IDs. `bun run check-journeys` checks real IDs per slice; `--complete` at clip completion checks served criteria have test citations. Citation coverage is not proof of behavior: test actual outcomes and browser paths.
-
-## AI choice
-
-EARS syntax cannot determine whether AI is needed. Choose deterministic code when a known rule/algorithm covers the input. Consider a model for genuinely uncertain interpretation, with measured quality/cost, abstention and a deterministic output gate. Keep accountable human approval for consequential writes. Never add an agent merely because a step is labeled judgment.
+EARS cannot decide AI. Use deterministic code when a known rule covers the input. A model needs measured quality, abstention and a deterministic gate. Never add an agent because a step is labeled judgment.

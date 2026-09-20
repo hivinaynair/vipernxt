@@ -97,32 +97,7 @@ export function isAutonomous(auth: SessionAuthContext | null): boolean {
   return auth !== null && auth.principalId === AUTONOMOUS_PRINCIPAL;
 }
 
-/**
- * Whether the dispatching channel stamped this caller as trusted.
- *
- * @remarks
- * This is the single caller check for routine repository writes. New
- * capabilities gate on this predicate (or {@link isAutonomous} /
- * {@link isScheduleAppAuth}) rather than inventing their own.
- */
+/** Whether the dispatching channel stamped this caller as trusted. */
 export function isTrusted(auth: SessionAuthContext | null): boolean {
   return auth !== null && auth.attributes[TRUSTED_ATTRIBUTE] === "true";
-}
-
-/**
- * The app principal eve stamps on schedule-dispatched turns.
- *
- * @remarks
- * No schedule ships in this template, but the approval policies already
- * recognize the principal so a schedule added later (see the README's
- * extending section) inherits sensible write behavior: reversible writes run,
- * anything that ships still parks for a person. It is never a user identity.
- */
-export function isScheduleAppAuth(auth: SessionAuthContext | null): boolean {
-  return (
-    auth !== null &&
-    auth.authenticator === "app" &&
-    auth.principalId === "eve:app" &&
-    auth.principalType === "runtime"
-  );
 }

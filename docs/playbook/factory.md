@@ -12,13 +12,7 @@ Completion means all required journey steps have implementation evidence, the co
 
 ## Research and choice
 
-[OpenAI Symphony](https://github.com/openai/symphony) is the closest architectural reference: it turns issue work into isolated agent sessions. Its [specification](https://github.com/openai/symphony/blob/main/SPEC.md) separates tracker integration, scheduling, workspace management and agent execution. It is an engineering preview, so evaluate its implementation against this kit's acceptance and integration requirements before adopting it.
-
-[Factory Droid Exec](https://docs.factory.ai/droid-exec/overview) illustrates a headless worker interface. A worker command alone does not provide a durable queue, restart recovery or deployment acceptance. [GitHub's cloud agent](https://docs.github.com/en/copilot/concepts/agents/cloud-agent/about-cloud-agent) is another execution option where repository-hosted task and PR operations fit. Whether a provider can execute unattended depends on its configured credentials and approval behavior; a connector available in this chat is not proof of daemon access.
-
-[Anthropic's long-running application harness work](https://www.anthropic.com/engineering/harness-design-long-running-apps) supports treating environment setup, incremental work and browser verification as harness responsibilities. Its reported runs are not a portable cost benchmark for this kit. More agents and more review loops are hypotheses to measure, not automatic improvements.
-
-Recommendation: retain `/next` as the product-discovery and approval interface. Put unattended execution behind a small supervisor with a replaceable worker adapter. Start with a repository queue and one serial worker; evaluate Symphony before building equivalent orchestration from scratch. GitHub Issues expose work to humans, not become the only durable copy of the product plan.
+Sources and comparisons: [factory-inspiration.md](factory-inspiration.md). `/next` stays the discovery and approval interface. Unattended execution is a supervisor with a replaceable worker — hosted Eve, or the local serial runner. GitHub Issues are the human board, not a second product spec.
 
 ## Authoritative records
 
