@@ -11,7 +11,13 @@ import { file, github, head, type Issue, isAncestor } from "../lib/github.js";
 import { assertApprovedIntake } from "../lib/intake.js";
 import { postReceipt } from "../lib/receipt.js";
 import { verifyRuntime } from "../lib/runtime.js";
-import { archiveBatch, readState, type State, saveState } from "../lib/store.js";
+import {
+  archiveBatch,
+  isAuthorizedResume,
+  readState,
+  type State,
+  saveState,
+} from "../lib/store.js";
 import { intakeIssueNumber } from "../lib/trust.js";
 
 export default defineWorkflowTool({
@@ -28,14 +34,15 @@ export default defineWorkflowTool({
       if (snapshot.status !== "running") return snapshot;
       if (!snapshot.agentId) continue;
       using done = createHook({ token: `cursor:${snapshot.agentId}` });
-      if (await done.getConflict()) return { status: "another_workflow_owns_stage" };
+      const hookHeld = await done.getConflict();
       const registeredAgent = snapshot.agentId;
       snapshot = await advance(ctx);
       if (snapshot.status !== "running") return snapshot;
       if (snapshot.agentId !== registeredAgent) continue;
       const waitingAgent = snapshot.agentId;
       const deadline = new Date(snapshot.deadline!);
-      await Promise.race([done, sleep(deadline)]);
+      // A previous workflow may still hold the wake token. Deadline is enough.
+      await (hookHeld ? sleep(deadline) : Promise.race([done, sleep(deadline)]));
       snapshot = await advance(ctx);
       if (snapshot.status !== "running") return snapshot;
       if (snapshot.agentId !== waitingAgent) continue;
@@ -120,15 +127,13 @@ async function register(ctx: WorkflowStepToolContext) {
       state.batch.workflowOwner === ctx.callId
     )
       return { status: state.batch.status };
-    if (
-      state.batch.issue === issueNumber &&
-      state.batch.intakeHash === digest(source) &&
-      state.batch.status === "blocked"
-    ) {
-      if (Date.now() >= runDeadline(state.batch)) throw new Error("Original batch budget expired");
+    if (isAuthorizedResume(state.batch, issueNumber, digest(source))) {
+      if (Date.now() >= runDeadline(state.batch) && !state.batch.active?.posted)
+        throw new Error("Original batch budget expired");
       state.batch.workflowOwner = ctx.callId;
       state.batch.status = "running";
       state.batch.error = undefined;
+      if (state.batch.active) state.batch.active.startedAt = Date.now();
       await saveState(state, sha);
       await postReceipt(issueNumber, {
         event: "resuming",
@@ -139,8 +144,6 @@ async function register(ctx: WorkflowStepToolContext) {
       });
       return { status: "resuming" };
     }
-    if (state.batch.status === "running")
-      throw new Error("Another workflow owns the running batch");
     archiveBatch(state, "New authorized factory label");
   }
   try {

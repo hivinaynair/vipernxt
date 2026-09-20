@@ -19,9 +19,11 @@ the moving branch tip. Workers start from the intake tree so pinned catalogs
 exist. It validates the manifest and pinned artifacts, then runs as a durable
 background workflow. Cursor Grok 4.6 implements each slice from a pinned
 `factory/input/<agent-id>` ref and must push one `cursor/` branch. A separate
-Claude plan-mode run reviews that exact commit. Slice review may
-`request_changes` at most twice, then holds. Delivery is a draft PR. Every
-transition posts an issue receipt.
+agent-mode reviewer (Claude when listed) reviews that exact commit and must
+return one JSON object. Slice review may `request_changes` at most twice, then
+holds. Unreadable JSON is retried separately so a schema miss does not spend
+the product revision budget. Delivery is a draft PR. Every transition posts an
+issue receipt.
 
 There is **no cron schedule**. Before each Cursor launch the workflow registers
 `cursor:<agent-id>` as a durable hook. The product's stop hook sends a short-lived
@@ -30,6 +32,8 @@ audience, expiry and the registered agent identity, then wakes that hook.
 The command consumes Cursor stop-event JSON on stdin and returns `{}` on stdout.
 The callback body cannot approve anything. **Deadline or callback is enough.**
 The workflow then reads Cursor's actual run status and the branch SHA.
+If a previous run still holds the `cursor:<agent-id>` wake token, the new
+workflow waits on the deadline only and keeps ticking.
 
 A stop hook can arrive before the terminal API status. A short settling window
 handles that race. A missed first-turn hook is not a failed slice. Deadline
@@ -56,13 +60,17 @@ One batch is supported per deployment. A fresh authorized `factory` label event
 can resume a blocked batch with the same issue and intake, within its original
 time budget. Agent identity, attempts, clocks and accepted evidence are retained.
 A new authorized label for a different batch archives the previous checkpoint
-automatically. Register failures persist `lastFailure` and an issue receipt so
+automatically, including a still-running station. Same issue and intake resume
+instead of starting a second batch. Register failures persist `lastFailure` and an issue receipt so
 the next label can start.
 
 Cursor starts from a dedicated `factory/input/<agent-id>` branch whose head is
 checked against the approved commit. This works around a raw-SHA launch rejected
 by the live Cursor v1 API. Implementers use Grok 4.6 in agent mode. Reviewers
-use Claude 4.5 Sonnet in plan mode.
+use a different model from `GET /v1/models` (Claude when listed,
+otherwise any non-builder model) and must return JSON. A fresh authorized label can adopt a running, blocked, or paused batch
+(same issue and intake) so a new deploy can take over an in-flight station.
+`invalid_model` is owner configuration, not an Eve repair.
 
 The build limits generated Vercel function invocations to 60 seconds, shorter
 than the five-minute lease expiry.
@@ -71,10 +79,29 @@ Jev classifies blocked failures in shadow mode. It cannot accept a slice, change
 scope or reset budgets. It does decide **attention**: `owner` (you need to look)
 or `eve` (the coordinator may continue inside the approved contract).
 `retry_read` and `repair` are Eve-delegable; `ask_owner` and `stop` hold.
-`classify_failure` never 403s — missing state returns `no_batch`.
+`classify_failure` never 403s — missing state returns `no_batch`. When Eve may
+resume, `classify_failure` claims the workflow and continues the durable station
+loop itself so the composer does not have to call `start_batch` again. A factory
+label session cannot substitute `factory_status` for `start_batch`. Cursor
+`ERROR`/`EXPIRED` and unreadable review JSON retry inside the engine; Jev routes
+those same strings without calling the model if a prior deploy left them blocked.
 
-Local tests cover acceptance, scope, dispatch reconciliation, leases and callback
-authentication. Hosted workflow replay, real stop-hook delivery and end-to-end
+Owner attention is a pager, not a second work queue. The first owner hold for an
+issue+error @mentions `FACTORY_OWNER` on the GitHub receipt and posts Slack when
+configured. Slack **Hold** leaves Eve stopped, **Retry** dispatches `start_batch`
+for the same issue and intake (no extra budget or scope), and **Reject** archives
+the batch and drops the `factory` label. Thread replies become issue comments.
+Secrets pasted in Slack are dropped. Slack cannot approve a slice.
+
+Set `FACTORY_OWNER` (GitHub login). For Slack buttons and replies, set
+`SLACK_BOT_TOKEN`, `SLACK_SIGNING_SECRET`, `SLACK_OWNER_CHANNEL`, and
+`SLACK_OWNER_USER_ID`, then point Event Subscriptions and Interactivity at
+`https://<factory>/callbacks/slack`. `SLACK_OWNER_WEBHOOK` is a text-only fallback
+without buttons. Inbound Slack is ignored unless the acting user is
+`SLACK_OWNER_USER_ID`.
+
+Local tests cover acceptance, scope, dispatch reconciliation, leases, owner pager
+and callback authentication. Hosted workflow replay, real stop-hook delivery and end-to-end
 Cursor verification must be tested separately. An agent's evidence report is
 not a cryptographic proof that tests ran.
 

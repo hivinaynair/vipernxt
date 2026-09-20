@@ -15,19 +15,35 @@ export function stationFor(phase: Attempt["phase"]) {
     };
   }
   return {
-    mode: "plan" as const,
-    model: {
-      id: "claude-4.5-sonnet",
-      params: [
-        { id: "effort", value: "medium" },
-        { id: "fast", value: "false" },
-      ],
-    },
+    // Plan mode answered in prose and failed the JSON contract twice.
+    mode: "agent" as const,
+    model: { id: "claude-4.6-sonnet-thinking" },
   };
 }
+
+type ModelList = { items?: { id: string }[]; models?: string[] };
+
+export async function resolveStation(phase: Attempt["phase"], request: typeof cursor = cursor) {
+  const configured = stationFor(phase);
+  if (phase === "build") return configured;
+  const listed = await request<ModelList>("/models");
+  const ids = [...(listed.items ?? []).map((item) => item.id), ...(listed.models ?? [])].filter(
+    Boolean,
+  );
+  const pick =
+    ids.find((id) => id === configured.model.id) ??
+    ids.find((id) => /claude/i.test(id)) ??
+    ids.find((id) => id !== "grok-4.6") ??
+    ids[0];
+  if (!pick) throw new Error("Cursor has no reviewer model");
+  return { mode: "agent" as const, model: { id: pick } };
+}
 export class CursorError extends Error {
-  constructor(public status: number) {
-    super(`Cursor HTTP ${status}`);
+  constructor(
+    public status: number,
+    detail = "",
+  ) {
+    super(detail ? `Cursor HTTP ${status}: ${detail}` : `Cursor HTTP ${status}`);
   }
 }
 export async function cursor<T>(path: string, method = "GET", body?: unknown): Promise<T> {
@@ -39,9 +55,12 @@ export async function cursor<T>(path: string, method = "GET", body?: unknown): P
     },
     body: body === undefined ? undefined : JSON.stringify(body),
     redirect: "error",
-    signal: AbortSignal.timeout(15000),
+    signal: AbortSignal.timeout(30000),
   });
-  if (!r.ok) throw new CursorError(r.status);
+  if (!r.ok) {
+    const detail = (await r.text()).replace(/\s+/g, " ").trim().slice(0, 180);
+    throw new CursorError(r.status, detail);
+  }
   return r.json() as Promise<T>;
 }
 export type Run = {
@@ -64,7 +83,7 @@ export async function advanceRemote(
     agent = await request(`/agents/${a.agentId}`);
   } catch (e) {
     if (!(e instanceof CursorError && e.status === 404) || a.posted) throw e;
-    const station = stationFor(a.phase);
+    const station = await resolveStation(a.phase, request);
     const created = await request<{ agent: { id: string }; run: Run }>("/agents", "POST", {
       agentId: a.agentId,
       prompt: { text: prompt },

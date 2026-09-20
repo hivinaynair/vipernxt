@@ -24,6 +24,7 @@ export async function classifyStoredFailure(
     github?: typeof github;
     classify?: typeof classifyFailure;
     postReceipt?: typeof postReceipt;
+    workflowOwner?: string;
   } = {},
 ): Promise<Classification> {
   const read = deps.readState ?? readState;
@@ -62,6 +63,7 @@ export async function classifyStoredFailure(
     if (resume) {
       batch.status = "running";
       batch.error = undefined;
+      if (deps.workflowOwner) batch.workflowOwner = deps.workflowOwner;
     }
     await save(state, sha);
     await receipt(batch.issue, {
@@ -97,4 +99,8 @@ export async function classifyStoredFailure(
     return { status: "no_batch", attention: result.attention, result };
   }
   return { status: "no_batch", attention: "owner" };
+}
+
+export function continuesStations(result: Classification) {
+  return "resumed" in result && result.resumed === true;
 }

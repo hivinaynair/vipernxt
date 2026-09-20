@@ -29,6 +29,74 @@ describe("Jev shadow boundary", () => {
     expect(attentionFor("investigate")).toBe("eve");
     expect(eveMayResume({ attention: "eve", recommendation: "investigate" })).toBe(false);
   });
+  test("Cursor builder ERROR is Eve repair without calling the model", async () => {
+    let calls = 0;
+    const result = await classifyFailure(
+      {
+        ...failure,
+        summary: "Cursor stage ended with ERROR",
+      },
+      async () => {
+        calls++;
+        return { choice: "investigate" };
+      },
+    );
+    expect(result.recommendation).toBe("repair");
+    expect(result.attention).toBe("eve");
+    expect(eveMayResume(result)).toBe(true);
+    expect(calls).toBe(0);
+  });
+  test("reviewer prose is a retryable read, not a broken manifest", async () => {
+    let calls = 0;
+    const result = await classifyFailure(
+      {
+        ...failure,
+        stage: "review",
+        summary: `Unexpected token 'V', "Verificati"... is not valid JSON`,
+      },
+      async () => {
+        calls++;
+        return { choice: "stop" };
+      },
+    );
+    expect(result.recommendation).toBe("retry_read");
+    expect(result.attention).toBe("eve");
+    expect(eveMayResume(result)).toBe(true);
+    expect(calls).toBe(0);
+  });
+  test("workflow ownership conflict is a retryable read", async () => {
+    let calls = 0;
+    const result = await classifyFailure(
+      {
+        ...failure,
+        summary: "Workflow ownership changed",
+      },
+      async () => {
+        calls++;
+        return { choice: "investigate" };
+      },
+    );
+    expect(result.recommendation).toBe("retry_read");
+    expect(calls).toBe(0);
+  });
+  test("invalid Cursor model is owner configuration, not an Eve repair", async () => {
+    let calls = 0;
+    const result = await classifyFailure(
+      {
+        ...failure,
+        stage: "review",
+        summary: `Cursor HTTP 400: {"error":{"code":"invalid_model","message":"Model 'x' is not available or invalid."}}`,
+      },
+      async () => {
+        calls++;
+        return { choice: "repair" };
+      },
+    );
+    expect(result.recommendation).toBe("ask_owner");
+    expect(result.attention).toBe("owner");
+    expect(eveMayResume(result)).toBe(false);
+    expect(calls).toBe(0);
+  });
   test("scope and budget failures bypass the model and need the owner", async () => {
     let calls = 0;
     for (const patch of [{ scopeValid: false }, { budgetAvailable: false }]) {

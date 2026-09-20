@@ -1,9 +1,14 @@
 import { describe, expect, test } from "bun:test";
-import { parseReview } from "../agent/lib/contract.js";
+import { extractReviewJson, parseReview } from "../agent/lib/contract.js";
 import { stationFor } from "../agent/lib/cursor.js";
 import { attentionFor, classifyFailure, eveMayResume } from "../agent/lib/jev.js";
 import { formatReceipt } from "../agent/lib/receipt.js";
-import { archiveBatch, type State } from "../agent/lib/store.js";
+import {
+  archiveBatch,
+  isAuthorizedResume,
+  type State,
+  supersedesBatch,
+} from "../agent/lib/store.js";
 import { classifyStoredFailure } from "../agent/lib/triage.js";
 
 describe("Jev routes owner vs Eve", () => {
@@ -129,9 +134,11 @@ test("Eve repair resumes the reserved batch", async () => {
     postReceipt: async (_issue, receipt) => {
       receipts.push(receipt);
     },
+    workflowOwner: "call-classify",
   });
   expect(result).toMatchObject({ attention: "eve", recommendation: "repair", resumed: true });
   expect(state.batch?.status).toBe("running");
+  expect(state.batch?.workflowOwner).toBe("call-classify");
   expect(receipts[0]).toMatchObject({ event: "jev-eve-resume", attention: "eve" });
 });
 
@@ -182,13 +189,75 @@ test("reviewer cannot invent criterion IDs", () => {
         unchanged: true,
         findings: [],
         checks: [{ command: ["bun", "test"], exitCode: 0, evidence: "ok" }],
-        criteria: [{ step: "invented", passed: true, evidence: "no" }],
+        criteria: [
+          { step: "order-by-due", passed: true, evidence: "ordered" },
+          { step: "invented", passed: true, evidence: "no" },
+        ],
       },
       commit,
       [["bun", "test"]],
-      ["loan-created"],
+      ["order-by-due", "clear-filters"],
     ),
   ).toThrow("invented criterion");
+});
+
+test("journey-step IDs cover the assigned requirement IDs when they all passed", () => {
+  const commit = "a".repeat(40);
+  const parsed = parseReview(
+    {
+      commit,
+      verdict: "approve",
+      unchanged: true,
+      findings: [],
+      checks: [{ command: ["bun", "test"], exitCode: 0, evidence: "ok" }],
+      criteria: [{ step: "J1.S1", passed: true, evidence: "desk orders by due date" }],
+    },
+    commit,
+    [["bun", "test"]],
+    ["order-by-due", "clear-filters"],
+  );
+  expect(parsed.verdict).toBe("approve");
+  expect(parsed.review.criteria.map((c) => c.step).sort()).toEqual([
+    "clear-filters",
+    "order-by-due",
+  ]);
+});
+
+test("review JSON can sit after plan-mode prose", () => {
+  const commit = "a".repeat(40);
+  const value = extractReviewJson(
+    `All verification ran.\n{"commit":"${commit}","verdict":"request_changes","unchanged":true,"findings":["x"],"checks":[],"criteria":[]}`,
+  );
+  expect(value).toMatchObject({ verdict: "request_changes", findings: ["x"] });
+});
+
+test("prose with stray braces is an unreadable review, not a raw JSON crash", () => {
+  expect(() => extractReviewJson("Verification ran. {this is not json}")).toThrow(
+    "did not return JSON",
+  );
+  expect(() => extractReviewJson("Verification complete.")).toThrow("did not return JSON");
+});
+
+test("object findings coerce to strings so a reviewer verdict can be read", () => {
+  const commit = "a".repeat(40);
+  const parsed = parseReview(
+    {
+      commit,
+      verdict: "request_changes",
+      unchanged: true,
+      findings: [
+        { message: "selector order is wrong" },
+        { path: "desk.tsx", detail: "no Clear filters" },
+      ],
+      checks: [{ command: ["bun", "test"], exitCode: 1, evidence: "failed" }],
+      criteria: [{ step: "loan-created", passed: false, evidence: "missing row" }],
+    },
+    commit,
+    [["bun", "test"]],
+    ["loan-created"],
+  );
+  expect(parsed.verdict).toBe("request_changes");
+  expect(parsed.review.findings).toEqual(["selector order is wrong", "no Clear filters"]);
 });
 
 test("request_changes needs findings and is not an approval", () => {
@@ -209,12 +278,43 @@ test("request_changes needs findings and is not an approval", () => {
   expect(parsed.verdict).toBe("request_changes");
 });
 
-test("review station uses a different vendor and plan mode", () => {
+test("review station uses a different vendor", () => {
   expect(stationFor("build")).toMatchObject({ mode: "agent", model: { id: "grok-4.6" } });
   expect(stationFor("review")).toMatchObject({
-    mode: "plan",
-    model: { id: "claude-4.5-sonnet" },
+    mode: "agent",
+    model: { id: "claude-4.6-sonnet-thinking" },
   });
+  expect(stationFor("review").model).not.toHaveProperty("params");
+});
+
+test("Jev-orphaned running batch can be adopted by the next authorized label", () => {
+  const batch = {
+    issue: 10,
+    intakeHash: "x",
+    status: "running" as const,
+    error: undefined,
+    triage: {
+      key: "agent:Cursor HTTP 400",
+      result: {
+        version: 1 as const,
+        evidenceHash: "h",
+        model: "typesafe-ai/jev" as const,
+        mode: "shadow" as const,
+        status: "evaluated" as const,
+        recommendation: "retry_read" as const,
+        attention: "eve" as const,
+        execution: "hold" as const,
+      },
+    },
+  };
+  expect(isAuthorizedResume(batch as never, 10, "x")).toBe(true);
+  expect(
+    isAuthorizedResume({ ...batch, status: "running", triage: undefined } as never, 10, "x"),
+  ).toBe(true);
+  expect(isAuthorizedResume({ ...batch, status: "blocked" } as never, 10, "x")).toBe(true);
+  expect(isAuthorizedResume({ ...batch, status: "paused" } as never, 10, "x")).toBe(true);
+  expect(supersedesBatch(batch as never, 15, "y")).toBe(true);
+  expect(supersedesBatch(batch as never, 10, "x")).toBe(false);
 });
 
 test("receipts name the issue, station, and who must act", () => {
@@ -227,4 +327,42 @@ test("receipts name the issue, station, and who must act", () => {
       attention: "owner",
     }),
   ).toContain("Attention: owner");
+});
+
+test("a factory label session cannot substitute status for start_batch", async () => {
+  const { factoryProgress } = await import("../agent/lib/progress.js");
+  const { stampAutonomous, stampTrusted } = await import("../agent/lib/trust.js");
+  const auth = stampAutonomous(
+    {
+      principalId: "github:1",
+      principalType: "user",
+      authenticator: "github",
+      attributes: {},
+    } as never,
+    13,
+  );
+  const result = factoryProgress(auth, {
+    version: 1,
+    batch: { status: "running", issue: 13, accepted: [] },
+  } as never);
+  expect(result).toMatchObject({ status: "dispatch_required", nextTool: "start_batch", issue: 13 });
+  const mention = factoryProgress(
+    stampTrusted({
+      principalId: "github:1",
+      principalType: "user",
+      authenticator: "github",
+      attributes: {},
+    } as never),
+    {
+      version: 1,
+      batch: {
+        status: "running",
+        issue: 13,
+        accepted: [],
+        manifest: { jobs: [{}] },
+      },
+    } as never,
+  );
+  expect(mention).toMatchObject({ status: "running", issue: 13, total: 1 });
+  expect(mention).not.toHaveProperty("nextTool");
 });

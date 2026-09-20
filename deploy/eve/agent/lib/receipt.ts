@@ -1,4 +1,5 @@
 import { github } from "./github.js";
+import { mentionLine, notifyOwner } from "./pager.js";
 
 export type Receipt = {
   event: string;
@@ -43,10 +44,20 @@ export async function postReceipt(
   issue: number,
   receipt: Omit<Receipt, "issue">,
   request: typeof github = github,
+  notify: typeof notifyOwner | null = notifyOwner,
 ) {
+  const full = { ...receipt, issue };
+  let fresh = false;
+  if (full.attention === "owner" && notify) {
+    try {
+      fresh = await notify(full);
+    } catch {
+      fresh = true;
+    }
+  }
   try {
     await request(`/issues/${issue}/comments`, "POST", {
-      body: formatReceipt({ ...receipt, issue }),
+      body: formatReceipt(full) + (fresh ? mentionLine() : ""),
     });
   } catch {
     // Receipts are the operator projection. A comment failure must not roll back a checkpoint.

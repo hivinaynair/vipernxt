@@ -59,7 +59,6 @@ describe("acceptance is an exact contract", () => {
     "failed-check",
     "missing-criterion",
     "changed-tree",
-    "finding",
     "blank-evidence",
   ]) {
     test(`rejects ${defect} despite approved=true`, () => {
@@ -70,11 +69,16 @@ describe("acceptance is an exact contract", () => {
       if (defect === "failed-check") r.checks[0].exitCode = 1;
       if (defect === "missing-criterion") r.criteria = [];
       if (defect === "changed-tree") r.unchanged = false;
-      if (defect === "finding") (r.findings as string[]).push("incorrect result");
       if (defect === "blank-evidence") r.checks[0].evidence = "   ";
       expect(() => checkReview(r, commit, commands, ["J1.S1"])).toThrow();
     });
   }
+  test("informational findings do not veto a passing approve", () => {
+    const r = report();
+    (r.findings as string[]).push("NON-BLOCKING: Task B left for the next job");
+    expect(checkReview(r, commit, commands, ["J1.S1"]).approved).toBe(true);
+    expect(parseReview(r, commit, commands, ["J1.S1"]).review.findings).toEqual([]);
+  });
 });
 describe("scope and graph guards", () => {
   test("rename cannot move an out-of-scope file into allowed directory", () => {
@@ -112,10 +116,30 @@ describe("scope and graph guards", () => {
       ),
     ).toThrow();
   });
-  test("review cannot invent criterion IDs", () => {
+  test("approve may include extra keys, a short SHA, and a string command", () => {
+    const r = {
+      ...report(),
+      commit: commit.slice(0, 12),
+      notes: "non-blocking scope note",
+      checks: [{ command: "bun test", exitCode: 0, evidence: "passed independently" }],
+    };
+    expect(parseReview(r, commit, [["bun", "test"]], ["J1.S1"]).verdict).toBe("approve");
+  });
+  test("approve may map or drop extra criterion IDs when required steps passed", () => {
     const r = report();
     r.criteria.push({ step: "invented", passed: true, evidence: "no" });
-    expect(() => parseReview(r, commit, commands, ["J1.S1"])).toThrow("invented");
+    expect(parseReview(r, commit, commands, ["J1.S1"]).verdict).toBe("approve");
+  });
+  test("approve may include extra checks if every required command ran", () => {
+    const r = report();
+    r.checks.push({ command: ["bun", "run", "lint"], exitCode: 0, evidence: "extra pass" });
+    expect(checkReview(r, commit, commands, ["J1.S1"]).approved).toBe(true);
+  });
+  test("omitted required check names the missing argv", () => {
+    const r = report();
+    r.checks.pop();
+    expect(() => parseReview(r, commit, commands, ["J1.S1"])).toThrow("omitted checks");
+    expect(() => parseReview(r, commit, commands, ["J1.S1"])).toThrow("build");
   });
   test("request_changes is a structured verdict, not an approval", () => {
     const r = {

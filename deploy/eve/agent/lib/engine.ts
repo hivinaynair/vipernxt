@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { repository, required } from "./config.js";
 import {
   digest,
+  extractReviewJson,
   intake,
   type Job,
   parseReview,
@@ -70,16 +71,19 @@ export function promptRequirements(b: Batch, job: Job) {
 }
 
 export function executionCommands(b: Batch, job: Job) {
-  if (!b.deployment) return verificationCommands(b.manifest, job);
-  return [
-    ...b.manifest.setup,
-    ...[...job.checks, ...(job.browser ? [job.browser] : [])].map((command) => [
-      "env",
-      `FACTORY_STAGING_URL=${b.deployment!.url}`,
-      `E2E_BASE_URL=${b.deployment!.url}`,
-      ...command,
-    ]),
-  ];
+  if (b.deployment)
+    return [
+      ...b.manifest.setup,
+      ...[...job.checks, ...(job.browser ? [job.browser] : [])].map((command) => [
+        "env",
+        `FACTORY_STAGING_URL=${b.deployment!.url}`,
+        `E2E_BASE_URL=${b.deployment!.url}`,
+        ...command,
+      ]),
+    ];
+  // Combined checks belong to integrated review. Setup is prep, not evidence.
+  if (job.id.startsWith("__")) return verificationCommands(b.manifest, job);
+  return [...job.checks, ...(job.browser ? [job.browser] : [])];
 }
 export function workerPrompt(b: Batch, job: Job): string {
   const contract = {
@@ -103,9 +107,25 @@ export function workerPrompt(b: Batch, job: Job): string {
       `Commit: ${b.active.base}. Compare against ${b.active.phase === "integrated-review" ? b.manifest.base : b.candidate}.`,
       "Use a writable Cloud VM for verification, not an early read-only exploration turn. First create and immediately remove a temporary file in the repository root using mktemp and rm, so repository hooks are active. Keep tracked files unchanged; never invoke the completion hook manually.",
       "For authentication, use dedicated Clerk development identities and runtime secrets with the pinned approved access matrix. Never bypass authentication or output credentials. Verify signed-out, role and cross-tenant denials where applicable.",
-      "Read every pinned specification and verify every cited journey step, including fields, tables, validation, permissions and error states. Run every command, including browser evidence when requested. Return ONLY JSON:",
-      '{"commit":"exact SHA","verdict":"approve|request_changes|reject","unchanged":true,"findings":[],"checks":[{"command":["exact","argv"],"exitCode":0,"evidence":"observed output"}],"criteria":[{"step":"exact requirement ID from criterionIds","passed":true,"evidence":"what you independently verified"}]}',
-      "Use only criterionIds. Do not invent steps. request_changes returns the slice to the builder within the attempt budget. reject holds for the owner. If any required check fails or evidence is missing, verdict must not be approve. Report the actual unchanged status using git status.",
+      "Read every pinned specification and verify every cited journey step, including fields, tables, validation, permissions and error states. Run every command, including browser evidence when requested. Your entire reply must be one JSON object. The first character is { and the last is }. No prose, headings or fences.",
+      "If you approve, return this object with real evidence strings. Copy every command and criterionIds value exactly. Extra checks are allowed. Do not rename argv or invent steps:",
+      JSON.stringify({
+        commit: b.active.base,
+        verdict: "approve",
+        unchanged: true,
+        findings: [],
+        checks: contract.commands.map((command) => ({
+          command,
+          exitCode: 0,
+          evidence: "observed output",
+        })),
+        criteria: contract.criterionIds.map((step) => ({
+          step,
+          passed: true,
+          evidence: "what you independently verified",
+        })),
+      }),
+      "request_changes returns the slice to the builder within the attempt budget. reject holds for the owner. If any required check fails or evidence is missing, verdict must not be approve. Report the actual unchanged status using git status.",
       JSON.stringify(contract),
     ].join("\n");
   return [
@@ -159,6 +179,7 @@ export async function tick(overrides: Partial<typeof live> = {}) {
           : undefined,
         error: b.error,
         pr: b.pr,
+        attention: b.status === "blocked" || b.status === "paused" ? "owner" : undefined,
       },
       github,
     );
@@ -182,7 +203,7 @@ export async function tick(overrides: Partial<typeof live> = {}) {
       await persist("paused");
       return;
     }
-    if (Date.now() >= runDeadline(b))
+    if (Date.now() >= runDeadline(b) && !b.active?.posted)
       throw new Error(
         "Batch time budget exhausted; reconcile any active Cursor run before resuming",
       );
@@ -246,8 +267,6 @@ export async function tick(overrides: Partial<typeof live> = {}) {
       await persist("station-reserved");
       return; // Identity is committed BEFORE the next tick can launch.
     }
-    if (Date.now() >= b.active.startedAt + b.manifest.limits.jobSeconds * 1000)
-      throw new Error("Cursor stage time budget exhausted; remote may still be running");
     await assertLease(store, owner);
     if (!b.active.posted) {
       // Cursor v1 rejected raw commit startingRef in the live test. Give it a
@@ -264,10 +283,22 @@ export async function tick(overrides: Partial<typeof live> = {}) {
     }
     const run = await advanceRemote(b.active, workerPrompt(b, job));
     if (!run || ["CREATING", "RUNNING"].includes(run.status)) {
+      if (Date.now() >= runDeadline(b))
+        throw new Error("Batch time budget exhausted; remote may still be running");
+      if (Date.now() >= b.active.startedAt + b.manifest.limits.jobSeconds * 1000)
+        throw new Error("Cursor stage time budget exhausted; remote may still be running");
       await checkpoint();
       return;
     }
-    if (run.status !== "FINISHED") throw new Error(`Cursor stage ended with ${run.status}`);
+    if (run.status !== "FINISHED") {
+      if (run.status === "ERROR" || run.status === "EXPIRED") {
+        b.feedback = `Cursor ${b.active.phase} ended with ${run.status}`;
+        b.active = undefined;
+        await persist("request-changes");
+        return;
+      }
+      throw new Error(`Cursor stage ended with ${run.status}`);
+    }
     if (b.active.phase === "build") {
       const branches = run.git?.branches ?? [];
       const branch = branches[0]?.branch;
@@ -301,16 +332,35 @@ export async function tick(overrides: Partial<typeof live> = {}) {
       if (!b.active.branch || (await head(b.active.branch)) !== b.active.base)
         throw new Error("Worker branch changed during independent review");
     }
-    const raw = run.result
-      ?.trim()
-      .replace(/^```(?:json)?\s*/, "")
-      .replace(/\s*```$/, "");
-    const parsed = parseReview(
-      JSON.parse(raw ?? "null"),
-      b.active.base,
-      executionCommands(b, job),
-      reviewCriteria(b, job),
-    );
+    let parsed: ReturnType<typeof parseReview>;
+    try {
+      parsed = parseReview(
+        extractReviewJson(run.result),
+        b.active.base,
+        executionCommands(b, job),
+        reviewCriteria(b, job),
+      );
+    } catch (error) {
+      if (b.active.phase !== "review") throw error;
+      const unreadable = (b.unreadable?.[job.id] ?? 0) + 1;
+      if (unreadable > 4) throw error;
+      b.unreadable = { ...b.unreadable, [job.id]: unreadable };
+      const snippet = (() => {
+        try {
+          return JSON.stringify(extractReviewJson(run.result)).slice(0, 280);
+        } catch {
+          return (run.result ?? "").replace(/\s+/g, " ").trim().slice(0, 280);
+        }
+      })();
+      b.feedback =
+        `${error instanceof Error ? error.message : "Independent review was unreadable"}. Reviewer returned: ${snippet}`.slice(
+          0,
+          500,
+        );
+      b.active = undefined;
+      await persist("request-changes");
+      return;
+    }
     if (parsed.verdict !== "approve") {
       if (b.active.phase === "review" && parsed.verdict === "request_changes") {
         const revisions = (b.revisions?.[job.id] ?? 0) + 1;
@@ -355,8 +405,25 @@ export async function tick(overrides: Partial<typeof live> = {}) {
   } catch (e) {
     // A lost checkpoint race is retried from fresh state. Never overwrite a
     // concurrent pause/cancel with the older in-memory snapshot.
+    const message = e instanceof Error ? e.message.slice(0, 500) : "Factory transition failed";
+    if (
+      b.active?.phase === "review" &&
+      /JSON|unreadable|omitted checks|did not return JSON|did not satisfy|criteria /i.test(message)
+    ) {
+      const jobId = b.manifest.jobs.find((j) => !b.accepted.includes(j.id))?.id;
+      const unreadable = (jobId && (b.unreadable?.[jobId] ?? 0) + 1) || 1;
+      if (jobId && unreadable <= 4) {
+        b.unreadable = { ...b.unreadable, [jobId]: unreadable };
+        b.feedback = message;
+        b.active = undefined;
+        b.status = "running";
+        b.error = undefined;
+        await persist("request-changes");
+        return;
+      }
+    }
     b.status = "blocked";
-    b.error = e instanceof Error ? e.message.slice(0, 500) : "Factory transition failed";
+    b.error = message;
     await persist("blocked");
   }
 }
