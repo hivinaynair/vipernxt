@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { repository, required } from "./config.js";
 import {
   digest,
+  extractReviewJson,
   intake,
   type Job,
   parseReview,
@@ -103,7 +104,7 @@ export function workerPrompt(b: Batch, job: Job): string {
       `Commit: ${b.active.base}. Compare against ${b.active.phase === "integrated-review" ? b.manifest.base : b.candidate}.`,
       "Use a writable Cloud VM for verification, not an early read-only exploration turn. First create and immediately remove a temporary file in the repository root using mktemp and rm, so repository hooks are active. Keep tracked files unchanged; never invoke the completion hook manually.",
       "For authentication, use dedicated Clerk development identities and runtime secrets with the pinned approved access matrix. Never bypass authentication or output credentials. Verify signed-out, role and cross-tenant denials where applicable.",
-      "Read every pinned specification and verify every cited journey step, including fields, tables, validation, permissions and error states. Run every command, including browser evidence when requested. Return ONLY JSON:",
+      "Read every pinned specification and verify every cited journey step, including fields, tables, validation, permissions and error states. Run every command, including browser evidence when requested. Your entire reply must be one JSON object. The first character is { and the last is }. No prose, headings or fences:",
       '{"commit":"exact SHA","verdict":"approve|request_changes|reject","unchanged":true,"findings":[],"checks":[{"command":["exact","argv"],"exitCode":0,"evidence":"observed output"}],"criteria":[{"step":"exact requirement ID from criterionIds","passed":true,"evidence":"what you independently verified"}]}',
       "Use only criterionIds. Do not invent steps. request_changes returns the slice to the builder within the attempt budget. reject holds for the owner. If any required check fails or evidence is missing, verdict must not be approve. Report the actual unchanged status using git status.",
       JSON.stringify(contract),
@@ -303,14 +304,10 @@ export async function tick(overrides: Partial<typeof live> = {}) {
       if (!b.active.branch || (await head(b.active.branch)) !== b.active.base)
         throw new Error("Worker branch changed during independent review");
     }
-    const raw = run.result
-      ?.trim()
-      .replace(/^```(?:json)?\s*/, "")
-      .replace(/\s*```$/, "");
     let parsed: ReturnType<typeof parseReview>;
     try {
       parsed = parseReview(
-        JSON.parse(raw ?? "null"),
+        extractReviewJson(run.result),
         b.active.base,
         executionCommands(b, job),
         reviewCriteria(b, job),

@@ -10,8 +10,8 @@ requirements or pass instructions to a worker yourself. A durable background
 workflow waits for a signed Cursor stop callback or the stage deadline. Either
 wake is enough. Do not poll in a tool loop. The callback cannot accept a slice.
 
-Cursor Cloud implements each slice in agent mode. A separate Cursor plan-mode
-run on a different model reviews the exact commit. Report the tool's evidence
+Cursor Cloud implements each slice in agent mode. A separate Cursor run on a
+different model reviews the exact commit and must return the JSON contract. Report the tool's evidence
 honestly. A completed worker is not an accepted slice. Failed checks, missing
 evidence, scope drift and expired budgets must remain visible. Never claim a
 product is deployed because a PR exists.

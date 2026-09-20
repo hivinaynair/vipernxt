@@ -98,7 +98,7 @@ test("dispatch uses the pinned input branch and configured execution model", asy
         return { items: [{ id: "claude-4.5-sonnet-thinking" }, { id: "grok-4.6" }] };
       if (method !== "POST") throw new CursorError(404);
       const payload = body as { mode: string; model: { id: string } };
-      expect(payload.mode).toBe("plan");
+      expect(payload.mode).toBe("agent");
       expect(payload.model.id).toBe("claude-4.5-sonnet-thinking");
       expect((body as { model: { params?: unknown } }).model.params).toBeUndefined();
       return {
@@ -111,7 +111,7 @@ test("dispatch uses the pinned input branch and configured execution model", asy
       "review",
       transport(async () => ({ items: [{ id: "grok-4.6" }, { id: "composer-2" }] })),
     );
-    expect(fallback).toEqual({ mode: "plan", model: { id: "composer-2" } });
+    expect(fallback).toEqual({ mode: "agent", model: { id: "composer-2" } });
   } finally {
     if (old === undefined) delete process.env.FACTORY_REPO;
     else process.env.FACTORY_REPO = old;

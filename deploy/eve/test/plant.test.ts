@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { parseReview } from "../agent/lib/contract.js";
+import { extractReviewJson, parseReview } from "../agent/lib/contract.js";
 import { stationFor } from "../agent/lib/cursor.js";
 import { attentionFor, classifyFailure, eveMayResume } from "../agent/lib/jev.js";
 import { formatReceipt } from "../agent/lib/receipt.js";
@@ -191,6 +191,14 @@ test("reviewer cannot invent criterion IDs", () => {
   ).toThrow("invented criterion");
 });
 
+test("review JSON can sit after plan-mode prose", () => {
+  const commit = "a".repeat(40);
+  const value = extractReviewJson(
+    `All verification ran.\n{"commit":"${commit}","verdict":"request_changes","unchanged":true,"findings":["x"],"checks":[],"criteria":[]}`,
+  );
+  expect(value).toMatchObject({ verdict: "request_changes", findings: ["x"] });
+});
+
 test("object findings coerce to strings so a reviewer verdict can be read", () => {
   const commit = "a".repeat(40);
   const parsed = parseReview(
@@ -231,10 +239,10 @@ test("request_changes needs findings and is not an approval", () => {
   expect(parsed.verdict).toBe("request_changes");
 });
 
-test("review station uses a different vendor and plan mode", () => {
+test("review station uses a different vendor", () => {
   expect(stationFor("build")).toMatchObject({ mode: "agent", model: { id: "grok-4.6" } });
   expect(stationFor("review")).toMatchObject({
-    mode: "plan",
+    mode: "agent",
     model: { id: "claude-4.6-sonnet-thinking" },
   });
   expect(stationFor("review").model).not.toHaveProperty("params");

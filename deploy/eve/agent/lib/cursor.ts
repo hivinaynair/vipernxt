@@ -15,7 +15,8 @@ export function stationFor(phase: Attempt["phase"]) {
     };
   }
   return {
-    mode: "plan" as const,
+    // Plan mode answered in prose and failed the JSON contract twice.
+    mode: "agent" as const,
     model: { id: "claude-4.6-sonnet-thinking" },
   };
 }
@@ -35,7 +36,7 @@ export async function resolveStation(phase: Attempt["phase"], request: typeof cu
     ids.find((id) => id !== "grok-4.6") ??
     ids[0];
   if (!pick) throw new Error("Cursor has no reviewer model");
-  return { mode: "plan" as const, model: { id: pick } };
+  return { mode: "agent" as const, model: { id: pick } };
 }
 export class CursorError extends Error {
   constructor(

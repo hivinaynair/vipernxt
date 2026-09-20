@@ -76,6 +76,20 @@ export function validateManifest(value: unknown, repo: string): Manifest {
 export function verificationCommands(m: Manifest, j: Job) {
   return [...m.setup, ...j.checks, ...(j.browser ? [j.browser] : []), ...m.combinedChecks];
 }
+export function extractReviewJson(raw: string | undefined): unknown {
+  const text = (raw ?? "")
+    .trim()
+    .replace(/^```(?:json)?\s*/, "")
+    .replace(/\s*```$/, "");
+  try {
+    return JSON.parse(text);
+  } catch {
+    const start = text.indexOf("{");
+    const end = text.lastIndexOf("}");
+    if (start >= 0 && end > start) return JSON.parse(text.slice(start, end + 1));
+    throw new Error("Independent review did not return JSON");
+  }
+}
 export type ReviewVerdict = "approve" | "request_changes" | "reject";
 function findingText(value: unknown): string {
   if (typeof value === "string") return value;
