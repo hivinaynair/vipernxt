@@ -2,11 +2,10 @@
 name: shape
 description: >-
   Shapes a new SaaS before any product code: interviews one question at a time,
-  researches the domain, drafts user journeys and low-fi screens, optionally
-  shows a Cursor design canvas, and writes a design doc under docs/plans. Use
-  when starting a new product, when the product is still uncertain, or when the
-  user asks to shape the product, draft journeys, low-fi screens, a design
-  canvas, or a design doc.
+  researches the domain, drafts user journeys and low-fi screens, and writes a
+  design doc under docs/plans. Use when starting a new product, when the product
+  is still uncertain, or when the user asks to shape the product, draft
+  journeys, screens, or a design doc.
 ---
 
 # Shape the product
@@ -18,9 +17,9 @@ Follow [the execution contract](../CONTRACT.md). Input: participant/workflow evi
 1. **Orient:** read AGENTS.md, recipe and current state. Load [question bank](questions.md) only for a missing decision; never replay it from the beginning when evidence already answers it.
 2. **Claim:** draft U5 from evidence—outcome, affected person, real problem, why the obvious implementation misses it, fallback. Confirm unresolved claims; create the design doc once accepted.
 3. **Actors:** identify who acts, owns policy/data/money and never logs in. Default one application with explicit seats/roles; do not invent a separate app for every person. Confirm only new authority/scope choices.
-4. **Foundations:** settle authentication (Clerk whenever needed), tenant ownership, server-side permissions, persistence and shared navigation before slicing. Record each as required or explicitly unnecessary with a reason. Link the access matrix, dedicated test identities and denial scenarios using [cloud authentication](../../../docs/kit/cloud-auth.md). Authentication belongs in the first real journey; changing a foundation invalidates verification of its consumers.
-5. **Journeys:** one table row per seat: bucket, wants, does, sees after first beat, sees at end. Number the clip beats. Have the user confirm the story before drawing screens; accepted brief content need not be reconfirmed.
-6. **Screens and data:** use [the data-surface contract](data-surfaces.md) to inventory and iterate all MVP form fields, table columns and detail information with the user. Link the reviewed contract from the design; settle material rules before implementation approval. Then define layout bands and per-role copy for actual interactive steps. Record language/canonical language before writing copy. Include empty, loading, error and recovery states. Skip screens for a headless clip.
+4. **Foundations:** settle auth (Clerk when needed), tenancy, permissions, persistence and navigation as required or explicitly unnecessary. Access matrix and test identities: [cloud-auth.md](../../../docs/kit/cloud-auth.md). Auth belongs in the first real journey.
+5. **Journeys:** one table row per seat: bucket, wants, does, sees after first beat, sees at end. Number clip beats. Confirm the story before screens.
+6. **Screens and data:** [data-surfaces.md](data-surfaces.md) for MVP fields, columns and rules. Then layout bands and empty/loading/error/recovery. Skip screens for a headless clip.
 7. **Surfaces:** select web/agent/db and facets from the recipe, with reasons. This phase records choices; scaffolding happens after design acceptance.
 8. **Review:** reconcile the doc end to end, remove contradictions/TBDs and request the unresolved design approval. Record the decision ID in state. Return to `/next`; do not add another stop or ask the user to invoke implementation.
 

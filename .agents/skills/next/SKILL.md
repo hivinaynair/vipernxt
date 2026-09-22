@@ -10,62 +10,46 @@ description: >-
 
 # next
 
-Read `docs/product/state.yaml` first, then [the execution contract](../CONTRACT.md). This is the only user-facing entry point; load one phase skill when needed, return here, update state and continue until the next genuine user decision. Schema: [state-schema.md](state-schema.md).
+Read `docs/product/state.yaml`, then [CONTRACT.md](../CONTRACT.md). This is the only user-facing entry; load one phase skill, return here, update state, continue until a real user decision. Schema: [state-schema.md](state-schema.md). Phase detail: [fde-loop.md](../../../docs/playbook/fde-loop.md).
 
-## Entry
+## Route
 
-| Request | Route |
+| Request | Action |
 |---|---|
-| Small change | Do the change; no discovery ceremony |
-| Feature in an accepted product | Extend the existing spine, then plan/build |
-| New idea, including self-use | Find another named person with the problem; category research may run meanwhile |
-| Named person/customer and existing workflow | Engagement: salvage → research/field → shape → first slice |
+| Small change | Do it. No discovery ceremony. |
+| Feature in an accepted product | Extend the spine, then plan/build. |
+| New idea, including self-use | Find another named person with the problem. |
+| Named person + existing workflow | Engagement: salvage → field/research → shape → first slice. |
 
-Record `size: engagement` for both idea intake and customer work; “idea” is not a separate state value. Finding another person validates a discovery participant, not market demand. FDE depth depends on how much of their actual workflow, environment and adoption you own.
+`size` is always `engagement`. Finding another person validates a participant, not market demand. FDE depth is how much of their actual workflow you own.
 
-No state file: create it from the schema with `clone.customized` and `clone.scaffolded: pending`, `clone.setup` and `clone.tickets: deferred`. Record who has the problem and what they use today. Ask for existing material only if missing: local `docs/research/salvage-inbox/`; remote transcripts plus INVENTORY.md, or one zip of originals. Run `bun scripts/salvage-inbox.mjs <inputs>`; see [pile checklist](../salvage/pile.md). Do not put engagements in the reusable kit.
+No state file: create it from the schema with `clone.customized` and `clone.scaffolded: pending`, `clone.setup` and `clone.tickets: deferred`. Record who has the problem and what they use today. Ask for existing material only if missing (`docs/research/salvage-inbox/`, transcripts + INVENTORY.md, or one zip). Run `bun scripts/salvage-inbox.mjs <inputs>`; see [pile.md](../salvage/pile.md). Do not put engagements in this kit.
 
 ## Progression
 
-| Step | Skill/output | Exit condition |
+| Step | Skill | Done when |
 |---|---|---|
-| 0 Salvage | `salvage`; facts from current tools and supplied material | Incumbent and current paid capabilities checked; no unchecked “paper” premise |
-| 1 Research | Decision-relevant primary sources; `before-we-build.md` | Unknowns that change scope named; settled choices not reopened |
-| 2 Field | `field-kit`; on-site, pile or trip | Workflow, exceptions, baseline and eval cases sourced; accepted assumptions explicit |
-| 3 Shape | `shape`; approved design | U5: outcome, affected person, real problem, why obvious build is wrong, safe fallback |
-| 3.5 Ontology | `ontology` | Domain entities/actions/vocabulary; unresolved surprises confirmed |
-| 4 Journeys | `journeys` | Valid ID'd expansion of accepted beats, EARS and feature mapping |
-| Scaffold | `customize` → `scaffold` script | Chosen stack configured and verified; no cloud prerequisites for local clip |
-| 5a Structure | `design-system` | Minimal layout/state primitives before first product screens |
-| 6 First slice | `plan` → `build` | Wave 0 + one working journey, tests and eval evidence; Cursor Cloud preferred, user reviews it |
-| Factory | Setup, GitHub Issues, Eve, remaining planned slices | Accepted scope integrated and verified as a combined product |
+| 0 Salvage | `salvage` | Incumbent and paid capabilities checked |
+| 1 Research | primary sources; `before-we-build.md` | Scope-changing unknowns named |
+| 2 Field | `field-kit` | Workflow, exceptions, baseline, eval cases sourced |
+| 3 Shape | `shape` | U5 accepted |
+| 3.5 Ontology | `ontology` | Domain terms confirmed |
+| 4 Journeys | `journeys` | ID'd spine |
+| Scaffold | `customize` | Recipe applied; no cloud needed for a local clip |
+| 5a Structure | `design-system` | Layout primitives before screens |
+| 6 First slice | `plan` → `build` | Wave 0 + one working journey; user reviews it |
+| Factory | Eve | Remaining approved scope integrated and verified |
 
-Research and field may overlap. Shape may draft while gaps remain, but cannot be done on unaccepted assumptions. The first design review and first working slice are product decisions; mechanically expanding approved content is not another approval gate.
+Research and field may overlap. Shape may draft with gaps; it cannot finish on unaccepted assumptions. The first design review and first working slice are product decisions. U1–U5, eval-set rules, and incumbent-as-fallback live in [fde-loop.md](../../../docs/playbook/fde-loop.md).
 
-U1–U5 detail and optional later generalization: [fde-loop.md](../../../docs/playbook/fde-loop.md). The last ten real cases are a starting eval set, not a statistical guarantee. Record baseline before an incumbent upgrade makes it unrecoverable. Do not report synthetic cases as real outcomes. Keep the incumbent as fallback; judgment systems propose before they can post.
+## Resume
 
-## Build and resume
+Input/data-display work needs the reviewed [data-surface contract](../shape/data-surfaces.md). Stack, wave 0, and isolation: AGENTS.md. Drift: `bun scripts/check-drift.ts`. After clip acceptance, record `clip.acceptance`, then authorized setup. Factory: [factory.md](../../../docs/playbook/factory.md) and [Eve](../../../deploy/eve/README.md) — do not claim an unattended supervisor unless one is running.
 
-Before wave 0 or any slice with inputs/data displays, require the reviewed MVP [data-surface contract](../shape/data-surfaces.md), its approval decision and coverage of the affected journeys. Resolve material gaps through shape/plan; keep unrelated research moving. Reuse existing approval when the contract is unchanged.
+Story change: revise the design clip/table, re-expand the same spine, keep IDs. Reopen shape only when the claim changes. Never reuse a dropped ID.
 
-Run `bun scripts/check-drift.ts` before building; disclose findings and repair actual inconsistencies within scope. Wave 0 owns schema, seed, route shells and initial layout. `bun scripts/journey.ts routes <spine>` lists shells. Schema covers the next slice, not speculative future tables. Seed fixed IDs/dates from the eval set before feature work.
+## Children
 
-Missing local DB keys do not block: PGlite runs locally. Use `bun run db generate`, `bun run db migrate`, `bun run --cwd packages/db db:seed`; stop the dev server before DB scripts. Reset only the disposable local DB when appropriate. Clerk keyless development requires its wiring; package installation alone is not verification.
+Delegate one independent source or one disjoint planned slice. Give the child its skill, inputs, allowed paths, evidence question and output limit. Cursor uses the Grok adapters; otherwise run serially. Stop a slice for an unsettled product choice, missing schema dependency, two failed repair rounds, or the same-theme corrections.
 
-After slice acceptance, record `clip.acceptance: accepted`, its `acceptance_decision` and `evidence` artifact, set setup/tickets pending when applicable, and perform already-authorized provisioning. Build remaining slices in dependency order. Shared surfaces run alone; isolated feature slices may run concurrently only with exclusive ownership. Serial integration must verify the combined product. The factory design is [factory.md](../../../docs/playbook/factory.md); do not claim an unattended supervisor is running unless one actually is.
-
-When a story changes: revise the design clip/table, re-expand the same spine and preserve IDs for unchanged moments. Reopen shape only when the claim changes; otherwise reopen journeys. Never reuse a dropped ID for another meaning. Sync tickets when enabled. A parked/buy-instead outcome has a reason and date.
-
-## Child work and cost
-
-Delegate only an independent question/source or a disjoint planned slice. Give the child the relevant skill, inputs, allowed paths, evidence question and output limit—not all project history. Use salvage-miner, pile-reader, domain-researcher, spine-checker or ui-gate-auditor as appropriate. Cursor uses matching adapters; other hosts use available subagents/sibling workers, or run serially. Missing a vendor-specific harness is not a reason to skip the job.
-
-Start with a few useful sources; expand only for a decision-changing gap. Cache source/date/decision links. Report one consolidated result. Stop a slice for an unsettled product choice, absent schema dependency, two failed verification/repair rounds, or recurring same-theme corrections; keep independent work moving.
-
-## Cloud implementation
-
-Keep discovery, design, journeys and scaffold local. Prefer Cursor Cloud for implementation using [Eve](../../../deploy/eve/README.md). Establish the explicitly chosen product GitHub repository before the first cloud slice; do not push to an inherited kit origin. Use an explicitly approved first-slice coverage catalog for one reviewed-design job, then hold its working result for acceptance. Full production provisioning can wait. Missing Cursor API access is a concrete blocker to cloud execution; offer local execution only as an explicit alternative. MCP connections do not replace the Cursor API key.
-
-## Unattended handoff
-
-When the user authorizes factory execution after accepting the clip, use [Eve](../../../deploy/eve/README.md). Prepare the whole approved MVP coverage catalog before splitting the remaining work; follow [coverage planning](../../../deploy/eve/COVERAGE.md). Include authentication, permissions and tenancy prerequisites where applicable, and require combined-product browser acceptance. Pin the catalog, specifications, data-surface contracts and runtime files in the manifest. Publish an authorized GitHub issue with its immutable manifest reference, then apply the `factory` label to dispatch. Confirm actual workflow status; dispatch is not completion. Execution is serial, creates a draft PR, and remains experimental. The local `factory` CLI is a development runner, not the hosted Eve entry point.
+Discovery stays local. Cloud implementation uses Eve and a chosen product repo; MCP is not a Cursor API key. After they authorize remaining scope, pin the MVP catalog ([COVERAGE.md](../../../deploy/eve/COVERAGE.md)), open a factory-labeled issue, and confirm the workflow — dispatch is not completion. The local `factory` CLI is a development runner.
