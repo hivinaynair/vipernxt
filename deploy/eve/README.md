@@ -2,8 +2,8 @@
 
 Experimental Vercel-hosted factory. A trusted `factory` label plus a valid
 hash-bound readiness packet and coverage catalog starts a batch. There is no `FACTORY_ENABLED` deploy switch.
-The legacy Fly controller has been removed from the kit. Hosted two-slice
-recovery remains required before treating this as unattended production.
+The legacy Fly controller has been removed from the kit. The [hosted benchmark](evals/hosted.md) demonstrates bounded two-slice staging
+delivery and real coordinator continuation. Production release remains a separate gate.
 
 Install and validate with `bun install --frozen-lockfile`, `bun test`,
 `bun run check-types`, and `bun run build`. Vercel uses Node.js 24 at runtime.
@@ -166,4 +166,6 @@ from the entire MVP. A separate final Cursor review must verify all requirements
 on the combined candidate before draft-PR delivery. Interactive journeys require
 browser verification. Older manifests and registered batches without readiness or coverage
 fail closed and need a newly approved batch; they are not retroactively certified.
-These local checks do not replace the still-pending hosted end-to-end test.
+The [hosted evaluation](evals/hosted.md) completed the bounded two-slice CI,
+automatic staging and actual-site acceptance path. Local tests alone do not
+certify customer behavior or broader provider-failure windows.

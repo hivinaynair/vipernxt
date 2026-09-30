@@ -1,6 +1,6 @@
 # Hosted factory readiness — 1 October 2026 (IST)
 
-Status: in progress. No completed hosted delivery or new readiness score is claimed yet.
+**9/10 for the bounded factory workflow and minimal-supervision engineering readiness.** The sixth live trial completed without intervention after launch: two first-attempt slices, independent slice and combined reviews, draft PR, exact-candidate GitHub CI, automatic staging and actual-site acceptance. This is a rubric-based engineering assessment, not a measured reliability probability or customer/MVP certification.
 
 The user authorized implementation, real paid-provider testing and disposable staging. This technical benchmark uses synthetic Return Desk data and covers J1.S1 (order-by-due, clear-filters, due-today). J1.S2/J1.S3, customer discovery, authentication/tenancy and production release are excluded. Ordinary customer intake still requires an observed walkthrough; the exact repository-bound simulation mode cannot certify an MVP.
 
@@ -28,12 +28,11 @@ Required root checks pass: 400 tests, zero failures, 45 files; 217 Eve tests are
 | [Issue #19](https://github.com/hivinaynair/return-desk-cloud-test/issues/19) | Both slices independently accepted; integrated approval with failed checks correctly blocked. Preserved hook-collision and worker-preflight failure evidence. |
 | [Issue #21](https://github.com/hivinaynair/return-desk-cloud-test/issues/21) | Real builder handoff and normal predecessor exit; SELECT independently accepted. Paused when the broken deployed evaluator argv was reproduced. Existing VIEW builder finished; no subsequent reviewer/deployment was dispatched. |
 | [Issue #23](https://github.com/hivinaynair/return-desk-cloud-test/issues/23) | Corrected packet at 8cee41c6ce6cedd0fcb38f2fae00f9adf5ea43d2. SELECT independently accepted at 448f405ba69ffbab037c0e9aa3aa9555a3ad209a; VIEW independently accepted at fd21bedeae9d6640addd74afaadd8ce845ed8a7d. Combined review ran all required checks successfully (173 unit tests, build and three browser cases), but approval included a failed supplementary excluded-journey test. It correctly held; no PR or deployment was produced. The original review clock was not reset. |
-
 | [Issue #24](https://github.com/hivinaynair/return-desk-cloud-test/issues/24) | SELECT accepted at 3e3863c33a3bca8b1b6bbd8b7e16c9d8b8a86836; VIEW built at 0eeaa91cc2f7cf9a470c73668bf3cbb4bbd812b4. Three separate reviewer reports used incorrect IDs (one also had malformed notes). Correct hold at retry exhaustion; no PR or staging delivery. |
-
 | [Issue #25](https://github.com/hivinaynair/return-desk-cloud-test/issues/25) | SELECT and VIEW independently accepted on first attempts, no format retries, candidate d41a9f2b441fa54d94e67a9ec2f0c586264ccc38. Integrated code checks and local browser passed; reviewer incorrectly required a not-yet-deployed origin and rejected. No PR or staging delivery. |
+| [Issue #26](https://github.com/hivinaynair/return-desk-cloud-test/issues/26) | **Completed** at 92c3296e4b465e5122334ae693c4c3bce8cf0e5f. Both slices passed independent review on first attempts; combined review passed 173 product tests, build and three local browser cases. Exact-SHA CI passed; one automatic staging workflow deployed the candidate; deployed independent review and a separate direct browser run each passed three live cases. No retries, CI/integration repairs or operator intervention after launch. |
 
-Fourth [issue #24](https://github.com/hivinaynair/return-desk-cloud-test/issues/24) uses the exact third intake and unchanged evaluators, requirements and limits. Runtime 39b9c98 is deployed as vipernxt-factory-5cn8xwzb5-vinaynair-projects.vercel.app. Prior reviewer FINISHED status was confirmed before dispatch.
+Fourth [issue #24](https://github.com/hivinaynair/return-desk-cloud-test/issues/24) used the exact third intake and unchanged evaluators, requirements and limits. Runtime 39b9c98 was deployed as vipernxt-factory-5cn8xwzb5-vinaynair-projects.vercel.app. Prior reviewer FINISHED status was confirmed before dispatch.
 
 Setup [PR #18](https://github.com/hivinaynair/return-desk-cloud-test/pull/18), [PR #20](https://github.com/hivinaynair/return-desk-cloud-test/pull/20) and [PR #22](https://github.com/hivinaynair/return-desk-cloud-test/pull/22) passed CI and merged only disposable staging. No production-main merge occurred. The original ViperNxt main remains 4a10ccb1c8717e0c8c75c747fe364120a75079c4.
 
@@ -45,6 +44,23 @@ The workspace Docker build hit upstream Docker Hub HTTP 429 and is not counted a
 
 Costs are authorized. One Gateway inference reported $0.00016; Cursor/hosting totals are unknown. There is no zero-spend claim or dollar-cap guarantee.
 
-Fifth [issue #25](https://github.com/hivinaynair/return-desk-cloud-test/issues/25) uses the identical intake and limits. Reviewer-contract clarification 7d8e3d2 is live as vipernxt-factory-cxovp7h4n-vinaynair-projects.vercel.app; 400 root tests and 217 included Eve tests, strict types and Vercel build pass.
+Fifth [issue #25](https://github.com/hivinaynair/return-desk-cloud-test/issues/25) used the identical intake and limits. Reviewer-contract clarification 7d8e3d2 was deployed as vipernxt-factory-cxovp7h4n-vinaynair-projects.vercel.app; 400 root tests and 217 included Eve tests, strict types and Vercel build pass.
 
-Remaining: fresh phase-explicit trial through both slices, combined review, exact-candidate GitHub CI, automatic staging receipt and deployed browser acceptance. Cold failover during provider creation and ambiguous remote staging dispatch have only fixture coverage; these limits prevent a 10/10 reliability claim.
+Sixth [issue #26](https://github.com/hivinaynair/return-desk-cloud-test/issues/26) uses identical intake and budgets. Runtime a4c02e2 is live as vipernxt-factory-7f7dhgybr-vinaynair-projects.vercel.app. 400 root tests, 217 included Eve tests, strict types and Vercel build pass. The content-addressed upload returned a transient 502; CLI cache reconciliation succeeded with exit 0 and deployment READY.
+
+## Final delivery evidence
+
+- [Draft product PR #27](https://github.com/hivinaynair/return-desk-cloud-test/pull/27) targets staging and remains unmerged; head `92c3296e4b465e5122334ae693c4c3bce8cf0e5f`.
+- [Exact-candidate CI](https://github.com/hivinaynair/return-desk-cloud-test/actions/runs/36778580193/job/110102626773) completed successfully with no repairs.
+- [Automatic staging workflow](https://github.com/hivinaynair/return-desk-cloud-test/actions/runs/36778700867) completed successfully; request `factory-2d81baf8-6c20-4f59-9db3-10bdc5ffdc4e`, run `36778700867`. No manual deployment substituted for it. The existing repository deployment secrets were consumed successfully.
+- GitHub deployment `6770397858` / status `19082054966` were verified by the running engine against the candidate, expected creator, staging environment, run and request. Cloud inspection credentials return 403 for GitHub deployment reads; Actions metadata, Vercel metadata and actual-site checks were independently corroborated.
+- Vercel deployment `vipernxt-pilot-staging-mngnz3w0i-vinaynair-projects.vercel.app` is READY and its factoryCandidate metadata equals the accepted SHA. [Live read-only staging](https://vipernxt-pilot-staging.vercel.app/) passed the ordinary, incomplete/exception and denial cases in both independent review and a separate direct Chromium run (three passed, no skips, flakes or failures).
+- [Immutable final checkpoint](https://github.com/hivinaynair/return-desk-cloud-test/blob/35b6318df922b747fd38e3e3976c437812d81cd2/factory-state.json) records `slice-complete`, matching integrated/CI/deployment/deployed-review candidates, one builder attempt per job, no format retries and no error.
+
+## Score and remaining boundary
+
+The offline ten-part rubric scored 9/10, and hosted readiness previously scored 8/10. The full live two-slice delivery, earlier real coordinator supersession/continued collection and verified GitHub owner mention now earn the outstanding live-pilot point, bringing hosted readiness to 9/10. Restart/fencing and staging-dispatch protocols retain only half credit each: cold failure during provider creation and ambiguous remote staging dispatch have fixture coverage but have not been fault-injected live. Broader repeat runs are needed for 10/10.
+
+Requirement completeness remains a customer decision. Normal intake still requires an observed walkthrough and hash-bound approval; material policy gaps, changed scope/permissions and exhausted budgets hold. This synthetic first-slice run certifies the filter workflow and read-only demonstration only. Persistent returns, production authentication/tenant security, customer acceptance, full MVP completion and production release were not exercised. Production main remains unchanged.
+
+The app's PR attachment RPC timed out; the actual draft PR and its direct links are verified. This metadata limitation did not affect Eve, CI, staging or acceptance.
