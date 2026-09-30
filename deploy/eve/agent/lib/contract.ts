@@ -168,6 +168,23 @@ export function parseReview(value: unknown, commit: string, commands: string[][]
     );
   }
   const verdict: ReviewVerdict = r.verdict ?? (r.approved ? "approve" : "request_changes");
+  if (
+    verdict === "approve" &&
+    r.approved !== false &&
+    r.unchanged &&
+    !r.findings.length &&
+    r.criteria.every((c) => c.passed) &&
+    r.checks
+      .filter((c) => commands.some((required) => argv(required) === argv(c.command)))
+      .every((c) => c.exitCode === 0) &&
+    r.checks.some((c) => c.exitCode !== 0)
+  )
+    throw new SurplusCheckFailure(
+      "Approval contains failed supplementary checks. Independently rerun the pinned scope. " +
+        "Report only the required phase commands in checks; retain other outcomes in notes. " +
+        "Any genuine defect affecting an included requirement must reject or request_changes. " +
+        JSON.stringify(r.checks.filter((c) => c.exitCode !== 0)),
+    );
   if (verdict === "approve") {
     if (
       r.approved === false ||
@@ -192,6 +209,8 @@ export function parseReview(value: unknown, commit: string, commands: string[][]
     review: r,
   };
 }
+/** Rejected report eligible for fresh bounded verification; never normalize it into approval. */
+export class SurplusCheckFailure extends Error {}
 export function checkReview(value: unknown, commit: string, commands: string[][], steps: string[]) {
   const parsed = parseReview(value, commit, commands, steps);
   if (parsed.verdict !== "approve")

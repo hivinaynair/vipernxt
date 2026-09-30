@@ -220,6 +220,76 @@ test("all slice receipts reserve final review rather than creating a PR", async 
 });
 
 for (const phase of ["integrated-review", "deployed-review"] as const) {
+  test(`${phase} rejects surplus failures and obtains fresh verification without resetting identity or clocks`, async () => {
+    const f = fixture();
+    if (phase === "deployed-review") f.enableDeployment();
+    f.startReview();
+    f.state().batch!.active!.phase = phase;
+    const before = { ...f.state().batch!.active! };
+    const previousIntegrated = structuredClone(f.state().batch!.integratedReview);
+    const r = phase === "deployed-review" ? f.deployedReview() : f.goodReview();
+    r.checks.push({
+      command: ["bunx", "playwright", "test"],
+      exitCode: 1,
+      evidence: "Supplementary suite contains an excluded journey",
+    });
+    f.setReview(r);
+    await tick(f.deps);
+    const b = f.state().batch!;
+    expect(b.status).toBe("running");
+    expect(b.integratedReview).toEqual(previousIntegrated);
+    expect(b.deployedReview).toBeUndefined();
+    expect(b.active?.agentId).not.toBe(before.agentId);
+    expect(b.active?.base).toBe(before.base);
+    expect(b.active?.startedAt).toBe(before.startedAt);
+    expect(b.active?.phase).toBe(phase);
+    expect(b.attempts).toEqual({});
+    expect(Object.values(b.unreadable!)).toEqual([1]);
+    f.setReview(phase === "deployed-review" ? f.deployedReview() : f.goodReview());
+    await tick(f.deps);
+    expect(f.state().batch!.active).toBeUndefined();
+    expect(f.state().batch!.status).toBe(phase === "deployed-review" ? "mvp-complete" : "running");
+  });
+  test(`${phase} supplementary contradictions cannot buy unlimited reviewers or any builder attempt`, async () => {
+    const f = fixture();
+    if (phase === "deployed-review") f.enableDeployment();
+    f.startReview();
+    f.state().batch!.active!.phase = phase;
+    const before = { ...f.state().batch!.active! };
+    const r = phase === "deployed-review" ? f.deployedReview() : f.goodReview();
+    r.checks.push({
+      command: ["bunx", "playwright", "test"],
+      exitCode: 1,
+      evidence: "Unrequested suite failed",
+    });
+    f.setReview(r);
+    for (let n = 0; n < 3; n++) await tick(f.deps);
+    const b = f.state().batch!;
+    expect(b.status).toBe("blocked");
+    expect(b.error).toContain("Review retry budget exhausted");
+    expect(b.active?.base).toBe(before.base);
+    expect(b.active?.startedAt).toBe(before.startedAt);
+    expect(b.attempts).toEqual({});
+    expect(Object.values(b.unreadable!)).toEqual([2]);
+  });
+  test(`${phase} required failure still holds even when supplementary records also fail`, async () => {
+    const f = fixture();
+    if (phase === "deployed-review") f.enableDeployment();
+    f.startReview();
+    f.state().batch!.active!.phase = phase;
+    const r = phase === "deployed-review" ? f.deployedReview() : f.goodReview();
+    r.checks[0].exitCode = 1;
+    r.checks.push({
+      command: ["bunx", "playwright", "test"],
+      exitCode: 1,
+      evidence: "Unrequested suite failed",
+    });
+    f.setReview(r);
+    await tick(f.deps);
+    expect(f.state().batch!.status).toBe("blocked");
+    expect(f.state().batch!.unreadable).toBeUndefined();
+    expect(f.state().batch!.attempts).toEqual({});
+  });
   test(`${phase} malformed output retries the same candidate without rebuilding or resetting its clock`, async () => {
     const f = fixture();
     if (phase === "deployed-review") f.enableDeployment();

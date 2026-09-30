@@ -148,6 +148,12 @@ Git commits; inherited VM signing can otherwise hang those tests. Startup
 should check the required tools. Report final observed command results once,
 preserving failed setup attempts and excluded-journey outcomes in review notes.
 Final required failures still block acceptance.
+For pinned evaluators with nonstandard names, use an explicit relative path,
+for example `bun test ./e2e/comparison/selection.eval.ts`. Without `./`, Bun
+treats the argument as a discovery filter and can silently skip it when other
+tests match. Intake rejects this mistake in declared job, integrated and
+deployed commands before reserving a worker. Opaque test scripts still need
+their own checks that the intended cases executed.
 Hook diagnostics are also recorded without tokens in
 `/tmp/vipernxt-factory-hook.jsonl` inside the agent VM.
 

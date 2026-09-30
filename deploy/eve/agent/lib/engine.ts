@@ -12,6 +12,7 @@ import {
   intake,
   type Job,
   parseReview,
+  SurplusCheckFailure,
   validateDiff,
   verificationCommands,
 } from "./contract.js";
@@ -110,6 +111,12 @@ export function executionCommands(b: Batch, job: Job) {
 export function workerPrompt(b: Batch, job: Job): string {
   const contract = {
     job,
+    deadline: new Date(
+      Math.min(
+        runDeadline(b),
+        b.active ? b.active.startedAt + b.manifest.limits.jobSeconds * 1000 : Infinity,
+      ),
+    ).toISOString(),
     deployment: b.deployment,
     requirements: promptRequirements(b, job),
     criterionIds: b.coverage ? reviewCriteria(b, job) : job.steps,
@@ -131,8 +138,8 @@ export function workerPrompt(b: Batch, job: Job): string {
       `Commit: ${b.active.base}. Compare against ${b.active.phase === "integrated-review" ? b.manifest.base : b.candidate}.`,
       "Use a writable Cloud VM for verification, not an early read-only exploration turn. First create and immediately remove a temporary file in the repository root using mktemp and rm, so repository hooks are active. Keep tracked files unchanged; never invoke the completion hook manually.",
       "For authentication, use dedicated Clerk development identities and runtime secrets with the pinned approved access matrix. Never bypass authentication or output credentials. Verify signed-out, role and cross-tenant denials where applicable.",
-      "Read every pinned specification and verify every cited journey step, including fields, tables, validation, permissions and error states. Run every command, including browser evidence when requested. Your entire reply must be one JSON object. The first character is { and the last is }. No prose, headings or fences.",
-      "If you approve, return this object with real evidence strings. Copy every command and criterionIds value exactly. Extra checks are allowed. Use notes for nonblocking observations; findings are blockers. Do not abbreviate the commit, rename argv or invent steps:",
+      "Read every pinned specification and verify the included requirements and their cited journey steps, including fields, tables, validation, permissions and error states. Honor scope exclusions. Run the commands for this phase, including required browser evidence; integrated review does not certify a site that has not been deployed. Unrequested screenshots/videos must not delay required verification or completion before the original deadline. Your entire reply must be one JSON object. The first character is { and the last is }. No prose, headings or fences.",
+      "If you approve, return this object with real evidence strings. Copy every required command and criterionIds value exactly. Put only required phase commands in checks. Record supplementary commands and their actual outcomes in notes; any genuine in-scope defect remains a blocker. Findings are blockers. Do not abbreviate the commit, rename argv or invent steps:",
       "Report one final observed result per command in checks. Preserve earlier failed attempts, their exit codes and any environment corrections in notes; rerun affected required checks after a correction. A final failed required check cannot approve. Certify only the pinned scope: record tests of explicitly excluded journeys in notes with their actual outcomes, never as proof of an included requirement. Do not omit an in-scope defect or change an evaluator to obtain a pass.",
       JSON.stringify({
         commit: b.active.base,
@@ -155,6 +162,7 @@ export function workerPrompt(b: Batch, job: Job): string {
     ].join("\n");
   return [
     "Implement only this approved slice. Read AGENTS.md and all pinned specifications. Do not invent fields or requirements. Do not modify pinned evaluators, factory state, GitHub workflows or unrelated paths. Commit and push only the implementation branch; do not open or merge PRs or deploy.",
+    "Complete required checks and push the approved implementation before the original deadline. Unrequested screenshots/videos are optional and must not delay completion; record capture limitations in the summary. Never skip required browser tests or requested evidence.",
     `Base: ${b.active?.base}.`,
     JSON.stringify(contract),
     b.feedback ? `Previous review findings: ${b.feedback}` : "",
@@ -471,7 +479,7 @@ export async function tick(overrides: Partial<typeof live> = {}) {
         reviewCriteria(b, job),
       );
     } catch (error) {
-      if (b.active.phase !== "review") throw error;
+      if (b.active.phase !== "review" && !(error instanceof SurplusCheckFailure)) throw error;
       retryReview(error instanceof Error ? error.message : "Unreadable review", job);
       await persist("review-retry");
       return;
