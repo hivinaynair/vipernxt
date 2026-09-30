@@ -141,6 +141,13 @@ repository default branch because Cursor Builds use its configuration. The
 environment must declare its Dockerfile and install command. This source check
 does not prove the active Cursor Build is fresh: verify that Build separately
 before dispatch. The install command must include `bun install --frozen-lockfile`.
+Exercise the product's full verification suite in that image, including its
+fixture dependencies. The Return Desk pilot needs ZIP and Pandoc for document
+fixtures and an explicit `commit.gpgsign=false` runtime override for temporary
+Git commits; inherited VM signing can otherwise hang those tests. Startup
+should check the required tools. Report final observed command results once,
+preserving failed setup attempts and excluded-journey outcomes in review notes.
+Final required failures still block acceptance.
 Hook diagnostics are also recorded without tokens in
 `/tmp/vipernxt-factory-hook.jsonl` inside the agent VM.
 
