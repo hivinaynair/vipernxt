@@ -451,10 +451,20 @@ export async function tick(overrides: Partial<typeof live> = {}) {
       if (!b.active.branch || (await head(b.active.branch)) !== b.active.base)
         throw new Error("Worker branch changed during independent review");
     }
+    let reviewJson: unknown;
+    try {
+      reviewJson = extractReviewJson(run.result);
+      if (!reviewJson || typeof reviewJson !== "object" || Array.isArray(reviewJson))
+        throw new Error("Independent review must return a JSON object");
+    } catch (error) {
+      retryReview(error instanceof Error ? error.message : "Unreadable review", job);
+      await persist("review-retry");
+      return;
+    }
     let parsed: ReturnType<typeof parseReview>;
     try {
       parsed = parseReview(
-        extractReviewJson(run.result),
+        reviewJson,
         b.active.base,
         executionCommands(b, job),
         reviewCriteria(b, job),

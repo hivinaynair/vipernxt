@@ -218,6 +218,46 @@ test("all slice receipts reserve final review rather than creating a PR", async 
   expect(f.state().batch!.active?.phase).toBe("integrated-review");
   expect(f.prs()).toBe(0);
 });
+
+for (const phase of ["integrated-review", "deployed-review"] as const) {
+  test(`${phase} malformed output retries the same candidate without rebuilding or resetting its clock`, async () => {
+    const f = fixture();
+    if (phase === "deployed-review") f.enableDeployment();
+    f.startReview();
+    const before = { ...f.state().batch!.active!, phase };
+    f.state().batch!.active = before;
+    f.setReview("not a valid reviewer object");
+    await tick(f.deps);
+    const b = f.state().batch!;
+    expect(b.status).toBe("running");
+    expect(b.active?.phase).toBe(phase);
+    expect(b.active?.base).toBe(before.base);
+    expect(b.active?.branch).toBe(before.branch);
+    expect(b.active?.startedAt).toBe(before.startedAt);
+    expect(b.active?.agentId).not.toBe(before.agentId);
+    expect(b.attempts).toEqual({});
+    expect(Object.values(b.unreadable!)).toEqual([1]);
+    f.setReview(phase === "deployed-review" ? f.deployedReview() : f.goodReview());
+    await tick(f.deps);
+    expect(f.state().batch!.status).toBe(phase === "deployed-review" ? "mvp-complete" : "running");
+    expect(f.state().batch!.active).toBeUndefined();
+  });
+  test(`${phase} format retries exhaust without replacing the candidate or spending a builder attempt`, async () => {
+    const f = fixture();
+    if (phase === "deployed-review") f.enableDeployment();
+    f.startReview();
+    f.state().batch!.active!.phase = phase;
+    const candidate = f.state().batch!.active!.base;
+    f.setReview("unreadable JSON object");
+    for (let n = 0; n < 3; n++) await tick(f.deps);
+    expect(f.state().batch!.status).toBe("blocked");
+    expect(f.state().batch!.error).toContain("Review retry budget exhausted");
+    expect(f.state().batch!.active?.base).toBe(candidate);
+    expect(f.state().batch!.active?.phase).toBe(phase);
+    expect(f.state().batch!.attempts).toEqual({});
+    expect(Object.values(f.state().batch!.unreadable!)).toEqual([2]);
+  });
+}
 test("final review must include already implemented requirements", async () => {
   const f = fixture();
   f.startReview();

@@ -32,9 +32,9 @@ Track questions discovered during implementation, business rules guessed by buil
 
 Validation on this staging-based documentation branch: `bun test` completed with 333 passes and zero failures; type checks passed; all 22 newly introduced local Markdown links resolve; `git diff --check` passed. Boundary/token/journey commands also exited successfully, but this bare kit has no product app/spine, so those checks do not demonstrate requirements coverage or product behavior. No new customer interview, paid factory run or hosted deployment was performed.
 
-## Limits and next implementation step
+## Limits at the documentation-only checkpoint
 
-This change strengthens skill instructions and contract templates. No new runtime schema, discovery validator, automatic approval, merge or deployment behavior is added. Existing hooks check shape status; Eve validates the pinned spine/catalog and execution evidence. Neither verifies every row of the new review or proves exhaustive discovery. A separate deterministic validator could enforce references, case mappings and unresolved-item blocking, with migration rules for existing engagements; it would still require customer walkthroughs and behavioral verification.
+At that checkpoint, the change strengthened skill instructions and contract templates without adding runtime validation or deployment behavior. The implementation below subsequently added the structural gate and staging handoff. Neither version proves exhaustive discovery; customer walkthroughs and behavioral verification remain necessary.
 
 
 ## Implementation following the repository review

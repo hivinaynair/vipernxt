@@ -1,15 +1,13 @@
 import { defineWorkflowTool, type WorkflowStepToolContext } from "eve/tools";
 import { RetryableError } from "workflow";
-import { parse as parseYaml } from "yaml";
 import { z } from "zod";
+import { approvedContract } from "../lib/approved-contract.js";
 import { repository, required } from "../lib/config.js";
 import { digest, intake, validateManifest } from "../lib/contract.js";
-import { coverageSchema, validateCoverage } from "../lib/coverage.js";
 import { deploymentReceipt, runDeadline, verifyDeployment } from "../lib/deployment.js";
 import { file, github, head, type Issue, isAncestor } from "../lib/github.js";
 import { assertApprovedIntake } from "../lib/intake.js";
 import { postReceipt } from "../lib/receipt.js";
-import { validateReadiness } from "../lib/requirements-readiness.js";
 import { runBatch } from "../lib/run-batch.js";
 import { verifyRuntime } from "../lib/runtime.js";
 import {
@@ -144,43 +142,7 @@ async function register(ctx: WorkflowStepToolContext) {
       required("FACTORY_CALLBACK_AUDIENCE"),
       file,
     );
-    const files: Record<string, string> = {};
-    for (const p of manifest.specFiles) files[p] = (await file(p, source.commit)).text;
-    const catalog = coverageSchema.parse(
-      JSON.parse((await file(manifest.coverageFile, source.commit)).text),
-    );
-    if (!manifest.specFiles.includes(catalog.spineFile))
-      throw new Error("Journey spine must be pinned");
-    const coverage = validateCoverage(
-      catalog,
-      manifest,
-      parseYaml((await file(catalog.spineFile, source.commit)).text),
-    );
-    const packet = JSON.parse(files[manifest.requirementsFile]);
-    const readiness = validateReadiness({
-      coverageFile: manifest.coverageFile,
-      file: manifest.requirementsFile,
-      packetText: files[manifest.requirementsFile],
-      approval: manifest.approval,
-      scope: coverage.scope,
-      specFiles: manifest.specFiles,
-      files,
-      state: parseYaml(files[packet.stateFile]),
-      requirementIds: coverage.requirements.map((r) => r.id),
-      staging: Boolean(coverage.deployed?.automatic),
-      requiredArtifacts: [
-        manifest.coverageFile,
-        coverage.spineFile,
-        ...(coverage.accessFile ? [coverage.accessFile] : []),
-        ...(coverage.deployed?.automatic
-          ? [
-              coverage.deployed.automatic.workflow,
-              ".github/scripts/factory-staging.ts",
-              ...coverage.deployed.automatic.sources,
-            ]
-          : []),
-      ],
-    });
+    const { coverage, readiness } = await approvedContract(manifest, source.commit, file);
     state.batch = {
       workflowOwner: ctx.callId,
       issue: issueNumber,
