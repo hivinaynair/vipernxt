@@ -26,6 +26,8 @@ Validate/render with `bun scripts/journey.ts` (`validate`, `render --out`). Inde
 
 Reconcile [data-surfaces.md](../shape/data-surfaces.md) to step IDs. Keep the inventory in the contract, not the YAML. Missing information requirements return to shape/plan.
 
+Resolve the [requirements review](../shape/requirements-readiness.md) from design beats to step/criterion references. Distinct rule, denial, recovery and operating promises need observable criteria and linked acceptance cases; do not collapse them into “works”. Faithful expansion changes no policy. Missing or contradictory policy returns to `/next`.
+
 ## Stable IDs
 
 Never hand-edit generated markdown, renumber to close gaps, or reuse a retired ID. Insert `J1.S2b`. Same meaning keeps its ID. Wrong story → shape; wrong expansion → YAML only. Tests cite step IDs. `check-journeys` is citation coverage, not behavior proof.

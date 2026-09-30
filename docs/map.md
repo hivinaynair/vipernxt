@@ -26,6 +26,8 @@ is a view of this file — not a second spec.
 
 `status` is the glance. `setup` waits for the clip. `shape` does not rename packages. Loop: [playbook/fde-loop.md](playbook/fde-loop.md).
 
+Before implementation, shape links a scoped [requirements review](../.agents/skills/shape/requirements-readiness.md): entities/lifecycle, fields/displays, rules/access, applicable integration/operating constraints and acceptance cases. Draft domain decisions before approval; finalize ontology/spine before wave 0. Resolve material unknowns and record approval once. Before unattended work, reconcile the whole MVP and pin its contracts. This review is a playbook gate; the existing UI hook checks shape status, not requirements completeness.
+
 ## Repo
 
 | Path | Role |

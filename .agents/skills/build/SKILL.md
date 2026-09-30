@@ -11,7 +11,7 @@ description: >-
 
 Read [CONTRACT.md](../CONTRACT.md), AGENTS.md, served spine criteria, spec and ontology. Output: implementation, checks, eval evidence, and a reviewable branch/PR on the tested commit. Do not change the accepted story or expand the slice.
 
-Read the approved [data-surface contract](../shape/data-surfaces.md) before edits. Do not invent fields, columns, calculations or validation. Missing material detail returns to `/next`.
+Read the scoped [requirements review](../shape/requirements-readiness.md) and relevant linked contracts/cases before edits. Do not invent fields, entities, rules, permissions, side effects or operating promises. Missing material detail returns to `/next`; internal technical choices within accepted behavior remain the builder's job.
 
 ## Isolation
 
@@ -20,6 +20,8 @@ Isolated worktree. Branch from staging (local staging before provisioning; never
 ## Verify
 
 For forms/tables, check the approved surface IDs: fields, rules, permissions, errors, search/sort/filter, persistence. Tests cite journey step IDs and exercise behavior. Run the AGENTS.md merge bar, the affected production build, and a real critical browser path (`next-dev-loop` or equivalent). Missing required evidence leaves the slice unverified.
+
+Exercise the linked acceptance cases and resulting state/side effects, including applicable denial, boundary, duplicate, conflict and dependency-failure outcomes. A citation, screenshot or checklist alone does not prove a rule. Operating targets must be measured under the approved workload/environment.
 
 `bun scripts/eval.ts --require-cases` — cases in `*.eval.ts`. Report score, denominator, failures, skips, provenance. A low score is a review finding; a broken harness is not a pass. Final clip: `bun run check-journeys -- --complete` plus combined-product browser journeys. Bug fixes: capture the failing behavior first. Green exit without complete output is not evidence.
 

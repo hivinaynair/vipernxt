@@ -164,3 +164,5 @@ after shape. No state file = boilerplate, not gated. An **instrument** (eval rep
 baseline count — U4) is not product UI — keep it out of those trees.
 
 **`clip.acceptance`.** Set `accepted` only after the user accepts the working slice (or explicitly authorizes a synthetic review). Record `acceptance_decision` and an existing `evidence` artifact. An approved design alone does not accept the implementation.
+
+**Requirements approval.** No extra phase or state field is required. The design links `docs/product/requirements-review.md` and canonical contracts. A decision names the approved first-slice/MVP scope and reviewed revisions, with the user's verbatim answer. Material findings use ordinary `held` items; a deferral cannot leave their dependent behavior in approved implementation scope. Before wave 0, `/next` reconciles the approved packet against finalized ontology/spine. Before remaining factory work, it reconciles the whole MVP and reuses existing authorization. This is a playbook obligation; `check-drift` and the UI hook do not validate packet completeness.

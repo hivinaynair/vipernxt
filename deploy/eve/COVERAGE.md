@@ -11,6 +11,8 @@ contents with the approved execution base. Workers cannot edit them. This versio
 supports one authoritative MVP spine file, not a multi-file spine collection;
 consolidate the approved MVP journeys into that file before dispatch.
 
+Before constructing the catalog, reconcile the scoped [requirements review](../../.agents/skills/shape/requirements-readiness.md). Include it, ontology, applicable integration/operating/access contracts and referenced acceptance-case definitions in `specFiles` alongside data surfaces. Translate distinct rule, denial, recovery and operating promises into observable spine criteria; case definitions provide detail, not a second catalog. This is a planning obligation, not a new catalog schema field or an automated completeness check. The runtime validates the pinned catalog/spine, not whether an interview found every requirement.
+
 ```json
 {
   "version": 1,

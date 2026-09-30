@@ -19,9 +19,9 @@ Follow [the execution contract](../CONTRACT.md). Input: participant/workflow evi
 3. **Actors:** identify who acts, owns policy/data/money and never logs in. Default one application with explicit seats/roles; do not invent a separate app for every person. Confirm only new authority/scope choices.
 4. **Foundations:** settle auth (Clerk when needed), tenancy, permissions, persistence and navigation as required or explicitly unnecessary. Access matrix and test identities: [cloud-auth.md](../../../docs/kit/cloud-auth.md). Auth belongs in the first real journey.
 5. **Journeys:** one table row per seat: bucket, wants, does, sees after first beat, sees at end. Number clip beats. Confirm the story before screens.
-6. **Screens and data:** [data-surfaces.md](data-surfaces.md) for MVP fields, columns and rules. Then layout bands and empty/loading/error/recovery. Skip screens for a headless clip.
+6. **Requirements and screens:** use [requirements-readiness.md](requirements-readiness.md) to gather applicable contracts, including a draft domain model and [data-surfaces.md](data-surfaces.md). Walk ordinary/incomplete/exception cases, then layout bands and empty/loading/error/recovery. Skip screens for a headless clip, not its data or behavior contracts.
 7. **Surfaces:** select web/agent/db and facets from the recipe, with reasons. This phase records choices; scaffolding happens after design acceptance.
-8. **Review:** reconcile the doc end to end, remove contradictions/TBDs and request the unresolved design approval. Record the decision ID in state. Return to `/next`; do not add another stop or ask the user to invoke implementation.
+8. **Review:** reconcile the linked requirements review, run an independent omission/contradiction pass, and resolve material findings for the named scope. Request only unresolved approval of the design and reviewed contract revisions; record the decision ID in state. Return to `/next`; do not add another stop or ask the user to invoke implementation.
 
 State owns gate status and decision references; the doc owns the accepted product. Preserve progress across sessions without reconstructing approval from prose. A written brief can settle several gates at once; label assumptions individually. User research gaps remain gaps unless explicitly accepted.
 

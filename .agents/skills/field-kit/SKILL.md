@@ -23,7 +23,7 @@ Markdown is the questionnaire. Trip DOCX: `bun scripts/homework.mjs build docs/p
 
 Answer discoverable questions yourself. Ask about yesterday, the last ten cases, the last failure. Avoid compliments and wishlists. Five priority questions; ~15 typed prompts. Photograph screens only with permission. Include the operator, the money/reporting owner, and someone affected.
 
-Observe one completed form and one real table decision for the [data-surface contract](../shape/data-surfaces.md). Write `docs/product/homework/<nn>-<topic>.md`: who/where, bullet questions, capture checkboxes, done-when. Move answered material under `## Closed`/`## Settled`.
+Observe one completed form and one real table decision for the [data-surface contract](../shape/data-surfaces.md). Follow a normal, incomplete and exception record from source to receipt: who knows each value, entity ownership/state changes, rules, corrections, failures and work outside the software. Use [requirements readiness](../shape/requirements-readiness.md) to identify applicable evidence gaps, not to recite every question. Write `docs/product/homework/<nn>-<topic>.md`: who/where, bullet questions, capture checkboxes, done-when. Move answered material under `## Closed`/`## Settled`.
 
 ## Absorb
 

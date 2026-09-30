@@ -11,7 +11,7 @@ description: >-
 
 Input: accepted claim and workflow evidence. Output: `docs/product/ontology.md`, before spine/schema work. Follow [execution contract](../CONTRACT.md) and artifact caps.
 
-Define entities in the participants' vocabulary, then properties, links/cardinality, actions/authorized actors, states and allowed transitions. An ontology describes the domain; tables are later storage choices.
+Use [model-contract.md](model-contract.md): entities and identity, typed properties and invariants, links/cardinality/optionality, ownership/source of truth, actions/authorized actors, states/transitions, lifecycle and applicable retry/conflict behavior. Draft during shape when needed to settle policy; final expansion preserves approved meaning. An ontology describes the domain; tables are later storage choices.
 
 Every entity/field needs provenance. Printed forms, incumbent data, field observations and authoritative rules are evidence with different strength. A printed field is not automatically necessary or legally required. Mark fields observed-used, required-by-rule, historical, assumed or unknown. Resolve overloads and rejected synonyms; canonical terms then apply to journeys, code, seed and UI.
 

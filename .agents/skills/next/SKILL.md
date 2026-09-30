@@ -32,7 +32,7 @@ No state file: create it from the schema with `clone.customized` and `clone.scaf
 | 0 Salvage | `salvage` | Incumbent and paid capabilities checked |
 | 1 Research | primary sources; `before-we-build.md` | Scope-changing unknowns named |
 | 2 Field | `field-kit` | Workflow, exceptions, baseline, eval cases sourced |
-| 3 Shape | `shape` | U5 accepted |
+| 3 Shape | `shape` | U5 and scoped design/contracts approved; material gaps resolved |
 | 3.5 Ontology | `ontology` | Domain terms confirmed |
 | 4 Journeys | `journeys` | ID'd spine |
 | Scaffold | `customize` | Recipe applied; no cloud needed for a local clip |
@@ -44,7 +44,7 @@ Research and field may overlap. Shape may draft with gaps; it cannot finish on u
 
 ## Resume
 
-Input/data-display work needs the reviewed [data-surface contract](../shape/data-surfaces.md). Stack, wave 0, and isolation: AGENTS.md. Drift: `bun scripts/check-drift.ts`. After clip acceptance, record `clip.acceptance`, then authorized setup. Factory: [factory.md](../../../docs/playbook/factory.md) and [Eve](../../../deploy/eve/README.md) — do not claim an unattended supervisor unless one is running.
+Before wave 0, reconcile the [requirements review](../shape/requirements-readiness.md) with finalized ontology and spine criteria; faithful expansion adds no approval. Before factory handoff, reconcile the whole remaining MVP, not just the first clip. Stack, wave 0, and isolation: AGENTS.md. Drift: `bun scripts/check-drift.ts`. After clip acceptance, record `clip.acceptance`, then authorized setup. Factory: [factory.md](../../../docs/playbook/factory.md) and [Eve](../../../deploy/eve/README.md) — do not claim an unattended supervisor unless one is running.
 
 Story change: revise the design clip/table, re-expand the same spine, keep IDs. Reopen shape only when the claim changes. Never reuse a dropped ID.
 
