@@ -133,6 +133,7 @@ export function workerPrompt(b: Batch, job: Job): string {
       "For authentication, use dedicated Clerk development identities and runtime secrets with the pinned approved access matrix. Never bypass authentication or output credentials. Verify signed-out, role and cross-tenant denials where applicable.",
       "Read every pinned specification and verify every cited journey step, including fields, tables, validation, permissions and error states. Run every command, including browser evidence when requested. Your entire reply must be one JSON object. The first character is { and the last is }. No prose, headings or fences.",
       "If you approve, return this object with real evidence strings. Copy every command and criterionIds value exactly. Extra checks are allowed. Use notes for nonblocking observations; findings are blockers. Do not abbreviate the commit, rename argv or invent steps:",
+      "Report one final observed result per command in checks. Preserve earlier failed attempts, their exit codes and any environment corrections in notes; rerun affected required checks after a correction. A final failed required check cannot approve. Certify only the pinned scope: record tests of explicitly excluded journeys in notes with their actual outcomes, never as proof of an included requirement. Do not omit an in-scope defect or change an evaluator to obtain a pass.",
       JSON.stringify({
         commit: b.active.base,
         verdict: "approve",
