@@ -9,7 +9,6 @@ let waits = 0;
 let rejectConflict = false;
 const tokens: string[] = [];
 mock.module("workflow", () => ({
-  FatalError: class FatalError extends Error {},
   createHook({ token }: { token: string }) {
     assert.ok(token.endsWith(":call_new"), "adoption must not reuse the predecessor's hook");
     tokens.push(token);
@@ -82,10 +81,8 @@ for (const kind of ["cursor", "conflict", "ci", "deployment"] as const) {
 }
 batch.status = "running";
 ticks = 0;
-await assert.rejects(
-  runBatch({ callId: "call_old" } as WorkflowStepToolContext),
-  /ownership changed/,
-);
+const obsolete = await runBatch({ callId: "call_old" } as WorkflowStepToolContext);
+assert.equal(obsolete.status, "superseded", "normal handoff must not report an owner failure");
 assert.equal(ticks, 0, "an obsolete workflow must not tick the engine");
 assert.ok(tokens.length >= 4);
 console.log(

@@ -1,5 +1,5 @@
 import type { WorkflowStepToolContext } from "eve/tools";
-import { createHook, FatalError, sleep } from "workflow";
+import { createHook, sleep } from "workflow";
 import { runDeadline } from "./deployment.js";
 import { tick } from "./engine.js";
 import { readState } from "./store.js";
@@ -35,7 +35,14 @@ async function advance(ctx: WorkflowStepToolContext) {
   "use step";
   const before = await readState();
   if (before.state.batch?.workflowOwner !== ctx.callId)
-    throw new FatalError("Workflow ownership changed");
+    return {
+      status: "superseded" as const,
+      waitMs: 0,
+      token: undefined,
+      pr: before.state.batch?.pr,
+      error: undefined,
+      deadline: Date.now(),
+    };
   await tick();
   const b = (await readState()).state.batch!;
   const deadline = Math.min(
