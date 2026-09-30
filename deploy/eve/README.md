@@ -21,7 +21,7 @@ background workflow. Cursor Grok 4.6 implements each slice from a pinned
 `factory/input/<agent-id>` ref and must push one `cursor/` branch. A separate
 agent-mode reviewer from a different recognized vendor (Claude when listed) reviews that exact commit and must
 return one JSON object. Slice review may `request_changes` at most twice, then
-holds. Unreadable slice output or terminal reviewer errors reserve a fresh reviewer of the same candidate, twice at most, preserving the original stage clock. Code revisions start from the rejected candidate and consume build attempts. Advisory notes cannot erase blocking findings. Delivery creates a draft PR; [approved CI repair and automatic staging](AUTOMATION.md) can continue unattended to deployed acceptance. Meaningful transitions post issue receipts.
+holds. Unreadable slice output or terminal reviewer errors reserve a fresh reviewer of the same candidate, twice at most, preserving the original stage clock. At integrated/deployed review, a contradictory approval whose required checks all pass but whose supplementary check fails is rejected and can use that same bounded fresh-verification mechanism. Failed required checks still hold immediately; rejected reports never count as acceptance. Code revisions start from the rejected candidate and consume build attempts. Advisory notes cannot erase blocking findings. Delivery creates a draft PR; [approved CI repair and automatic staging](AUTOMATION.md) can continue unattended to deployed acceptance. Meaningful transitions post issue receipts.
 
 There is **no cron schedule**. Before each Cursor launch the workflow registers
 `cursor:<agent-id>:<workflow-owner>` as a durable hook. The product's stop hook sends a short-lived

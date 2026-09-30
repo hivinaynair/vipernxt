@@ -139,13 +139,14 @@ export function workerPrompt(b: Batch, job: Job): string {
       "Use a writable Cloud VM for verification, not an early read-only exploration turn. First create and immediately remove a temporary file in the repository root using mktemp and rm, so repository hooks are active. Keep tracked files unchanged; never invoke the completion hook manually.",
       "For authentication, use dedicated Clerk development identities and runtime secrets with the pinned approved access matrix. Never bypass authentication or output credentials. Verify signed-out, role and cross-tenant denials where applicable.",
       "Read every pinned specification and verify the included requirements and their cited journey steps, including fields, tables, validation, permissions and error states. Honor scope exclusions. Run the commands for this phase, including required browser evidence; integrated review does not certify a site that has not been deployed. Unrequested screenshots/videos must not delay required verification or completion before the original deadline. Your entire reply must be one JSON object. The first character is { and the last is }. No prose, headings or fences.",
-      "If you approve, return this object with real evidence strings. Copy every required command and criterionIds value exactly. Put only required phase commands in checks. Record supplementary commands and their actual outcomes in notes; any genuine in-scope defect remains a blocker. Findings are blockers. Do not abbreviate the commit, rename argv or invent steps:",
+      "If you approve, return this object with real evidence strings. Copy every required command and criterionIds value exactly. criteria[*].step must use criterionIds, never substitute the job.steps journey IDs or a criterion description. notes and findings must each be arrays of strings, never a single string. Put only required phase commands in checks. Record supplementary commands and their actual outcomes in notes; any genuine in-scope defect remains a blocker. Findings are blockers. Do not abbreviate the commit, rename argv or invent steps:",
       "Report one final observed result per command in checks. Preserve earlier failed attempts, their exit codes and any environment corrections in notes; rerun affected required checks after a correction. A final failed required check cannot approve. Certify only the pinned scope: record tests of explicitly excluded journeys in notes with their actual outcomes, never as proof of an included requirement. Do not omit an in-scope defect or change an evaluator to obtain a pass.",
       JSON.stringify({
         commit: b.active.base,
         verdict: "approve",
         unchanged: true,
         findings: [],
+        notes: [],
         checks: contract.commands.map((command) => ({
           command,
           exitCode: 0,

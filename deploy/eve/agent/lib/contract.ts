@@ -151,7 +151,9 @@ export function parseReview(value: unknown, commit: string, commands: string[][]
   if (r.commit !== commit)
     throw new Error(`Independent review commit ${r.commit} does not match ${commit}`);
   if (r.criteria.some((c) => !steps.includes(c.step)))
-    throw new Error("Review invented criterion IDs");
+    throw new Error(
+      `Review invented criterion IDs: reported ${JSON.stringify(r.criteria.map((c) => c.step))}; expected exactly ${JSON.stringify(steps)}. Use requirement criterion IDs, not journey trace IDs.`,
+    );
   if (r.verdict && r.approved !== undefined && r.approved !== (r.verdict === "approve"))
     throw new Error("Contradictory review verdict");
   const argv = (c: string[]) => JSON.stringify(c);
