@@ -77,6 +77,7 @@ test("blocked batch records Jev attention without requiring a principal", async 
       verification: "cursor-cloud",
       specFiles: ["docs/coverage.json"],
       coverageFile: "docs/coverage.json",
+      requirementsFile: "docs/readiness.json",
       setup: [],
       worker: { kind: "cursor", repository: "https://github.com/acme/product" },
       limits: { attempts: 2, jobSeconds: 600, runSeconds: 3600 },

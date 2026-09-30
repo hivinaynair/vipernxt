@@ -15,6 +15,7 @@ export const manifestSchema = z.object({
   verification: z.literal("cursor-cloud"),
   specFiles: z.array(path).min(1),
   coverageFile: path,
+  requirementsFile: path,
   setup: z.array(command),
   worker: z.object({ kind: z.literal("cursor"), repository: z.string() }),
   limits: z.object({
@@ -57,10 +58,11 @@ export function validateManifest(value: unknown, repo: string): Manifest {
     throw new Error("Manifest repository differs from deployment");
   if (!m.specFiles.includes(m.coverageFile))
     throw new Error("Coverage catalog must be pinned in specFiles");
+  if (!m.specFiles.includes(m.requirementsFile))
+    throw new Error("Requirements packet must be pinned in specFiles");
   const seen = new Set<string>();
   for (const job of m.jobs) {
-    if (["__integrated_review__", "__deployed_review__"].includes(job.id))
-      throw new Error("Reserved job ID");
+    if (job.id.startsWith("__")) throw new Error("Reserved job ID");
     if (seen.has(job.id) || job.dependsOn.some((id) => !seen.has(id)))
       throw new Error("Jobs must be unique and ordered after dependencies");
     if (job.requiresBrowser && !job.browser) throw new Error("Browser evidence command missing");
@@ -118,18 +120,17 @@ export function parseReview(value: unknown, commit: string, commands: string[][]
     value && typeof value === "object" && "findings" in value && Array.isArray(value.findings)
       ? { ...value, findings: value.findings.map(findingText) }
       : value;
-  let r = z
+  const r = z
     .object({
-      commit: z.string().regex(/^[a-f0-9]{7,40}$/i),
+      commit: sha,
       approved: z.boolean().optional(),
       verdict: z.enum(["approve", "request_changes", "reject"]).optional(),
       unchanged: z.boolean(),
       findings: z.array(z.string()).optional().default([]),
+      notes: z.array(z.string()).optional().default([]),
       checks: z.array(
         z.object({
-          command: z
-            .union([command, z.string().min(1)])
-            .transform((c) => (Array.isArray(c) ? c : c.trim().split(/\s+/))),
+          command,
           exitCode: z.number().int(),
           evidence: z.string().trim().min(1),
         }),
@@ -142,38 +143,15 @@ export function parseReview(value: unknown, commit: string, commands: string[][]
     .parse(raw);
   if (r.verdict === undefined && r.approved === undefined)
     throw new Error("Review must include verdict or approved");
-  const reportedCommit = r.commit.toLowerCase();
-  if (reportedCommit !== commit && !commit.startsWith(reportedCommit)) {
+  if (r.commit !== commit)
     throw new Error(`Independent review commit ${r.commit} does not match ${commit}`);
-  }
-  r = { ...r, commit };
-  const known = r.criteria.filter((c) => steps.includes(c.step));
-  const invented = r.criteria.filter((c) => !steps.includes(c.step));
-  if (invented.length) {
-    if (known.length === steps.length) {
-      r = { ...r, criteria: known };
-    } else if (known.length === 0 && invented.every((c) => c.passed)) {
-      // Reviewer cited journey steps (J1.S1) instead of requirement IDs.
-      r = {
-        ...r,
-        criteria: steps.map((step) => ({
-          step,
-          passed: true,
-          evidence: invented[0]!.evidence,
-        })),
-      };
-    } else {
-      throw new Error("Review invented criterion IDs");
-    }
-  }
+  if (r.criteria.some((c) => !steps.includes(c.step)))
+    throw new Error("Review invented criterion IDs");
+  if (r.verdict && r.approved !== undefined && r.approved !== (r.verdict === "approve"))
+    throw new Error("Contradictory review verdict");
   const argv = (c: string[]) => JSON.stringify(c);
   const actual = r.checks.map((c) => argv(c.command));
-  const missing = commands
-    .filter(
-      (command) =>
-        !actual.some((got) => got === argv(command) || got.endsWith(argv(command).slice(1))),
-    )
-    .map(argv);
+  const missing = commands.filter((command) => !actual.includes(argv(command))).map(argv);
   const reported = r.criteria.map((c) => c.step).sort();
   const required = [...steps].sort();
   if (missing.length) {
@@ -188,6 +166,7 @@ export function parseReview(value: unknown, commit: string, commands: string[][]
   if (verdict === "approve") {
     if (
       r.approved === false ||
+      r.findings.length > 0 ||
       !r.unchanged ||
       r.checks.some((c) => c.exitCode !== 0) ||
       r.criteria.some((c) => !c.passed)
@@ -205,7 +184,7 @@ export function parseReview(value: unknown, commit: string, commands: string[][]
   }
   return {
     verdict,
-    review: verdict === "approve" ? { ...r, findings: [] } : r,
+    review: r,
   };
 }
 export function checkReview(value: unknown, commit: string, commands: string[][], steps: string[]) {

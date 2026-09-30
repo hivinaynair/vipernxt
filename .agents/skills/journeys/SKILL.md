@@ -12,7 +12,7 @@ description: >-
 
 # Journey spine
 
-Input: approved design Actors, numbered Clip, Journeys table, Screens. Output: `docs/journeys/<name>.yaml` (markdown is generated). Follow [CONTRACT.md](../CONTRACT.md). Schema: [spine-schema.md](spine-schema.md). Examples: [screens](example.yaml), [headless](example-wrap.yaml).
+Input: settled design Actors, numbered Clip, Journeys table, Screens. A faithful draft may be prepared during shape for the final hashed requirements approval; implementation still waits for that approval. Output: `docs/journeys/<name>.yaml` (markdown is generated). Follow [CONTRACT.md](../CONTRACT.md). Schema: [spine-schema.md](spine-schema.md). Examples: [screens](example.yaml), [headless](example-wrap.yaml).
 
 ## Expand
 

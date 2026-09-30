@@ -77,6 +77,8 @@ draft-PR delivery, not MVP completion.
 
 ## Deployed acceptance
 
+Validate the [requirements packet](../../docs/playbook/requirements-packet.md) before intake. Coverage approval must match manifest and packet. CI and automatic staging policies are optional and hash-bound with the catalog; see [automation](AUTOMATION.md).
+
 MVP catalogs must include `deployed`: environment `staging`, exact HTTPS origin,
 trusted GitHub deployment creator login, checks, and browser command for interactive
 journeys. Commands receive `FACTORY_STAGING_URL` and `E2E_BASE_URL` from authenticated
@@ -100,7 +102,7 @@ A fresh Cursor run verifies all requirements against the deployed URL. Only its
 passing report changes status to `mvp-complete` (`slice-complete` for first-slice
 scope). This approval opens one separate acceptance window bounded by `jobSeconds`;
 resuming cannot reset its clock or attempt count. Durable completion hooks and the
-stage deadline advance it; there is no polling schedule, automatic merge or deploy.
+stage deadline advance it. Automatic merge is not implemented; the [opt-in automatic staging policy](AUTOMATION.md) uses the same verification gate without an operator receipt/relabel.
 
 The deployed SHA must exactly equal the candidate: a normal merge commit with a
 new SHA is currently rejected, even if its tree matches. Use an exact-candidate

@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
+import { validateReadiness } from "../lib/requirements-readiness.js";
 
 export type Command = string[];
 export type Job = {
@@ -23,6 +24,8 @@ export type Manifest = {
   specFiles: string[];
   specHash?: string;
   approval: string;
+  requirementsFile?: string;
+  coverageFile?: string;
   simulation?: boolean;
   phase?: "first-slice" | "product";
   verification?: "cursor-cloud";
@@ -165,6 +168,36 @@ export function validate(root: string, m: Manifest, sealed = true) {
   if (sealed && m.specHash !== specHash(root, m))
     throw new Error("Spec changed: prepare a new run with renewed scope approval");
   if (!m.simulation) {
+    if (
+      !m.requirementsFile ||
+      !m.coverageFile ||
+      !m.specFiles.includes(m.requirementsFile) ||
+      !m.specFiles.includes(m.coverageFile)
+    )
+      throw new Error("Pinned requirements packet and coverage required");
+    const files = Object.fromEntries(
+      m.specFiles.map((p) => [p, readFileSync(resolve(root, p), "utf8")]),
+    );
+    const packetText = files[m.requirementsFile],
+      packet = JSON.parse(packetText);
+    const coverage = JSON.parse(files[m.coverageFile]);
+    validateReadiness({
+      coverageFile: m.coverageFile,
+      file: m.requirementsFile,
+      packetText,
+      approval: m.approval,
+      scope: m.phase === "first-slice" ? "first-slice" : "mvp",
+      specFiles: m.specFiles,
+      files,
+      state: Bun.YAML.parse(files[packet.stateFile]),
+      requirementIds: coverage.requirements.map((r: { id: string }) => r.id),
+      staging: Boolean(m.delivery),
+      requiredArtifacts: [
+        m.coverageFile,
+        coverage.spineFile,
+        ...(coverage.accessFile ? [coverage.accessFile] : []),
+      ],
+    });
     const path = resolve(root, "docs/product/state.yaml");
     if (!existsSync(path)) throw new Error("Product state required (or explicit simulation)");
     const state = Bun.YAML.parse(readFileSync(path, "utf8")) as {

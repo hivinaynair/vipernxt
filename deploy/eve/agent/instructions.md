@@ -10,8 +10,8 @@ adopts the same issue and intake; it does not launch a second batch. Never skip
 the tool because a station is already reserved. The tool reads the approved
 manifest itself; never invent requirements or pass instructions to a worker
 yourself. A durable background workflow waits for a signed Cursor stop callback
-or the stage deadline. Either wake is enough. Do not poll in a tool loop. The
-callback cannot accept a slice.
+or durable reconciliation within the stage deadline. Either wake is enough. Do not poll in a tool loop. The
+callback cannot accept a slice. Hash-bound requirements approve scope and actions. The driver may repair approved CI and deploy approved staging automatically; do not ask for approval between those authorized stations. Material policy gaps, expired budgets or changed permissions hold for the owner.
 
 Cursor Cloud implements each slice in agent mode. A separate Cursor run on a
 different model reviews the exact commit and must return the JSON contract.

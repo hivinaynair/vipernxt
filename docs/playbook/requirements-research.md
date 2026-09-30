@@ -35,3 +35,10 @@ Validation on this staging-based documentation branch: `bun test` completed with
 ## Limits and next implementation step
 
 This change strengthens skill instructions and contract templates. No new runtime schema, discovery validator, automatic approval, merge or deployment behavior is added. Existing hooks check shape status; Eve validates the pinned spine/catalog and execution evidence. Neither verifies every row of the new review or proves exhaustive discovery. A separate deterministic validator could enforce references, case mappings and unresolved-item blocking, with migration rules for existing engagements; it would still require customer walkthroughs and behavioral verification.
+
+
+## Implementation following the repository review
+
+The supplied Eve template was inventoried at `6bc5febab95de4c05fa08b164f544650f6aa11aa`: 98 tracked files, including all 73 TypeScript files and its prompts/configuration/documentation. The review covered source behavior; it did not execute its paid agents or validate every transitive lockfile package. Its typed station contracts, independent actual-diff review, signed event boundary and bounded CI repair informed this implementation. We retained ViperNxt's pinned coverage and compare-and-swap state, made approval hash-bound, removed reviewer ID/command coercions that could manufacture acceptance, and added durable CI/deployment reconciliation. Unlike the reference's permissive unresolved-plan choices, ViperNxt holds missing business policy. No template SDK upgrade, public Blob artifact store or production branch policy was copied.
+
+See [requirements packet](requirements-packet.md) for the structural gate and [Eve automation](../../deploy/eve/AUTOMATION.md) for the implemented recovery/delivery behavior. Local tests cover invalid approval/review, stale CI, duplicate repair, exact candidate branch updates, uncertain dispatch restart, mismatched deployment provenance and budget exhaustion. Hosted deployment evidence remains outstanding; a successful test fixture or build is not that evidence.

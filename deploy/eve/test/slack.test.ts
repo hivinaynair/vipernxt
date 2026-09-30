@@ -32,6 +32,7 @@ function blockedState(overrides: Partial<Batch> = {}): State {
         verification: "cursor-cloud",
         specFiles: ["docs/coverage.json"],
         coverageFile: "docs/coverage.json",
+        requirementsFile: "docs/readiness.json",
         setup: [],
         worker: { kind: "cursor", repository: "https://github.com/acme/product" },
         limits: { attempts: 2, jobSeconds: 600, runSeconds: 3600 },

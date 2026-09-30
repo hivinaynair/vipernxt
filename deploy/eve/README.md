@@ -1,7 +1,7 @@
 # Eve factory
 
 Experimental Vercel-hosted factory. A trusted `factory` label plus a valid
-coverage catalog starts a batch. There is no `FACTORY_ENABLED` deploy switch.
+hash-bound readiness packet and coverage catalog starts a batch. There is no `FACTORY_ENABLED` deploy switch.
 The legacy Fly controller has been removed from the kit. Hosted two-slice
 recovery remains required before treating this as unattended production.
 
@@ -19,23 +19,21 @@ the moving branch tip. Workers start from the intake tree so pinned catalogs
 exist. It validates the manifest and pinned artifacts, then runs as a durable
 background workflow. Cursor Grok 4.6 implements each slice from a pinned
 `factory/input/<agent-id>` ref and must push one `cursor/` branch. A separate
-agent-mode reviewer (Claude when listed) reviews that exact commit and must
+agent-mode reviewer from a different recognized vendor (Claude when listed) reviews that exact commit and must
 return one JSON object. Slice review may `request_changes` at most twice, then
-holds. Unreadable JSON is retried separately so a schema miss does not spend
-the product revision budget. Delivery is a draft PR. Every transition posts an
-issue receipt.
+holds. Unreadable slice output or terminal reviewer errors reserve a fresh reviewer of the same candidate, twice at most, preserving the original stage clock. Code revisions start from the rejected candidate and consume build attempts. Advisory notes cannot erase blocking findings. Delivery creates a draft PR; [approved CI repair and automatic staging](AUTOMATION.md) can continue unattended to deployed acceptance. Meaningful transitions post issue receipts.
 
 There is **no cron schedule**. Before each Cursor launch the workflow registers
 `cursor:<agent-id>` as a durable hook. The product's stop hook sends a short-lived
 Cursor-signed OIDC token to `/callbacks/cursor`. The endpoint checks issuer,
 audience, expiry and the registered agent identity, then wakes that hook.
 The command consumes Cursor stop-event JSON on stdin and returns `{}` on stdout.
-The callback body cannot approve anything. **Deadline or callback is enough.**
+The callback body cannot approve anything. Durable reconciliation or callback is enough.
 The workflow then reads Cursor's actual run status and the branch SHA.
 If a previous run still holds the `cursor:<agent-id>` wake token, the new
-workflow waits on the deadline only and keeps ticking.
+workflow uses durable reconciliation and keeps ticking.
 
-A stop hook can arrive before the terminal API status. A short settling window
+A stop hook can arrive before the terminal API status. Durable reconciliation
 handles that race. A missed first-turn hook is not a failed slice. Deadline
 exhaustion holds execution rather than silently granting more time. Completed
 workflow steps are replayed, not rerun.
@@ -136,11 +134,11 @@ Hook diagnostics are also recorded without tokens in
 
 ## Scope coverage
 
-New batches require a pinned `coverageFile`; see [coverage planning](COVERAGE.md).
+New batches require pinned `requirementsFile`, state, authoritative contracts and `coverageFile`; the [packet gate](../../docs/playbook/requirements-packet.md) binds their exact scope and approved actions. see [coverage planning](COVERAGE.md).
 It reconciles every pinned journey criterion with a job or existing evidence,
 enforces declared cross-cutting prerequisites, and distinguishes first-slice scope
 from the entire MVP. A separate final Cursor review must verify all requirements
 on the combined candidate before draft-PR delivery. Interactive journeys require
-browser verification. Older manifests and registered batches without coverage
+browser verification. Older manifests and registered batches without readiness or coverage
 fail closed and need a newly approved batch; they are not retroactively certified.
 These local checks do not replace the still-pending hosted end-to-end test.

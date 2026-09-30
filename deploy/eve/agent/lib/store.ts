@@ -1,3 +1,5 @@
+import type { DeploymentRequest } from "./automatic-deployment.js";
+import type { CIState } from "./ci.js";
 import { required } from "./config.js";
 import type { Manifest } from "./contract.js";
 import type { Coverage } from "./coverage.js";
@@ -24,6 +26,11 @@ export type Batch = {
   manifestPath: string;
   manifest: Manifest;
   coverage?: Coverage;
+  readiness?: { sha256: string; scope: "first-slice" | "mvp"; approval: string };
+  pendingRevision?: { job: string; base: string; branch?: string };
+  ci?: CIState;
+  integrationRepair?: { attempts: number; pending: boolean };
+  automaticDeployment?: DeploymentRequest;
   deployment?: VerifiedDeployment & { startedAt: number };
   deployedReview?: { commit: string; url: string; review: unknown };
   integratedReview?: { commit: string; review: unknown };
@@ -34,6 +41,8 @@ export type Batch = {
   attempts: Record<string, number>;
   revisions?: Record<string, number>;
   unreadable?: Record<string, number>;
+  networkRetries?: Record<string, number>;
+  retryAfter?: number;
   active?: Attempt;
   error?: string;
   pr?: string;

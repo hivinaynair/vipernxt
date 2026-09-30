@@ -107,11 +107,12 @@ test("dispatch uses the pinned input branch and configured execution model", asy
       };
     });
     await advanceRemote(review, "review", reviewRequest);
-    const fallback = await resolveStation(
-      "review",
-      transport(async () => ({ items: [{ id: "grok-4.6" }, { id: "composer-2" }] })),
-    );
-    expect(fallback).toEqual({ mode: "agent", model: { id: "composer-2" } });
+    await expect(
+      resolveStation(
+        "review",
+        transport(async () => ({ items: [{ id: "grok-4.6" }, { id: "composer-2" }] })),
+      ),
+    ).rejects.toThrow("independent reviewer");
   } finally {
     if (old === undefined) delete process.env.FACTORY_REPO;
     else process.env.FACTORY_REPO = old;

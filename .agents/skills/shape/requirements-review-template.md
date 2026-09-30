@@ -43,7 +43,7 @@ Cover every in-scope rule/field/action/operating promise; group shared definitio
 
 ## Handoff references
 
-<Pinned contract/case paths, coverage catalog, planned verification commands and deployment requirements. Record exact tested candidate later in implementation evidence, not here.>
+<Machine packet path/hash, approved action list, pinned contract/case paths, coverage catalog, planned verification commands and deployment requirements. Record exact tested candidate later in implementation evidence, not here.>
 ```
 
 The table is an index, not a replacement specification. A ready verdict is a review finding, not invented approval. Unresolved material findings keep the affected scope blocked even if a checklist has every row.

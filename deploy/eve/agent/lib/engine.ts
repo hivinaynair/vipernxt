@@ -1,4 +1,10 @@
 import { randomUUID } from "node:crypto";
+import {
+  dispatchDeployment,
+  reconcileDeployment,
+  reserveDeployment,
+} from "./automatic-deployment.js";
+import { inspectCI } from "./ci.js";
 import { repository, required } from "./config.js";
 import {
   digest,
@@ -9,9 +15,9 @@ import {
   validateDiff,
   verificationCommands,
 } from "./contract.js";
-import { advanceRemote } from "./cursor.js";
+import { advanceRemote, CursorError } from "./cursor.js";
 import { deploymentReceipt, runDeadline, verifyDeployment } from "./deployment.js";
-import { GitHubError, github, head, type Issue, isAncestor } from "./github.js";
+import { file, GitHubError, github, head, type Issue } from "./github.js";
 import { assertLease, claim } from "./lease.js";
 import { postReceipt } from "./receipt.js";
 import { type Batch, readState, saveState } from "./store.js";
@@ -44,9 +50,21 @@ export function integratedJob(b: Batch): Job {
   };
 }
 
+export function repairJob(b: Batch): Job {
+  return {
+    ...integratedJob(b),
+    id: b.integrationRepair?.pending ? "__integration_repair__" : "__ci_repair__",
+    title: "Repair approved CI failures",
+    paths: [...new Set(b.manifest.jobs.flatMap((j) => j.paths))],
+    instructions:
+      b.feedback ?? "Repair the failed approved CI checks without changing requirements.",
+  };
+}
 export function reviewCriteria(b: Batch, job: Job): string[] {
   if (!b.coverage) throw new Error("Missing coverage contract");
-  return b.active?.phase === "integrated-review" || b.active?.phase === "deployed-review"
+  return ["__ci_repair__", "__integration_repair__"].includes(job.id) ||
+    b.active?.phase === "integrated-review" ||
+    b.active?.phase === "deployed-review"
     ? b.coverage.requirements.map((r) => r.id)
     : b.coverage.requirements
         .filter((r) => r.delivery.kind === "job" && r.delivery.job === job.id)
@@ -55,7 +73,11 @@ export function reviewCriteria(b: Batch, job: Job): string[] {
 
 export function promptRequirements(b: Batch, job: Job) {
   if (!b.coverage) throw new Error("Missing coverage contract");
-  if (b.active?.phase === "integrated-review" || b.active?.phase === "deployed-review")
+  if (
+    ["__ci_repair__", "__integration_repair__"].includes(job.id) ||
+    b.active?.phase === "integrated-review" ||
+    b.active?.phase === "deployed-review"
+  )
     return b.coverage.requirements;
   const catalog = new Map(b.coverage.requirements.map((r) => [r.id, r]));
   const included = new Set<string>();
@@ -92,6 +114,7 @@ export function workerPrompt(b: Batch, job: Job): string {
     requirements: promptRequirements(b, job),
     criterionIds: b.coverage ? reviewCriteria(b, job) : job.steps,
     specFiles: b.manifest.specFiles,
+    readiness: b.readiness,
     commands: executionCommands(b, job),
   };
   if (
@@ -103,12 +126,13 @@ export function workerPrompt(b: Batch, job: Job): string {
       b.deployment
         ? `Verify the actual deployed site at ${b.deployment.url}. Run checks with FACTORY_STAGING_URL=${b.deployment.url}. Never substitute localhost, mocks or a different URL. Use only approved test accounts/data; missing credentials or unavailable site must fail. Do not deploy or merge.`
         : "Verify the candidate in the worker environment.",
+      b.feedback ? `Previous verification problem: ${b.feedback}` : "",
       "Independently verify this exact commit. Do not edit tracked files or push code. Ignore the builder's claims.",
       `Commit: ${b.active.base}. Compare against ${b.active.phase === "integrated-review" ? b.manifest.base : b.candidate}.`,
       "Use a writable Cloud VM for verification, not an early read-only exploration turn. First create and immediately remove a temporary file in the repository root using mktemp and rm, so repository hooks are active. Keep tracked files unchanged; never invoke the completion hook manually.",
       "For authentication, use dedicated Clerk development identities and runtime secrets with the pinned approved access matrix. Never bypass authentication or output credentials. Verify signed-out, role and cross-tenant denials where applicable.",
       "Read every pinned specification and verify every cited journey step, including fields, tables, validation, permissions and error states. Run every command, including browser evidence when requested. Your entire reply must be one JSON object. The first character is { and the last is }. No prose, headings or fences.",
-      "If you approve, return this object with real evidence strings. Copy every command and criterionIds value exactly. Extra checks are allowed. Do not rename argv or invent steps:",
+      "If you approve, return this object with real evidence strings. Copy every command and criterionIds value exactly. Extra checks are allowed. Use notes for nonblocking observations; findings are blockers. Do not abbreviate the commit, rename argv or invent steps:",
       JSON.stringify({
         commit: b.active.base,
         verdict: "approve",
@@ -125,7 +149,7 @@ export function workerPrompt(b: Batch, job: Job): string {
           evidence: "what you independently verified",
         })),
       }),
-      "request_changes returns the slice to the builder within the attempt budget. reject holds for the owner. If any required check fails or evidence is missing, verdict must not be approve. Report the actual unchanged status using git status.",
+      "Missing business policy or permissions must reject and hold for the owner. request_changes requests an implementation repair within the existing contract and attempt budget. reject holds for the owner. If any required check fails or evidence is missing, verdict must not be approve. Report the actual unchanged status using git status.",
       JSON.stringify(contract),
     ].join("\n");
   return [
@@ -145,22 +169,57 @@ const live = {
   head,
   advanceRemote,
   postReceipt,
+  file,
 };
 export async function tick(overrides: Partial<typeof live> = {}) {
-  const { repository, required, readState, saveState, github, head, advanceRemote, postReceipt } = {
+  const {
+    repository,
+    required,
+    readState,
+    saveState,
+    github,
+    head,
+    advanceRemote,
+    postReceipt,
+    file,
+  } = {
     ...live,
     ...overrides,
   };
   const store = { read: readState, save: saveState };
   const current = await store.read();
-  if (!current.state.batch || current.state.batch.status !== "running") return;
+  if (
+    !current.state.batch ||
+    current.state.batch.status !== "running" ||
+    (current.state.batch.retryAfter ?? 0) > Date.now()
+  )
+    return;
   const acquired = await claim(store);
   if (!acquired) return;
   const { state, sha, owner } = acquired;
   const b = state.batch;
-  const checkpoint = () => {
-    state.lease = undefined;
-    return saveState(state, sha);
+  let checkpointSha = sha;
+  const checkpoint = async (keepLease = false) => {
+    if (!keepLease) state.lease = undefined;
+    checkpointSha = await saveState(state, checkpointSha);
+    return checkpointSha;
+  };
+  const retryReview = (reason: string, job: Job) => {
+    if (!b?.active || b.active.phase === "build") throw new Error("No reviewer to retry");
+    const key = `${b.active.phase}:${job.id}:${b.active.base}`;
+    const retries = (b.unreadable?.[key] ?? 0) + 1;
+    if (retries > 2) throw new Error(`Review retry budget exhausted: ${reason}`);
+    b.unreadable = { ...b.unreadable, [key]: retries };
+    b.feedback = reason;
+    // Preserve the original stage clock and candidate; only the remote identity changes.
+    b.active = {
+      agentId: `bc-${randomUUID()}`,
+      phase: b.active.phase,
+      base: b.active.base,
+      candidate: b.active.candidate,
+      branch: b.active.branch,
+      startedAt: b.active.startedAt,
+    };
   };
   const persist = async (event: string) => {
     await checkpoint();
@@ -189,8 +248,11 @@ export async function tick(overrides: Partial<typeof live> = {}) {
     return;
   }
   try {
+    b.retryAfter = undefined;
     if (!b.coverage)
       throw new Error("Batch predates required coverage contract; create a newly approved batch");
+    if (!b.readiness)
+      throw new Error("Batch predates required readiness gate; create a newly approved batch");
     const issue = await github<Issue>(`/issues/${b.issue}`);
     if (
       issue.state !== "open" ||
@@ -209,7 +271,7 @@ export async function tick(overrides: Partial<typeof live> = {}) {
       );
     const nextJob = b.manifest.jobs.find((j) => !b.accepted.includes(j.id));
     if (b.deployment) {
-      const receipt = deploymentReceipt(issue.body ?? "");
+      const receipt = b.automaticDeployment ? b.deployment : deploymentReceipt(issue.body ?? "");
       if (
         receipt.deploymentId !== b.deployment.deploymentId ||
         receipt.statusId !== b.deployment.statusId
@@ -218,15 +280,20 @@ export async function tick(overrides: Partial<typeof live> = {}) {
       const verified = await verifyDeployment(b, receipt, github);
       if (verified.url !== b.deployment.url) throw new Error("Deployment URL changed");
     }
-    const job = b.deployment ? deployedJob(b) : (nextJob ?? integratedJob(b));
+    const repairing = b.ci?.result === "repair" || b.integrationRepair?.pending;
+    const job = repairing
+      ? repairJob(b)
+      : b.deployment
+        ? deployedJob(b)
+        : (nextJob ?? integratedJob(b));
     if (!b.deployment && !nextJob && b.integratedReview?.commit === b.candidate) {
       const branch = b.resultBranch;
       if (!branch || (await head(branch)) !== b.candidate)
         throw new Error("Final branch no longer matches verified candidate");
       const base = required("FACTORY_BASE_BRANCH");
-      if (!(await isAncestor(b.commit, await head(base))))
+      if ((await head(base)) !== b.commit)
         throw new Error(
-          "Target branch no longer contains the approved intake; combined verification must be rebased and repeated",
+          "Target branch changed since intake; rebase the candidate and repeat approved integration",
         );
       const existing = await github<{ html_url: string }[]>(
         `/pulls?state=open&head=${encodeURIComponent(repository().split("/")[0] + ":" + branch)}&base=${encodeURIComponent(base)}`,
@@ -242,6 +309,56 @@ export async function tick(overrides: Partial<typeof live> = {}) {
           body: `Implements approved batch #${b.issue}.\n\nScope: ${b.coverage?.scope}. Integrated acceptance verified at ${b.candidate}.\n\nJourney steps: ${[...new Set(b.manifest.jobs.flatMap((j) => j.steps))].join(", ")}\n\nIndependent verification receipts: [factory checkpoint](https://github.com/${repository()}/blob/factory/state/factory-state.json).\n\nNo staging merge or product deployment was performed.`,
         }));
       b.pr = pr.html_url;
+      if (b.coverage.ci) {
+        const ciResult = await inspectCI(b, github);
+        if (ciResult === "pending") {
+          await persist("ci-pending");
+          return;
+        }
+        if (ciResult === "repair") {
+          await persist("ci-repair-reserved");
+          return;
+        }
+      }
+      if (b.coverage.deployed?.automatic) {
+        if (!b.automaticDeployment) {
+          b.automaticDeployment = await reserveDeployment(b, base, file);
+          await persist("deployment-reserved");
+          return;
+        }
+        if (!b.automaticDeployment.posted) {
+          const ref = `factory/deployment/${b.automaticDeployment.id}`;
+          try {
+            await github("/git/refs", "POST", { ref: `refs/heads/${ref}`, sha: b.commit });
+          } catch (e) {
+            if (!(e instanceof GitHubError && e.status === 422)) throw e;
+          }
+          if ((await head(ref)) !== b.commit) throw new Error("Deployment input ref changed");
+          await assertLease(store, owner);
+          b.automaticDeployment.posted = true;
+          // Save dispatch intent before the non-idempotent workflow API call.
+          await checkpoint(true);
+          await assertLease(store, owner);
+          try {
+            await dispatchDeployment(b, ref, github);
+          } catch (e) {
+            if (e instanceof GitHubError && e.status >= 400 && e.status < 500 && e.status !== 429)
+              throw e;
+            /* dispatch may have succeeded; reconcile the reserved identity */
+          }
+          await checkpoint();
+
+          return;
+        }
+        const verified = await reconcileDeployment(b, github);
+        if (!verified) {
+          await checkpoint();
+          return;
+        }
+        b.deployment = { ...verified, startedAt: Date.now() };
+        await persist("deployment-verified");
+        return;
+      }
       b.status = "review";
       await persist("draft-pr");
       return;
@@ -250,18 +367,17 @@ export async function tick(overrides: Partial<typeof live> = {}) {
       throw new Error("Dependency not accepted");
     if (!b.active) {
       const count = b.attempts[job.id] ?? 0;
-      const revisions = b.revisions?.[job.id] ?? 0;
-      if (revisions > 2) throw new Error("Review revision limit reached");
-      if (count === 0) b.attempts[job.id] = 1;
-      else if (revisions === 0) {
-        if (count >= b.manifest.limits.attempts) throw new Error("Slice attempt budget exhausted");
-        b.attempts[job.id] = count + 1;
-      }
+      if (count >= b.manifest.limits.attempts) throw new Error("Slice attempt budget exhausted");
+      b.attempts[job.id] = count + 1;
       b.active = {
         agentId: `bc-${randomUUID()}`,
-        phase: b.deployment ? "deployed-review" : nextJob ? "build" : "integrated-review",
-        branch: nextJob ? undefined : b.resultBranch,
-        base: b.candidate,
+        phase: b.deployment
+          ? "deployed-review"
+          : nextJob || repairing
+            ? "build"
+            : "integrated-review",
+        branch: nextJob || repairing ? undefined : b.resultBranch,
+        base: b.pendingRevision?.job === job.id ? b.pendingRevision.base : b.candidate,
         startedAt: Date.now(),
       };
       await persist("station-reserved");
@@ -292,9 +408,12 @@ export async function tick(overrides: Partial<typeof live> = {}) {
     }
     if (run.status !== "FINISHED") {
       if (run.status === "ERROR" || run.status === "EXPIRED") {
-        b.feedback = `Cursor ${b.active.phase} ended with ${run.status}`;
-        b.active = undefined;
-        await persist("request-changes");
+        const reason = `Cursor ${b.active.phase} ended with ${run.status}`;
+        if (b.active.phase === "build") {
+          b.feedback = reason;
+          b.active = undefined;
+        } else retryReview(reason, job);
+        await persist("station-retry");
         return;
       }
       throw new Error(`Cursor stage ended with ${run.status}`);
@@ -342,26 +461,30 @@ export async function tick(overrides: Partial<typeof live> = {}) {
       );
     } catch (error) {
       if (b.active.phase !== "review") throw error;
-      const unreadable = (b.unreadable?.[job.id] ?? 0) + 1;
-      if (unreadable > 4) throw error;
-      b.unreadable = { ...b.unreadable, [job.id]: unreadable };
-      const snippet = (() => {
-        try {
-          return JSON.stringify(extractReviewJson(run.result)).slice(0, 280);
-        } catch {
-          return (run.result ?? "").replace(/\s+/g, " ").trim().slice(0, 280);
-        }
-      })();
-      b.feedback =
-        `${error instanceof Error ? error.message : "Independent review was unreadable"}. Reviewer returned: ${snippet}`.slice(
-          0,
-          500,
-        );
-      b.active = undefined;
-      await persist("request-changes");
+      retryReview(error instanceof Error ? error.message : "Unreadable review", job);
+      await persist("review-retry");
       return;
     }
     if (parsed.verdict !== "approve") {
+      if (
+        (b.active.phase === "integrated-review" ||
+          (b.active.phase === "deployed-review" && b.automaticDeployment)) &&
+        parsed.verdict === "request_changes"
+      ) {
+        const attempts = (b.integrationRepair?.attempts ?? 0) + 1;
+        if (attempts > 2) throw new Error("Integrated repair budget exhausted");
+        b.integrationRepair = { attempts, pending: true };
+        b.integratedReview = undefined;
+        b.deployment = undefined;
+        b.deployedReview = undefined;
+        b.automaticDeployment = undefined;
+        b.feedback =
+          parsed.review.findings.join("\n") ||
+          "Repair failing integrated acceptance within approved requirements";
+        b.active = undefined;
+        await persist("integration-repair-reserved");
+        return;
+      }
       if (b.active.phase === "review" && parsed.verdict === "request_changes") {
         const revisions = (b.revisions?.[job.id] ?? 0) + 1;
         if (revisions > 2) {
@@ -371,6 +494,7 @@ export async function tick(overrides: Partial<typeof live> = {}) {
         }
         b.revisions = { ...b.revisions, [job.id]: revisions };
         b.feedback = parsed.review.findings.join("\n") || "Independent review requested changes";
+        b.pendingRevision = { job: job.id, base: b.active.base, branch: b.active.branch };
         b.active = undefined;
         await persist("request-changes");
         return;
@@ -381,6 +505,14 @@ export async function tick(overrides: Partial<typeof live> = {}) {
     }
     const review = parsed.review;
     if (b.active.phase === "deployed-review") {
+      if (b.coverage.ci && (await inspectCI(b, github)) !== "passed") {
+        b.active = undefined;
+        if (b.ci?.result === "repair") {
+          await persist("ci-repair-reserved");
+          return;
+        }
+        throw new Error("Required CI no longer passes at deployed acceptance");
+      }
       const verified = await verifyDeployment(b, b.deployment!, github);
       if (verified.url !== b.deployment!.url)
         throw new Error("Deployment URL changed during review");
@@ -396,31 +528,47 @@ export async function tick(overrides: Partial<typeof live> = {}) {
       await persist("integrated-review");
       return;
     }
+    b.pendingRevision = undefined;
+    b.feedback = undefined;
     b.evidence.push({ job: job.id, commit: b.active.base, review });
-    b.accepted.push(job.id);
+    if (["__ci_repair__", "__integration_repair__"].includes(job.id)) {
+      if (!b.resultBranch) throw new Error("CI repair has no delivery branch");
+      const currentHead = await head(b.resultBranch);
+      if (![b.candidate, b.active.base].includes(currentHead))
+        throw new Error("Delivery branch changed during CI repair");
+      if (currentHead !== b.active.base) {
+        await assertLease(store, owner);
+        await github(`/git/refs/heads/${b.resultBranch}`, "PATCH", {
+          sha: b.active.base,
+          force: false,
+        });
+      }
+      if (b.ci) b.ci = { ...b.ci, commit: b.active.base, result: "pending" };
+      if (b.integrationRepair) b.integrationRepair.pending = false;
+      b.integratedReview = undefined;
+    } else b.accepted.push(job.id);
     b.candidate = b.active.base;
-    b.resultBranch = b.active.branch;
+    if (!["__ci_repair__", "__integration_repair__"].includes(job.id))
+      b.resultBranch = b.active.branch;
     b.active = undefined;
     await persist("slice-accepted");
   } catch (e) {
     // A lost checkpoint race is retried from fresh state. Never overwrite a
     // concurrent pause/cancel with the older in-memory snapshot.
     const message = e instanceof Error ? e.message.slice(0, 500) : "Factory transition failed";
-    if (
-      b.active?.phase === "review" &&
-      /JSON|unreadable|omitted checks|did not return JSON|did not satisfy|criteria /i.test(message)
-    ) {
-      const jobId = b.manifest.jobs.find((j) => !b.accepted.includes(j.id))?.id;
-      const unreadable = (jobId && (b.unreadable?.[jobId] ?? 0) + 1) || 1;
-      if (jobId && unreadable <= 4) {
-        b.unreadable = { ...b.unreadable, [jobId]: unreadable };
-        b.feedback = message;
-        b.active = undefined;
-        b.status = "running";
-        b.error = undefined;
-        await persist("request-changes");
-        return;
-      }
+    const transient =
+      ((e instanceof GitHubError || e instanceof CursorError) &&
+        (e.status === 429 || e.status >= 500)) ||
+      (e instanceof Error &&
+        (e.name === "TimeoutError" ||
+          (e.name === "TypeError" && /fetch|network/i.test(e.message))));
+    const retryKey = b.active?.agentId ?? b.automaticDeployment?.id ?? `delivery:${b.candidate}`;
+    const retries = b.networkRetries?.[retryKey] ?? 0;
+    if (transient && retries < 3 && Date.now() < runDeadline(b)) {
+      b.networkRetries = { ...b.networkRetries, [retryKey]: retries + 1 };
+      b.retryAfter = Date.now() + 15000 * (retries + 1);
+      await persist("transport-retry");
+      return;
     }
     b.status = "blocked";
     b.error = message;

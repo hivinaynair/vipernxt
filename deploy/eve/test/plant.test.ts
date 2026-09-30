@@ -95,6 +95,7 @@ test("Eve repair resumes the reserved batch", async () => {
         verification: "cursor-cloud",
         specFiles: ["docs/coverage.json"],
         coverageFile: "docs/coverage.json",
+        requirementsFile: "docs/readiness.json",
         setup: [],
         worker: { kind: "cursor", repository: "https://github.com/acme/product" },
         limits: { attempts: 3, jobSeconds: 600, runSeconds: 3600 },
@@ -165,6 +166,7 @@ test("stale batches archive instead of blocking the next label", () => {
         verification: "cursor-cloud",
         specFiles: ["docs/coverage.json"],
         coverageFile: "docs/coverage.json",
+        requirementsFile: "docs/readiness.json",
         setup: [],
         worker: { kind: "cursor", repository: "https://github.com/acme/product" },
         limits: { attempts: 1, jobSeconds: 600, runSeconds: 3600 },
@@ -201,26 +203,23 @@ test("reviewer cannot invent criterion IDs", () => {
   ).toThrow("invented criterion");
 });
 
-test("journey-step IDs cover the assigned requirement IDs when they all passed", () => {
+test("journey-step labels cannot substitute for individually verified requirement IDs", () => {
   const commit = "a".repeat(40);
-  const parsed = parseReview(
-    {
+  expect(() =>
+    parseReview(
+      {
+        commit,
+        verdict: "approve",
+        unchanged: true,
+        findings: [],
+        checks: [{ command: ["bun", "test"], exitCode: 0, evidence: "ok" }],
+        criteria: [{ step: "J1.S1", passed: true, evidence: "desk ordered" }],
+      },
       commit,
-      verdict: "approve",
-      unchanged: true,
-      findings: [],
-      checks: [{ command: ["bun", "test"], exitCode: 0, evidence: "ok" }],
-      criteria: [{ step: "J1.S1", passed: true, evidence: "desk orders by due date" }],
-    },
-    commit,
-    [["bun", "test"]],
-    ["order-by-due", "clear-filters"],
-  );
-  expect(parsed.verdict).toBe("approve");
-  expect(parsed.review.criteria.map((c) => c.step).sort()).toEqual([
-    "clear-filters",
-    "order-by-due",
-  ]);
+      [["bun", "test"]],
+      ["order-by-due", "clear-filters"],
+    ),
+  ).toThrow("invented criterion");
 });
 
 test("review JSON can sit after plan-mode prose", () => {

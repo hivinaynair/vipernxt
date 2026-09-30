@@ -1,0 +1,46 @@
+name: Factory staging
+run-name: ${{ inputs.request_id }}
+on:
+  workflow_dispatch:
+    inputs:
+      candidate: { required: true, type: string }
+      request_id: { required: true, type: string }
+      coverage_file: { required: true, type: string }
+      coverage_hash: { required: true, type: string }
+      workflow_hash: { required: true, type: string }
+      script_hash: { required: true, type: string }
+      origin: { required: true, type: string }
+permissions:
+  contents: read
+  deployments: write
+concurrency:
+  group: factory-staging
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with: { path: control, persist-credentials: false }
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.candidate }}
+          path: candidate
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: '1.4.0' }
+      - run: bun control/.github/scripts/factory-staging.ts
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          FACTORY_CANDIDATE: ${{ inputs.candidate }}
+          FACTORY_REQUEST_ID: ${{ inputs.request_id }}
+          FACTORY_COVERAGE_FILE: ${{ inputs.coverage_file }}
+          FACTORY_COVERAGE_HASH: ${{ inputs.coverage_hash }}
+          FACTORY_WORKFLOW_HASH: ${{ inputs.workflow_hash }}
+          FACTORY_SCRIPT_HASH: ${{ inputs.script_hash }}
+          FACTORY_ORIGIN: ${{ inputs.origin }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}

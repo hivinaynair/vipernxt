@@ -1,7 +1,9 @@
 import { defaultGitHubAuth, githubChannel } from "eve/channels/github";
+import { resumeHook } from "workflow/api";
 import { mentionPattern, resolveBotName } from "../lib/bot-name.js";
 import { repository } from "../lib/config.js";
 import { githubCredentials } from "../lib/credentials.js";
+import { readState } from "../lib/store.js";
 import { stampAutonomous, stampTrusted } from "../lib/trust.js";
 
 export default githubChannel({
@@ -53,5 +55,47 @@ export default githubChannel({
     };
   },
   onPullRequest: () => null,
-  onCheckSuite: () => null,
+  async onCheckSuite(ctx, suite) {
+    if (
+      `${ctx.repository.owner}/${ctx.repository.name}` !== repository() ||
+      suite.action !== "completed" ||
+      suite.app.slug !== "github-actions"
+    )
+      return null;
+    const b = (await readState()).state.batch;
+    if (
+      b?.status === "running" &&
+      b.coverage?.ci &&
+      suite.headSha === b.candidate &&
+      b.pr &&
+      suite.pullRequests.some((n) => b.pr!.endsWith(`/${n}`))
+    ) {
+      try {
+        await resumeHook(`ci:${b.intakeHash}:${b.candidate}`, {});
+      } catch {
+        /* periodic reconciliation is sufficient */
+      }
+    }
+    return null;
+  },
+  async onWorkflowRun(ctx, run) {
+    if (
+      `${ctx.repository.owner}/${ctx.repository.name}` !== repository() ||
+      run.action !== "completed"
+    )
+      return null;
+    const b = (await readState()).state.batch;
+    if (
+      b?.status === "running" &&
+      b.automaticDeployment &&
+      (!b.automaticDeployment.runId || b.automaticDeployment.runId === run.workflowRunId)
+    ) {
+      try {
+        await resumeHook(`deployment:${b.automaticDeployment.id}`, {});
+      } catch {
+        /* next durable reconciliation verifies actual records */
+      }
+    }
+    return null;
+  },
 });
