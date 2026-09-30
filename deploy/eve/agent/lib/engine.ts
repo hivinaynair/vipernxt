@@ -110,6 +110,10 @@ export function executionCommands(b: Batch, job: Job) {
 }
 export function workerPrompt(b: Batch, job: Job): string {
   const contract = {
+    phase: b.active?.phase ?? "build",
+    verificationTarget: b.deployment
+      ? { kind: "deployed-staging", origin: b.deployment.url }
+      : { kind: "worker-app-before-deployment", origin: null },
     job,
     deadline: new Date(
       Math.min(
@@ -117,7 +121,7 @@ export function workerPrompt(b: Batch, job: Job): string {
         b.active ? b.active.startedAt + b.manifest.limits.jobSeconds * 1000 : Infinity,
       ),
     ).toISOString(),
-    deployment: b.deployment,
+    deployment: b.deployment ?? null,
     requirements: promptRequirements(b, job),
     criterionIds: b.coverage ? reviewCriteria(b, job) : job.steps,
     specFiles: b.manifest.specFiles,
@@ -132,7 +136,7 @@ export function workerPrompt(b: Batch, job: Job): string {
     return [
       b.deployment
         ? `Verify the actual deployed site at ${b.deployment.url}. Run checks with FACTORY_STAGING_URL=${b.deployment.url}. Never substitute localhost, mocks or a different URL. Use only approved test accounts/data; missing credentials or unavailable site must fail. Do not deploy or merge.`
-        : "Verify the candidate in the worker environment.",
+        : `Current phase: ${contract.phase}, BEFORE draft PR, GitHub CI and staging deployment. Verify code and the worker app with the pinned local configuration. Leave FACTORY_STAGING_URL and E2E_BASE_URL unset. Do not set them from coverage.deployed or browse its future origin. No staging deployment or GitHub receipt is expected yet; absence of that future site is not a failure in this phase. The deployed-review phase will require the actual staging origin after CI and deployment succeed. Do not deploy or merge.`,
       b.feedback ? `Previous verification problem: ${b.feedback}` : "",
       "Independently verify this exact commit. Do not edit tracked files or push code. Ignore the builder's claims.",
       `Commit: ${b.active.base}. Compare against ${b.active.phase === "integrated-review" ? b.manifest.base : b.candidate}.`,
@@ -160,6 +164,9 @@ export function workerPrompt(b: Batch, job: Job): string {
       }),
       "Missing business policy or permissions must reject and hold for the owner. request_changes requests an implementation repair within the existing contract and attempt budget. reject holds for the owner. If any required check fails or evidence is missing, verdict must not be approve. Report the actual unchanged status using git status.",
       JSON.stringify(contract),
+      b.deployment
+        ? "This is deployed-review. Required browser evidence must come from the verified staging origin; localhost cannot satisfy this gate."
+        : "This is pre-deployment verification. The required browser command must run against the worker app with FACTORY_STAGING_URL and E2E_BASE_URL unset. Certify the included code and local behavior here; verify GitHub CI, deployment receipts and the actual staging site only in their later phases.",
     ].join("\n");
   return [
     "Implement only this approved slice. Read AGENTS.md and all pinned specifications. Do not invent fields or requirements. Do not modify pinned evaluators, factory state, GitHub workflows or unrelated paths. Commit and push only the implementation branch; do not open or merge PRs or deploy.",
