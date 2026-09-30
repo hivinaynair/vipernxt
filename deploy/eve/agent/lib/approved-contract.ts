@@ -1,4 +1,5 @@
 import { parse as parseYaml } from "yaml";
+import { assertBunTargets } from "./bun-targets.js";
 import type { Manifest } from "./contract.js";
 import { validateCoverage } from "./coverage.js";
 import { validateReadiness } from "./requirements-readiness.js";
@@ -14,6 +15,15 @@ export async function approvedContract(
   for (const path of manifest.specFiles) files[path] = (await read(path, commit)).text;
   const catalog = JSON.parse(files[manifest.coverageFile]);
   const coverage = validateCoverage(catalog, manifest, parseYaml(files[catalog.spineFile]));
+  for (const argv of [
+    ...coverage.integrated.checks,
+    ...(coverage.integrated.browser ? [coverage.integrated.browser] : []),
+    ...(coverage.deployed?.checks ?? []),
+    ...(coverage.deployed?.browser ? [coverage.deployed.browser] : []),
+    ...(coverage.deployed?.automatic?.setup ?? []),
+    ...(coverage.deployed?.automatic ? [coverage.deployed.automatic.command] : []),
+  ])
+    assertBunTargets(argv, manifest.specFiles);
   const packet = JSON.parse(files[manifest.requirementsFile]);
   const readiness = validateReadiness({
     coverageFile: manifest.coverageFile,

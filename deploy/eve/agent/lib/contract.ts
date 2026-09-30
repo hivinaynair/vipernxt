@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
+import { assertBunTargets } from "./bun-targets.js";
 
 const sha = z.string().regex(/^[a-f0-9]{40}$/);
 const path = z
@@ -62,7 +63,10 @@ export function validateManifest(value: unknown, repo: string): Manifest {
   if (!m.specFiles.includes(m.requirementsFile))
     throw new Error("Requirements packet must be pinned in specFiles");
   const seen = new Set<string>();
+  for (const argv of [...m.setup, ...m.combinedChecks]) assertBunTargets(argv, m.specFiles);
   for (const job of m.jobs) {
+    for (const argv of [...job.checks, ...(job.browser ? [job.browser] : [])])
+      assertBunTargets(argv, m.specFiles);
     if (job.id.startsWith("__")) throw new Error("Reserved job ID");
     if (seen.has(job.id) || job.dependsOn.some((id) => !seen.has(id)))
       throw new Error("Jobs must be unique and ordered after dependencies");

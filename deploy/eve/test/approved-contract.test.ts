@@ -151,3 +151,25 @@ test("changed catalog and dropped job cannot shrink the approved packet", async 
     approvedContract(f.manifest, f.manifest.base, f.read, { allowSimulation: true }),
   ).rejects.toThrow();
 });
+
+for (const stage of ["integrated", "deployed"] as const) {
+  test(`intake holds an ambiguous pinned Bun evaluator in ${stage} acceptance`, async () => {
+    const f = fixture();
+    const path = "test/selection.eval.ts";
+    f.manifest.specFiles.push(path);
+    f.files[path] = "throw new Error('must run')";
+    const coverage = JSON.parse(f.files["docs/coverage.json"]);
+    if (stage === "integrated") coverage.integrated.checks = [["bun", "test", path]];
+    else
+      coverage.deployed = {
+        environment: "staging",
+        origin: "https://staging.example.com",
+        creator: "github-actions[bot]",
+        checks: [["bun", "test", path]],
+      };
+    f.files["docs/coverage.json"] = JSON.stringify(coverage);
+    await expect(
+      approvedContract(f.manifest, f.manifest.base, f.read, { allowSimulation: true }),
+    ).rejects.toThrow(`explicit path: use ./${path}`);
+  });
+}
