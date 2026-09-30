@@ -12,6 +12,7 @@ export const manifestSchema = z.object({
   id: z.string().regex(/^[a-z0-9-]+$/),
   base: sha,
   approval: z.string().min(1),
+  simulation: z.literal(true).optional(),
   verification: z.literal("cursor-cloud"),
   specFiles: z.array(path).min(1),
   coverageFile: path,

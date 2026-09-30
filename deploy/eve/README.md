@@ -38,6 +38,16 @@ handles that race. A missed first-turn hook is not a failed slice. Deadline
 exhaustion holds execution rather than silently granting more time. Completed
 workflow steps are replayed, not rerun.
 
+## Bounded hosted simulations
+
+For an operator-authorized technical benchmark, set `FACTORY_SIMULATION_REPO`
+to the exact disposable repository and pin `simulation: true` in its manifest.
+The target must be `staging`, scope must be `first-slice`, and the run is limited
+to two jobs, two attempts, 20-minute stations and a two-hour batch. Registration
+is explicitly reported as `simulation-registered`. Synthetic walkthroughs stay
+labelled as simulations; this mode cannot certify an MVP or replace customer
+approval. Without both bindings, hosted intake still requires observed discovery.
+
 ## Product hook
 
 Copy `hooks/cursor-stop.mjs` to `.cursor/hooks/factory-stop.mjs`, and add a `stop`

@@ -10,6 +10,7 @@ import { assertApprovedIntake } from "../lib/intake.js";
 import { postReceipt } from "../lib/receipt.js";
 import { runBatch } from "../lib/run-batch.js";
 import { verifyRuntime } from "../lib/runtime.js";
+import { simulationIntake } from "../lib/simulation.js";
 import {
   archiveBatch,
   isAuthorizedResume,
@@ -142,7 +143,17 @@ async function register(ctx: WorkflowStepToolContext) {
       required("FACTORY_CALLBACK_AUDIENCE"),
       file,
     );
-    const { coverage, readiness } = await approvedContract(manifest, source.commit, file);
+    const simulation = simulationIntake(
+      manifest,
+      repository(),
+      process.env.FACTORY_SIMULATION_REPO,
+      required("FACTORY_BASE_BRANCH"),
+    );
+    const { coverage, readiness } = await approvedContract(manifest, source.commit, file, {
+      allowSimulation: simulation,
+    });
+    if (simulation && coverage.scope !== "first-slice")
+      throw new Error("Hosted simulation cannot certify an MVP");
     state.batch = {
       workflowOwner: ctx.callId,
       issue: issueNumber,
@@ -162,7 +173,7 @@ async function register(ctx: WorkflowStepToolContext) {
     state.lastFailure = undefined;
     await saveState(state, sha);
     await postReceipt(issueNumber, {
-      event: "registered",
+      event: simulation ? "simulation-registered" : "registered",
       status: "running",
       candidate: source.commit,
     });
