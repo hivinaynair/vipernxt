@@ -24,14 +24,16 @@ return one JSON object. Slice review may `request_changes` at most twice, then
 holds. Unreadable slice output or terminal reviewer errors reserve a fresh reviewer of the same candidate, twice at most, preserving the original stage clock. Code revisions start from the rejected candidate and consume build attempts. Advisory notes cannot erase blocking findings. Delivery creates a draft PR; [approved CI repair and automatic staging](AUTOMATION.md) can continue unattended to deployed acceptance. Meaningful transitions post issue receipts.
 
 There is **no cron schedule**. Before each Cursor launch the workflow registers
-`cursor:<agent-id>` as a durable hook. The product's stop hook sends a short-lived
+`cursor:<agent-id>:<workflow-owner>` as a durable hook. The product's stop hook sends a short-lived
 Cursor-signed OIDC token to `/callbacks/cursor`. The endpoint checks issuer,
 audience, expiry and the registered agent identity, then wakes that hook.
 The command consumes Cursor stop-event JSON on stdin and returns `{}` on stdout.
 The callback body cannot approve anything. Durable reconciliation or callback is enough.
 The workflow then reads Cursor's actual run status and the branch SHA.
-If a previous run still holds the `cursor:<agent-id>` wake token, the new
-workflow uses durable reconciliation and keeps ticking.
+Adoption uses a fresh owner suffix for Cursor, CI, deployment and retry hooks,
+so a predecessor cannot retain its successor's wake token. Callback routes use
+the current checkpoint owner. SDK hook-conflict rejections use the bounded
+reconciliation path; an obsolete workflow stops without retrying an engine step.
 
 A stop hook can arrive before the terminal API status. Durable reconciliation
 handles that race. A missed first-turn hook is not a failed slice. Deadline

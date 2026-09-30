@@ -5,6 +5,7 @@ import { repository } from "../lib/config.js";
 import { githubCredentials } from "../lib/credentials.js";
 import { readState } from "../lib/store.js";
 import { stampAutonomous, stampTrusted } from "../lib/trust.js";
+import { wakeToken } from "../lib/wake.js";
 
 export default githubChannel({
   credentials: githubCredentials,
@@ -71,7 +72,7 @@ export default githubChannel({
       suite.pullRequests.some((n) => b.pr!.endsWith(`/${n}`))
     ) {
       try {
-        await resumeHook(`ci:${b.intakeHash}:${b.candidate}`, {});
+        await resumeHook(wakeToken("ci", `${b.intakeHash}:${b.candidate}`, b.workflowOwner), {});
       } catch {
         /* periodic reconciliation is sufficient */
       }
@@ -91,7 +92,7 @@ export default githubChannel({
       (!b.automaticDeployment.runId || b.automaticDeployment.runId === run.workflowRunId)
     ) {
       try {
-        await resumeHook(`deployment:${b.automaticDeployment.id}`, {});
+        await resumeHook(wakeToken("deployment", b.automaticDeployment.id, b.workflowOwner), {});
       } catch {
         /* next durable reconciliation verifies actual records */
       }

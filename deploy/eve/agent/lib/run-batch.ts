@@ -1,8 +1,9 @@
 import type { WorkflowStepToolContext } from "eve/tools";
-import { createHook, sleep } from "workflow";
+import { createHook, FatalError, sleep } from "workflow";
 import { runDeadline } from "./deployment.js";
 import { tick } from "./engine.js";
 import { readState } from "./store.js";
+import { hookConflict, wakeToken } from "./wake.js";
 
 /** Shared durable driver for intake and recovery. Side effects live only in steps. */
 export async function runBatch(ctx: WorkflowStepToolContext) {
@@ -12,7 +13,14 @@ export async function runBatch(ctx: WorkflowStepToolContext) {
     if (snapshot.status !== "running") return snapshot;
     if (!snapshot.token) continue;
     using done = createHook({ token: snapshot.token });
-    const held = await done.getConflict();
+    let held = false;
+    try {
+      held = Boolean(await done.getConflict());
+    } catch (error) {
+      // Some hosted SDK paths reject a conflict rather than returning its run.
+      if (!hookConflict(error)) throw error;
+      held = true;
+    }
     const registered = snapshot.token;
     snapshot = await advance(ctx);
     if (snapshot.status !== "running") return snapshot;
@@ -27,7 +35,7 @@ async function advance(ctx: WorkflowStepToolContext) {
   "use step";
   const before = await readState();
   if (before.state.batch?.workflowOwner !== ctx.callId)
-    throw new Error("Workflow ownership changed");
+    throw new FatalError("Workflow ownership changed");
   await tick();
   const b = (await readState()).state.batch!;
   const deadline = Math.min(
@@ -47,13 +55,13 @@ async function advance(ctx: WorkflowStepToolContext) {
     error: b.error,
     deadline,
     token: b.retryAfter
-      ? `retry:${b.intakeHash}`
+      ? wakeToken("retry", b.intakeHash, ctx.callId)
       : b.active
-        ? `cursor:${b.active.agentId}`
+        ? wakeToken("cursor", b.active.agentId, ctx.callId)
         : b.automaticDeployment
-          ? `deployment:${b.automaticDeployment.id}`
+          ? wakeToken("deployment", b.automaticDeployment.id, ctx.callId)
           : b.coverage?.ci && b.pr
-            ? `ci:${b.intakeHash}:${b.candidate}`
+            ? wakeToken("ci", `${b.intakeHash}:${b.candidate}`, ctx.callId)
             : undefined,
   };
 }
