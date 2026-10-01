@@ -29,7 +29,7 @@ fenced coordinator executes verified recovery actions.
 
 ## Evidence
 
-- Root suite: **430 pass, 0 fail, 46 files**; this includes **247 Eve tests**.
+- Root suite: **440 pass, 0 fail, 48 files**; this includes **257 Eve tests**.
 - Required root type/boundary/token/journey checks pass. The bare kit has no
   product source or engagement requirements packet; those empty checks do not
   establish customer-product acceptance.
@@ -54,7 +54,10 @@ fenced coordinator executes verified recovery actions.
   resumption. A revoked-credential case returned ask_owner through the deterministic
   guard without invoking the model. These read-only diagnostic inputs were synthetic.
 
-These fault simulations are not a hosted provider-failure pilot. The previous
-completed hosted run remains [separately recorded](hosted.md); it had no failure
-requiring Jev recovery. Broader live failure injection and empirical confidence
-calibration remain necessary before claiming 10/10 or flawless general recovery.
+These deterministic simulations are separate from the
+[controlled hosted failure campaign](hosted-faults.md). Its lost-launch trial
+used real Jev inference and bounded provider reads to resume the original
+worker, then completed independent reviews, CI, automatic staging and actual-site
+acceptance unattended. The previous happy-path run remains
+[separately recorded](hosted.md). Empirical confidence calibration and broader
+repeat runs remain necessary before claiming flawless general recovery.

@@ -116,9 +116,10 @@ The fault suite in `test/recovery.test.ts` exercises the actual engine,
 automatic driver and triage using injected provider responses, through accepted
 slice/integrated checkpoints and owner holds. It includes lost launch responses,
 weak confidence, model outages, uncertain writes, expired clocks, revoked
-credentials and authorization changes. These deterministic simulations are not
-a claim of hosted provider-failure recovery; that still requires a separate live
-fault pilot. The prior hosted happy-path completion remains documented in
+credentials and authorization changes. Those deterministic fixtures are separate
+from the [controlled hosted failure campaign](evals/hosted-faults.md), which
+records real worker reconciliation, Jev routing and staging dispatch recovery.
+The prior hosted happy-path completion remains documented in
 [evals/hosted.md](evals/hosted.md).
 
 Owner attention is a pager, not a second work queue. The first owner hold for an
@@ -215,4 +216,5 @@ by itself prove a physical cold-process restart.
 
 Disable the campaign setting and redeploy after testing. Fault manifests then
 reject registration, and historical fault plans cannot inject into normal work.
-The campaign report records actual observations rather than crediting unrun cases.
+The [campaign report](evals/hosted-faults.md) records actual observations rather
+than crediting unrun cases.
