@@ -1,18 +1,12 @@
 ---
 name: ontology
-description: >-
-  Models the domain as entities, properties, links and actions in the domain's own
-  vocabulary, before any schema or journey work. Use after the claim is confirmed
-  and before the journey spine, when the data model is unclear, or when the same
-  thing is being called three different names.
+description: Model domain entities, fields, relationships, actions and lifecycle using evidence and canonical terms.
 ---
 
-# Domain model
+# ontology
 
-Input: accepted claim and workflow evidence. Output: `docs/product/ontology.md`, before spine/schema work. Follow [execution contract](../CONTRACT.md) and artifact caps.
+Follow [CONTRACT](../CONTRACT.md). Input: accepted claim/workflow; output: docs/product/ontology.md before schema/spine. [Model contract](model-contract.md) covers identity, types/invariants, relationships/cardinality, ownership, actors/actions, states/lifecycle and applicable conflict/retry behavior.
 
-Define entities in the participants' vocabulary, then properties, links/cardinality, actions/authorized actors, states and allowed transitions. An ontology describes the domain; tables are later storage choices.
+Every field/entity needs provenance: observed-used, required-by-rule, historical, assumed or unknown. Printed/incumbent fields are not automatically necessary/legal requirements. Justify invented entities; resolve overloads/rejected synonyms. Canonical terms apply to code, seeds, journeys and UI.
 
-Every entity/field needs provenance. Printed forms, incumbent data, field observations and authoritative rules are evidence with different strength. A printed field is not automatically necessary or legally required. Mark fields observed-used, required-by-rule, historical, assumed or unknown. Resolve overloads and rejected synonyms; canonical terms then apply to journeys, code, seed and UI.
-
-Output an entity table with definitions/sources; blocks for entities with real state transitions; vocabulary decisions; open questions. Justify or remove invented entities. Confirm only ambiguity or domain choices not already settled by the accepted design. Return to `/next` without repeating the whole interview.
+Return entity/source tables, real transition blocks, vocabulary decisions and open questions. Draft during shape when policy needs settling; faithful expansion adds no approval. Storage tables come later.

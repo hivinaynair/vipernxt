@@ -19,9 +19,9 @@ export async function verifyCallback(
 }
 
 type CallbackDependencies = {
-  active(): Promise<{ agentId: string; running: boolean } | null>;
+  active(): Promise<{ agentId: string; running: boolean; workflowOwner?: string } | null>;
   verify(token: string, agentId: string): Promise<boolean>;
-  resume(agentId: string): Promise<void>;
+  resume(agentId: string, workflowOwner?: string): Promise<void>;
 };
 export async function handleCallback(request: Request, deps: CallbackDependencies) {
   const authorization = request.headers.get("authorization");
@@ -37,7 +37,7 @@ export async function handleCallback(request: Request, deps: CallbackDependencie
   }
   try {
     // Wake only. Acceptance remains in the workflow's API/diff/check gates.
-    await deps.resume(active.agentId);
+    await deps.resume(active.agentId, active.workflowOwner);
     return new Response(null, { status: 202 });
   } catch {
     // Do not acknowledge an unpersisted wake. Hook retries, then the durable

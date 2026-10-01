@@ -39,6 +39,7 @@ const manifest = () => ({
   verification: "cursor-cloud",
   specFiles: ["docs/spec.md"],
   coverageFile: "docs/spec.md",
+  requirementsFile: "docs/spec.md",
   setup: [],
   worker: { kind: "cursor", repository: "https://github.com/acme/product" },
   limits: { attempts: 2, jobSeconds: 600, runSeconds: 3600 },
@@ -73,11 +74,12 @@ describe("acceptance is an exact contract", () => {
       expect(() => checkReview(r, commit, commands, ["J1.S1"])).toThrow();
     });
   }
-  test("informational findings do not veto a passing approve", () => {
+  test("blocking findings veto approval; advisory notes remain visible", () => {
     const r = report();
     (r.findings as string[]).push("NON-BLOCKING: Task B left for the next job");
-    expect(checkReview(r, commit, commands, ["J1.S1"]).approved).toBe(true);
-    expect(parseReview(r, commit, commands, ["J1.S1"]).review.findings).toEqual([]);
+    expect(() => checkReview(r, commit, commands, ["J1.S1"])).toThrow();
+    const advisory = { ...report(), notes: ["Consider a future task"] };
+    expect(checkReview(advisory, commit, commands, ["J1.S1"]).notes).toEqual(advisory.notes);
   });
 });
 describe("scope and graph guards", () => {
@@ -116,24 +118,33 @@ describe("scope and graph guards", () => {
       ),
     ).toThrow();
   });
-  test("approve may include extra keys, a short SHA, and a string command", () => {
+  test("short SHA and string commands cannot approve", () => {
     const r = {
       ...report(),
       commit: commit.slice(0, 12),
       notes: "non-blocking scope note",
       checks: [{ command: "bun test", exitCode: 0, evidence: "passed independently" }],
     };
-    expect(parseReview(r, commit, [["bun", "test"]], ["J1.S1"]).verdict).toBe("approve");
+    expect(() => parseReview(r, commit, [["bun", "test"]], ["J1.S1"])).toThrow();
   });
-  test("approve may map or drop extra criterion IDs when required steps passed", () => {
+  test("unknown criterion IDs cannot be mapped or dropped", () => {
     const r = report();
     r.criteria.push({ step: "invented", passed: true, evidence: "no" });
-    expect(parseReview(r, commit, commands, ["J1.S1"]).verdict).toBe("approve");
+    expect(() => parseReview(r, commit, commands, ["J1.S1"])).toThrow("invented criterion");
   });
   test("approve may include extra checks if every required command ran", () => {
     const r = report();
     r.checks.push({ command: ["bun", "run", "lint"], exitCode: 0, evidence: "extra pass" });
     expect(checkReview(r, commit, commands, ["J1.S1"]).approved).toBe(true);
+  });
+  test("argv prefixes, duplicate criteria and contradictory verdicts cannot approve", () => {
+    for (const defect of ["prefix", "duplicate", "contradiction"]) {
+      const r = { ...report(), verdict: "approve" as const };
+      if (defect === "prefix") r.checks[0].command = ["echo", ...commands[0]];
+      if (defect === "duplicate") r.criteria.push(r.criteria[0]);
+      if (defect === "contradiction") r.approved = false;
+      expect(() => parseReview(r, commit, commands, ["J1.S1"])).toThrow();
+    }
   });
   test("omitted required check names the missing argv", () => {
     const r = report();

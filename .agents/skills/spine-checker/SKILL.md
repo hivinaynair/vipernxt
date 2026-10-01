@@ -1,13 +1,12 @@
 ---
 name: spine-checker
-description: >-
-  Child job: validate a journey spine YAML. Use after drafting or editing
-  docs/journeys/*.yaml, or when next is about to show a spine. Does not edit
-  generated markdown.
+description: Independently check assigned requirements or journey expansion for material omissions and contradictions.
 ---
 
-Read the assigned YAML and its source design table/clip; no file writes. Run `bun scripts/journey.ts validate <file>` and `bun run check-journeys`. Do not use `--complete` for an unbuilt draft.
+# spine-checker
 
-Check seat/beat fidelity, stable IDs, EARS, labeled outcome branches and valid terminal exits. Interactive steps need declared screen/state; headless script/judgment or out-of-band human steps do not. Report missing criteria even if the validator calls them warnings.
+No file writes. For requirements, use [readiness](../shape/requirements-readiness.md)/[acceptance](../shape/requirements-acceptance.md): applicability, provenance/assumptions, field/model/access consistency, exceptions and traceability. Flag policy unknowns; never approve for the owner. Pre-spine review uses design beats.
 
-Return pass/fail, concise command evidence and actionable gaps. Never edit generated markdown or invent a new product story to repair an expansion.
+For journeys, read assigned YAML, source clip/table and linked contracts/cases. Run journey validate and check-journeys; no --complete on unbuilt drafts. Check fidelity, stable IDs, EARS, outcome branches/exits and declared interactive screen/states. Headless/out-of-band steps need no screen. Report missing criteria even when validators warn.
+
+Return pass/fail, concise command evidence and actionable gaps. Never rewrite the story or generated markdown.

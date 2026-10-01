@@ -1,40 +1,21 @@
 ---
 name: shape
-description: >-
-  Shapes a new SaaS before any product code: interviews one question at a time,
-  researches the domain, drafts user journeys and low-fi screens, and writes a
-  design doc under docs/plans. Use when starting a new product, when the product
-  is still uncertain, or when the user asks to shape the product, draft
-  journeys, screens, or a design doc.
+description: Gather and reconcile product requirements, domain models, data surfaces and acceptance cases before implementation.
 ---
 
-# Shape the product
+# shape
 
-Follow [the execution contract](../CONTRACT.md). Input: participant/workflow evidence, salvage, research digest and any accepted brief. Output: `docs/plans/<date>-<name>-design.md`, using [the template](design-doc-template.md), capped at two pages plus linked detail.
+Follow [CONTRACT.md](../CONTRACT.md). Inputs: accepted brief, workflow evidence, salvage/research. Output: `docs/plans/<date>-<name>-design.md`, using [template](design-doc-template.md); ≤800-word overview plus linked structured detail.
 
-## Gates
+1. Read state, AGENTS and recipe. Load [questions](questions.md) only for unresolved decisions.
+2. Settle U5: person, outcome, problem, why the obvious implementation misses it, fallback. Evidence can answer multiple gates; label assumptions.
+3. Identify actors, policy/data/money owners and non-users. Default one app with roles, not an app per actor.
+4. Settle applicable auth, tenancy, permissions, persistence and navigation. Auth belongs in the first real journey; use [test identities](../../../docs/kit/cloud-auth.md).
+5. Draft numbered clip beats and one journey row per seat: wants, does, first result, end result. Confirm unresolved story choices before screens.
+6. Use [requirements readiness](requirements-readiness.md) and [data surfaces](data-surfaces.md): entities, fields/displays, rules, access, integrations, operations and acceptance. Walk ordinary, incomplete and exception records; cover empty/loading/error/recovery states. Headless work still needs data/behavior contracts.
+7. Select recipe surfaces/facets with reasons; scaffold only after acceptance.
+8. Draft faithful ontology/spine and exact-scope cases/coverage. Run an independent omission/contradiction review; resolve material findings. Record outstanding approval with decision ID and exact [packet hash/actions](../../../docs/playbook/requirements-packet.md), then return to /next.
 
-1. **Orient:** read AGENTS.md, recipe and current state. Load [question bank](questions.md) only for a missing decision; never replay it from the beginning when evidence already answers it.
-2. **Claim:** draft U5 from evidence—outcome, affected person, real problem, why the obvious implementation misses it, fallback. Confirm unresolved claims; create the design doc once accepted.
-3. **Actors:** identify who acts, owns policy/data/money and never logs in. Default one application with explicit seats/roles; do not invent a separate app for every person. Confirm only new authority/scope choices.
-4. **Foundations:** settle auth (Clerk when needed), tenancy, permissions, persistence and navigation as required or explicitly unnecessary. Access matrix and test identities: [cloud-auth.md](../../../docs/kit/cloud-auth.md). Auth belongs in the first real journey.
-5. **Journeys:** one table row per seat: bucket, wants, does, sees after first beat, sees at end. Number clip beats. Confirm the story before screens.
-6. **Screens and data:** [data-surfaces.md](data-surfaces.md) for MVP fields, columns and rules. Then layout bands and empty/loading/error/recovery. Skip screens for a headless clip.
-7. **Surfaces:** select web/agent/db and facets from the recipe, with reasons. This phase records choices; scaffolding happens after design acceptance.
-8. **Review:** reconcile the doc end to end, remove contradictions/TBDs and request the unresolved design approval. Record the decision ID in state. Return to `/next`; do not add another stop or ask the user to invoke implementation.
+Research primary sources for decision-changing unknowns; it does not prove customer behavior. Incumbent fields/menus are evidence, not mandatory scope. Distinguish habit, domain obligation and assumptions.
 
-State owns gate status and decision references; the doc owns the accepted product. Preserve progress across sessions without reconstructing approval from prose. A written brief can settle several gates at once; label assumptions individually. User research gaps remain gaps unless explicitly accepted.
-
-## Research and decisions
-
-When there is enough context, research the unanswered question with primary sources, then return the few findings that affect the next decision. Keep interview turns short. Research complements field observation; it does not certify the customer's actual behavior.
-
-Treat an incumbent field/menu as evidence, not required scope. The claim determines exclusions. Distinguish customer habit from domain requirement. Record permissions, integration feasibility, error recovery and data constraints when they change the slice. Human judgment, responsibility and relationship are distinct reasons for keeping a person in a step.
-
-## Optional visual
-
-The design doc is sufficient. A supported host canvas may render it; read that host's documentation first. Otherwise use a disposable diagram/prototype only if it answers a material design question. Keep pre-approval exploration outside product UI paths. The visual is a view of the doc, never another authority.
-
-## Revision
-
-For a wrong clip/table, revise those sections and confirm the changed story; leave unaffected actors/claim alone. Return to `/next` for spine expansion. Product UI stays gated until design approval. Do not rename packages, provision vendors or write the product during shaping.
+A design doc is sufficient. Use a disposable visual only to resolve a material question, outside gated product paths. Revisions touch affected story/contracts only. No vendor provisioning, package renaming or product UI during shape.

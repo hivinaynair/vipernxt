@@ -1,11 +1,10 @@
 ---
 name: salvage-miner
-description: >-
-  Child job: mine one prior-art source (incumbent, a named competitor,
-  spreadsheet, complaints) for domain facts, not structure. Use when next or
-  salvage fans out. Not the salvage phase itself.
+description: Mine one assigned prior-art source for cited domain facts without deciding product scope.
 ---
 
-Read the assigned prior-art source, not the whole engagement. No file writes. The parent supplies the evidence question and constraints.
+# salvage-miner
 
-Return a cited facts table, vocabulary, observed entities/states, any demonstrably abandoned work, and open questions. Facts survive removing the vendor's name; menus/navigation are not requirements. Record abandoned behavior without deciding new scope. Do not infer mandatory fields from their presence on a form. Default <=600 words; the parent reconciles sources.
+Read assigned source/question/constraints only; no file writes. Return sourced facts, vocabulary, observed entities/states, evidenced abandoned work and questions (default ≤600 words).
+
+Menus/navigation are not requirements; field presence does not prove necessity. Record abandoned behavior without prohibiting it. Parent reconciles sources and determines scope.

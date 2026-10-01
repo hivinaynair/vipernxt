@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
+import { assertBunTargets } from "./bun-targets.js";
 
 const sha = z.string().regex(/^[a-f0-9]{40}$/);
 const path = z
@@ -12,9 +13,32 @@ export const manifestSchema = z.object({
   id: z.string().regex(/^[a-z0-9-]+$/),
   base: sha,
   approval: z.string().min(1),
+  simulation: z.literal(true).optional(),
+  faults: z
+    .object({
+      campaign: z.string().regex(/^[a-z0-9-]{1,80}$/),
+      cases: z
+        .array(
+          z.enum([
+            "launch-response-lost",
+            "cursor-read-failures",
+            "step-replay",
+            "staging-response-lost",
+            "cursor-auth-denied",
+            "jev-unavailable",
+            "stage-expired",
+          ]),
+        )
+        .min(1)
+        .max(4)
+        .refine((cases) => new Set(cases).size === cases.length, "Duplicate fault cases"),
+    })
+    .strict()
+    .optional(),
   verification: z.literal("cursor-cloud"),
   specFiles: z.array(path).min(1),
   coverageFile: path,
+  requirementsFile: path,
   setup: z.array(command),
   worker: z.object({ kind: z.literal("cursor"), repository: z.string() }),
   limits: z.object({
@@ -57,10 +81,14 @@ export function validateManifest(value: unknown, repo: string): Manifest {
     throw new Error("Manifest repository differs from deployment");
   if (!m.specFiles.includes(m.coverageFile))
     throw new Error("Coverage catalog must be pinned in specFiles");
+  if (!m.specFiles.includes(m.requirementsFile))
+    throw new Error("Requirements packet must be pinned in specFiles");
   const seen = new Set<string>();
+  for (const argv of [...m.setup, ...m.combinedChecks]) assertBunTargets(argv, m.specFiles);
   for (const job of m.jobs) {
-    if (["__integrated_review__", "__deployed_review__"].includes(job.id))
-      throw new Error("Reserved job ID");
+    for (const argv of [...job.checks, ...(job.browser ? [job.browser] : [])])
+      assertBunTargets(argv, m.specFiles);
+    if (job.id.startsWith("__")) throw new Error("Reserved job ID");
     if (seen.has(job.id) || job.dependsOn.some((id) => !seen.has(id)))
       throw new Error("Jobs must be unique and ordered after dependencies");
     if (job.requiresBrowser && !job.browser) throw new Error("Browser evidence command missing");
@@ -118,18 +146,17 @@ export function parseReview(value: unknown, commit: string, commands: string[][]
     value && typeof value === "object" && "findings" in value && Array.isArray(value.findings)
       ? { ...value, findings: value.findings.map(findingText) }
       : value;
-  let r = z
+  const r = z
     .object({
-      commit: z.string().regex(/^[a-f0-9]{7,40}$/i),
+      commit: sha,
       approved: z.boolean().optional(),
       verdict: z.enum(["approve", "request_changes", "reject"]).optional(),
       unchanged: z.boolean(),
       findings: z.array(z.string()).optional().default([]),
+      notes: z.array(z.string()).optional().default([]),
       checks: z.array(
         z.object({
-          command: z
-            .union([command, z.string().min(1)])
-            .transform((c) => (Array.isArray(c) ? c : c.trim().split(/\s+/))),
+          command,
           exitCode: z.number().int(),
           evidence: z.string().trim().min(1),
         }),
@@ -142,38 +169,17 @@ export function parseReview(value: unknown, commit: string, commands: string[][]
     .parse(raw);
   if (r.verdict === undefined && r.approved === undefined)
     throw new Error("Review must include verdict or approved");
-  const reportedCommit = r.commit.toLowerCase();
-  if (reportedCommit !== commit && !commit.startsWith(reportedCommit)) {
+  if (r.commit !== commit)
     throw new Error(`Independent review commit ${r.commit} does not match ${commit}`);
-  }
-  r = { ...r, commit };
-  const known = r.criteria.filter((c) => steps.includes(c.step));
-  const invented = r.criteria.filter((c) => !steps.includes(c.step));
-  if (invented.length) {
-    if (known.length === steps.length) {
-      r = { ...r, criteria: known };
-    } else if (known.length === 0 && invented.every((c) => c.passed)) {
-      // Reviewer cited journey steps (J1.S1) instead of requirement IDs.
-      r = {
-        ...r,
-        criteria: steps.map((step) => ({
-          step,
-          passed: true,
-          evidence: invented[0]!.evidence,
-        })),
-      };
-    } else {
-      throw new Error("Review invented criterion IDs");
-    }
-  }
+  if (r.criteria.some((c) => !steps.includes(c.step)))
+    throw new Error(
+      `Review invented criterion IDs: reported ${JSON.stringify(r.criteria.map((c) => c.step))}; expected exactly ${JSON.stringify(steps)}. Use requirement criterion IDs, not journey trace IDs.`,
+    );
+  if (r.verdict && r.approved !== undefined && r.approved !== (r.verdict === "approve"))
+    throw new Error("Contradictory review verdict");
   const argv = (c: string[]) => JSON.stringify(c);
   const actual = r.checks.map((c) => argv(c.command));
-  const missing = commands
-    .filter(
-      (command) =>
-        !actual.some((got) => got === argv(command) || got.endsWith(argv(command).slice(1))),
-    )
-    .map(argv);
+  const missing = commands.filter((command) => !actual.includes(argv(command))).map(argv);
   const reported = r.criteria.map((c) => c.step).sort();
   const required = [...steps].sort();
   if (missing.length) {
@@ -185,9 +191,27 @@ export function parseReview(value: unknown, commit: string, commands: string[][]
     );
   }
   const verdict: ReviewVerdict = r.verdict ?? (r.approved ? "approve" : "request_changes");
+  if (
+    verdict === "approve" &&
+    r.approved !== false &&
+    r.unchanged &&
+    !r.findings.length &&
+    r.criteria.every((c) => c.passed) &&
+    r.checks
+      .filter((c) => commands.some((required) => argv(required) === argv(c.command)))
+      .every((c) => c.exitCode === 0) &&
+    r.checks.some((c) => c.exitCode !== 0)
+  )
+    throw new SurplusCheckFailure(
+      "Approval contains failed supplementary checks. Independently rerun the pinned scope. " +
+        "Report only the required phase commands in checks; retain other outcomes in notes. " +
+        "Any genuine defect affecting an included requirement must reject or request_changes. " +
+        JSON.stringify(r.checks.filter((c) => c.exitCode !== 0)),
+    );
   if (verdict === "approve") {
     if (
       r.approved === false ||
+      r.findings.length > 0 ||
       !r.unchanged ||
       r.checks.some((c) => c.exitCode !== 0) ||
       r.criteria.some((c) => !c.passed)
@@ -205,9 +229,11 @@ export function parseReview(value: unknown, commit: string, commands: string[][]
   }
   return {
     verdict,
-    review: verdict === "approve" ? { ...r, findings: [] } : r,
+    review: r,
   };
 }
+/** Rejected report eligible for fresh bounded verification; never normalize it into approval. */
+export class SurplusCheckFailure extends Error {}
 export function checkReview(value: unknown, commit: string, commands: string[][], steps: string[]) {
   const parsed = parseReview(value, commit, commands, steps);
   if (parsed.verdict !== "approve")

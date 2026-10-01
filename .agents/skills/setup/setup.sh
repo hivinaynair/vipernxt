@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 # Provision a new product: GitHub, Neon, Vercel, Clerk, PostHog, Resend, Blob, Linear.
-# Opinionated on purpose. Idempotent — safe to re-run; it skips what already exists.
+# Uses selected scaffold services. Reconcile uncertain creation before retrying.
 #
 #   ./setup.sh
 #
 set -uo pipefail
+umask 077
+TASK_SETUP_TMP="$(mktemp -d)" || exit 1
+trap 'rm -rf "$TASK_SETUP_TMP"' EXIT
 
 BOLD=$'\033[1m'; DIM=$'\033[2m'; OK=$'\033[32m'; WARN=$'\033[33m'; OFF=$'\033[0m'
 TOTAL=10; STAGE=0
@@ -13,6 +16,7 @@ say()  { printf '      %s\n' "$1"; }
 good() { printf '      %s✓%s %s\n' "$OK" "$OFF" "$1"; }
 warn() { printf '      %s!%s %s\n' "$WARN" "$OFF" "$1"; }
 ask()  { local p="$1" v; read -r -p "      $p " v; printf '%s' "$v"; }
+ask_secret() { local v; read -r -s -p "      $1 " v; printf '\n' >&2; printf '%s' "$v"; }
 confirm() { local v; read -r -p "      $1 [y/N] " v; [[ "$v" == [yY]* ]]; }
 have() { command -v "$1" >/dev/null 2>&1; }
 
@@ -20,9 +24,11 @@ env_put() { # env_put FILE KEY VALUE — idempotent upsert
   local f="$1" k="$2" val="$3"
   touch "$f"
   if grep -q "^${k}=" "$f" 2>/dev/null; then
-    grep -v "^${k}=" "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+    grep -v "^${k}=" "$f" > "$f.tmp"
+    mv "$f.tmp" "$f"
   fi
   printf '%s=%s\n' "$k" "$val" >> "$f"
+  chmod 600 "$f"
 }
 
 # ── 0. preflight ─────────────────────────────────────────────────────────────
@@ -78,7 +84,12 @@ ENVFILE="apps/web/.env.local"
 # ── 1. github ────────────────────────────────────────────────────────────────
 stage "GitHub repository"
 if git remote get-url origin >/dev/null 2>&1; then
-  good "remote exists: $(git remote get-url origin)"
+  product_remote="$(git remote get-url origin)"
+  if [[ "$product_remote" =~ hivinaynair/vipernxt(\.git)?/?$ ]]; then
+    warn "Origin still points to the upstream starter. Set your dedicated product origin first."
+    exit 1
+  fi
+  good "dedicated product remote exists"
 else
   if confirm "Create private repo ${PRODUCT} and push?"; then
     gh repo create "$PRODUCT" --private --source=. --remote=origin --push \
@@ -113,7 +124,7 @@ if [ -n "$pid" ]; then
   good "project $PRODUCT exists ($pid)"
 elif confirm "Create Neon project $PRODUCT?"; then
   neonctl projects create --name "$PRODUCT" --region "$NEON_REGION" --database staging --output json --no-secrets \
-    >/tmp/neon-project.json 2>/dev/null \
+    >"$TASK_SETUP_TMP/neon-project.json" 2>/dev/null \
     && good "created $PRODUCT (database: staging)" \
     || warn "create failed for $PRODUCT"
   pid="$(neon_project_id "$PRODUCT")"
@@ -128,7 +139,7 @@ if [ -n "$pid" ]; then
       good "database $db exists"
     elif confirm "Create database $db on $PRODUCT?"; then
       neonctl databases create --name "$db" --project-id "$pid" --output json \
-        >/tmp/neon-db-$db.json 2>/dev/null \
+        >"$TASK_SETUP_TMP/neon-db-$db.json" 2>/dev/null \
         && good "created database $db" \
         || { warn "create failed for $db"; continue; }
     else
@@ -182,7 +193,7 @@ if [ "$NEED_ANALYTICS" != 1 ]; then
 else
   say "Create a project at https://app.posthog.com (EU: https://eu.posthog.com)."
   say "Exception autocapture is a PostHog project setting. Keys stay in $ENVFILE."
-  token="$(ask 'Project token (phc_…), or blank to skip:')"
+  token="$(ask_secret 'Project token (phc_…), or blank to skip:')"
   if [ -n "$token" ]; then
     env_put "$ENVFILE" NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN "$token"
     host="$(ask 'Host [https://us.i.posthog.com]:')"
@@ -200,7 +211,7 @@ if [ "$NEED_EMAIL" != 1 ]; then
   say "skipped — scaffolded.yaml has --without email, or no web surface"
 else
   say "Create an API key at https://resend.com/api-keys. Do not invent a from-address here."
-  key="$(ask 'RESEND_API_KEY, or blank to skip:')"
+  key="$(ask_secret 'RESEND_API_KEY, or blank to skip:')"
   if [ -n "$key" ]; then
     env_put "$ENVFILE" RESEND_API_KEY "$key"
     good "Resend key written to $ENVFILE"
@@ -216,7 +227,7 @@ if [ "$NEED_FILES" != 1 ]; then
 else
   say "Create a Blob store on the Vercel project, then paste the read-write token."
   say "Dashboard: Storage → Blob. Do not create the store from this script."
-  blob="$(ask 'BLOB_READ_WRITE_TOKEN, or blank to skip:')"
+  blob="$(ask_secret 'BLOB_READ_WRITE_TOKEN, or blank to skip:')"
   if [ -n "$blob" ]; then
     env_put "$ENVFILE" BLOB_READ_WRITE_TOKEN "$blob"
     good "Blob token written to $ENVFILE"
@@ -227,6 +238,7 @@ fi
 
 # ── 8. linear ────────────────────────────────────────────────────────────────
 stage "Linear team"
+if confirm "Use optional Linear tracking?"; then
 say "Linear has no CLI and its API cannot create teams."
 say "Create a team for ${PRODUCT} at https://linear.app/settings/teams"
 key="$(ask 'Team key once created (e.g. KUB), or blank to skip:')"
@@ -235,6 +247,9 @@ if [ -n "$key" ]; then
   good "recorded LINEAR_TEAM=$key in .env.playbook"
 else
   say "skipped — linear-sync will ask again later"
+fi
+else
+  say "skipped — GitHub is sufficient for the factory"
 fi
 
 # ── 9. done ──────────────────────────────────────────────────────────────────
@@ -246,4 +261,4 @@ say "Not done here, on purpose:"
 say "  · Production Clerk keys — run 'clerk env pull --instance prod' at deploy time"
 say "  · GitHub Environments 'staging' and 'production' if secrets failed"
 say ""
-say "Next: bun install, then /next to start shaping."
+say "Next: verify created/skipped/failed stages and runtime connections; /next resumes your accepted product."

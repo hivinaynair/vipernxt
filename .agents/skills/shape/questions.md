@@ -90,7 +90,7 @@ Always attach 2–3 cited findings **above** the single question.
 
 ## D. Journeys (after actors confirmed)
 
-**D1. Table** — Reflect a journey table with these columns only: Seat / Wants / Can click / Sees after beat 1 / Sees at the end. Ask: is this the journey, or who is wrong?
+**D1. Table** — Reflect a journey table with these columns only: Seat / Bucket / Wants / Does / Sees after beat 1 / Sees at the end. Ask: is this the journey, or who is wrong?
 
 **D2. Forbidden click** — Which actor must **never** get the dangerous control (publish, refund, approve, delete org)? Confirm that seat’s row has no such click.
 
@@ -202,4 +202,23 @@ Recommended: A.
 - A) Yes — stop shaping
 - B) No — say which section is wrong
 
-**G2. After yes** — Do **not** ask a bundle of implementation questions. If they volunteer “go build it,” point at the **journeys** skill (spine first), then per-feature work; do not start either until they pick.
+**G2. After yes** — Return to `/next`, which continues already authorized work through ontology, spine and the first working slice. Ask only a genuinely unsettled decision; do not require another skill selection or “go”.
+
+## H. Requirement gaps (at the relevant gate, before approval)
+
+Use [requirements-readiness.md](requirements-readiness.md) to find applicable gaps. Present the proposed contract and realistic examples first. Pick one unresolved question; do not administer this list as another interview.
+
+- **Field purpose:** Which decision needs this value, who knows it at entry, and can we derive it instead?
+- **Missing data:** In this incomplete record, is the value unknown, not applicable or required before the action can complete?
+- **Identity:** When these two records share the same business identifier, are they duplicates or separate records? Show the actual distinction.
+- **Relationships:** Can this record exist without its parent, and what should happen when that parent is archived or deleted?
+- **Lifecycle:** In this exception, who may change the status, to which state, and what else must change with it?
+- **Rules:** At this boundary value, which outcome applies? Who owns that policy and any override?
+- **Access:** Should this role see or change this field on this record in this state? Show an allowed and denied example.
+- **Recovery:** If this save succeeded but the response was lost, what should the person see when they retry?
+- **Conflict:** If two people edit this record, which outcome prevents silently losing their work?
+- **Integration:** Which system owns this value, how fresh must it be, and who resolves conflicting or failed updates?
+- **Operation:** For this expected workload, what response or recovery limit would make the workflow usable? Propose a measurable target.
+- **Readback:** Walk this ordinary/incomplete/exception case through the proposed packet; what outcome or information is missing?
+
+Record the answer in state and update the canonical contract. Avoid arbitrary required flags, default statuses or operating targets presented as already decided.

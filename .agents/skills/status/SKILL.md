@@ -1,11 +1,8 @@
 ---
 name: status
-description: >-
-  Shows where the product stands in one short digest — phase, what is waiting on
-  the user, what is next, and any drift between artifacts. Read-only. Use when the
-  user asks where things are, what is pending, what they owe, or after time away.
+description: Read saved progress and report the current phase, pending input, next action and drift.
 ---
 
-Read-only: run `bun scripts/status.ts` and `bun scripts/check-drift.ts`. Present the digest and material contradictions without rewriting their meaning or changing state. State owns progress; do not reconstruct it from prose.
+# status
 
-Distinguish waiting on the builder from waiting on the customer. No state means no engagement running. Missing installed skills are a harness gap, not missing on-disk artifacts. Keep the answer short; `/next` performs work. Do not add an interview or silently fix drift.
+Run `bun scripts/status.ts` and `bun scripts/check-drift.ts`. Report material contradictions without changing state or reconstructing progress from prose. Distinguish builder/customer waits. No state means no engagement; missing catalog skills are a harness gap. Keep it short; /next does the work.

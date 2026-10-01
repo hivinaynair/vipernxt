@@ -33,9 +33,8 @@ export async function resolveStation(phase: Attempt["phase"], request: typeof cu
   const pick =
     ids.find((id) => id === configured.model.id) ??
     ids.find((id) => /claude/i.test(id)) ??
-    ids.find((id) => id !== "grok-4.6") ??
-    ids[0];
-  if (!pick) throw new Error("Cursor has no reviewer model");
+    ids.find((id) => /^(?:gpt|gemini|o[134])-/.test(id));
+  if (!pick) throw new Error("Cursor has no independent reviewer model");
   return { mode: "agent" as const, model: { id: pick } };
 }
 export class CursorError extends Error {
@@ -46,7 +45,12 @@ export class CursorError extends Error {
     super(detail ? `Cursor HTTP ${status}: ${detail}` : `Cursor HTTP ${status}`);
   }
 }
-export async function cursor<T>(path: string, method = "GET", body?: unknown): Promise<T> {
+export async function cursor<T>(
+  path: string,
+  method = "GET",
+  body?: unknown,
+  timeoutMs = 30000,
+): Promise<T> {
   const r = await fetch(`https://api.cursor.com/v1${path}`, {
     method,
     headers: {
@@ -55,7 +59,7 @@ export async function cursor<T>(path: string, method = "GET", body?: unknown): P
     },
     body: body === undefined ? undefined : JSON.stringify(body),
     redirect: "error",
-    signal: AbortSignal.timeout(30000),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   if (!r.ok) {
     const detail = (await r.text()).replace(/\s+/g, " ").trim().slice(0, 180);

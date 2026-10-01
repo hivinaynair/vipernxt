@@ -1,6 +1,6 @@
 # FDE loop
 
-How `/next` runs an engagement. Citations: [fde-workflow.md](../research/fde-workflow.md). Tools: [fde-tools.md](fde-tools.md). Skills own each phase; this is the order and the stop-before-code test.
+How `/next` runs an engagement. Tools: [fde-tools.md](fde-tools.md). Skills own each phase; this is the order and the stop-before-code test.
 
 No product UI until **U5**. A baseline counter, shadow log, or eval replay is U4, not UI. Live work runs on a throwaway clone, never this kit.
 

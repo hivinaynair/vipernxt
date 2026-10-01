@@ -1,55 +1,20 @@
 ---
 name: next
-description: >-
-  The single entry point for an FDE engagement — site, pile, clip, then the
-  factory. Reads pipeline state, does every step that does not need a human, and
-  stops only to hold an item. Use when they say "next", name a site, drop a pile,
-  resume shaping, answer a held question, say the journey is the wrong story, or
-  name a feature to plan and build.
+description: Resume discovery, requirements, first-slice review and approved MVP delivery from saved state.
 ---
 
 # next
 
-Read `docs/product/state.yaml`, then [CONTRACT.md](../CONTRACT.md). This is the only user-facing entry; load one phase skill, return here, update state, continue until a real user decision. Schema: [state-schema.md](state-schema.md). Phase detail: [fde-loop.md](../../../docs/playbook/fde-loop.md).
+Read state, then [CONTRACT.md](../CONTRACT.md); load only the current phase. Schema: [state-schema.md](state-schema.md). Procedure: [fde-loop.md](../../../docs/playbook/fde-loop.md).
 
-## Route
+Small changes need no discovery ceremony. Accepted-product features extend the spine, then plan/build. New ideas identify the intended user and current workflow. Personal/internal projects may use the builder's documented workflow; customer validation still requires external evidence.
 
-| Request | Action |
-|---|---|
-| Small change | Do it. No discovery ceremony. |
-| Feature in an accepted product | Extend the spine, then plan/build. |
-| New idea, including self-use | Find another named person with the problem. |
-| Named person + existing workflow | Engagement: salvage → field/research → shape → first slice. |
+Without state, create it from the schema: customize/scaffold pending, setup/tickets deferred. Record participant/context and existing material; normalize supplied files with `bun scripts/salvage-inbox.mjs <inputs>` ([pile](../salvage/pile.md)). Keep product work in a dedicated clone.
 
-`size` is always `engagement`. Finding another person validates a participant, not market demand. FDE depth is how much of their actual workflow you own.
+Progress: salvage → research/field → shape → ontology → journeys → customize → design-system → plan/build first slice → owner review → setup/Eve. Research and field overlap. Shape may draft with gaps but cannot approve unaccepted material assumptions. Readiness must cover the first slice before wave 0 and the entire remaining MVP before handoff.
 
-No state file: create it from the schema with `clone.customized` and `clone.scaffolded: pending`, `clone.setup` and `clone.tickets: deferred`. Record who has the problem and what they use today. Ask for existing material only if missing (`docs/research/salvage-inbox/`, transcripts + INVENTORY.md, or one zip). Run `bun scripts/salvage-inbox.mjs <inputs>`; see [pile.md](../salvage/pile.md). Do not put engagements in this kit.
+Record phase results in state and continue authorized work. After slice acceptance, record `clip.acceptance`. Story changes revise design/spine without reusing retired IDs; reopen shape only for changed claims/policy. Check drift with `bun scripts/check-drift.ts`.
 
-## Progression
+For delegated work, assign one independent source or disjoint planned slice, skill, inputs, allowed paths, evidence question and output limit. Cursor uses the Grok adapters; otherwise run serially. Stop affected work for missing dependencies/policy, two failed repairs or repeated same-theme corrections.
 
-| Step | Skill | Done when |
-|---|---|---|
-| 0 Salvage | `salvage` | Incumbent and paid capabilities checked |
-| 1 Research | primary sources; `before-we-build.md` | Scope-changing unknowns named |
-| 2 Field | `field-kit` | Workflow, exceptions, baseline, eval cases sourced |
-| 3 Shape | `shape` | U5 accepted |
-| 3.5 Ontology | `ontology` | Domain terms confirmed |
-| 4 Journeys | `journeys` | ID'd spine |
-| Scaffold | `customize` | Recipe applied; no cloud needed for a local clip |
-| 5a Structure | `design-system` | Layout primitives before screens |
-| 6 First slice | `plan` → `build` | Wave 0 + one working journey; user reviews it |
-| Factory | Eve | Remaining approved scope integrated and verified |
-
-Research and field may overlap. Shape may draft with gaps; it cannot finish on unaccepted assumptions. The first design review and first working slice are product decisions. U1–U5, eval-set rules, and incumbent-as-fallback live in [fde-loop.md](../../../docs/playbook/fde-loop.md).
-
-## Resume
-
-Input/data-display work needs the reviewed [data-surface contract](../shape/data-surfaces.md). Stack, wave 0, and isolation: AGENTS.md. Drift: `bun scripts/check-drift.ts`. After clip acceptance, record `clip.acceptance`, then authorized setup. Factory: [factory.md](../../../docs/playbook/factory.md) and [Eve](../../../deploy/eve/README.md) — do not claim an unattended supervisor unless one is running.
-
-Story change: revise the design clip/table, re-expand the same spine, keep IDs. Reopen shape only when the claim changes. Never reuse a dropped ID.
-
-## Children
-
-Delegate one independent source or one disjoint planned slice. Give the child its skill, inputs, allowed paths, evidence question and output limit. Cursor uses the Grok adapters; otherwise run serially. Stop a slice for an unsettled product choice, missing schema dependency, two failed repair rounds, or the same-theme corrections.
-
-Discovery stays local. Cloud implementation uses Eve and a chosen product repo; MCP is not a Cursor API key. After they authorize remaining scope, pin the MVP catalog ([COVERAGE.md](../../../deploy/eve/COVERAGE.md)), open a factory-labeled issue, and confirm the workflow — dispatch is not completion. The local `factory` CLI is a development runner.
+Cloud implementation needs Cursor API access and a dedicated product repository. Validate the [hash-bound packet](../../../docs/playbook/requirements-packet.md), pin [MVP coverage](../../../deploy/eve/COVERAGE.md), then dispatch an authorized factory issue. Confirm actual workflow registration; dispatch is not completion. [Eve](../../../deploy/eve/README.md) supervises hosted batches; the local CLI is a development runner.

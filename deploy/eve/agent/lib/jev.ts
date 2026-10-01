@@ -13,6 +13,8 @@ export const failureSchema = z
   })
   .strict();
 export type Failure = z.infer<typeof failureSchema>;
+// Conservative initial policy; calibrate against recorded failure evaluations.
+export const MIN_ROUTE_PROBABILITY = 0.8;
 const routes = ["retry_read", "repair", "investigate", "ask_owner", "stop"] as const;
 export type Route = (typeof routes)[number];
 export type Attention = "owner" | "eve";
@@ -50,9 +52,12 @@ export type Recommendation = {
   execution: "hold";
 };
 export type Evaluator = (failure: Failure) => Promise<unknown>;
-const evaluateFailure: Evaluator = async (failure) => {
+export const evaluateFailure = async (
+  failure: Failure,
+  model: Parameters<typeof evaluate>[0]["model"] = "typesafe-ai/jev",
+) => {
   const result = await evaluate({
-    model: "typesafe-ai/jev",
+    model,
     state: failure,
     questions,
     maxRetries: 0,
@@ -62,7 +67,26 @@ const evaluateFailure: Evaluator = async (failure) => {
 };
 
 export function routeFromEvidence(failure: Failure): Route | undefined {
-  if (!failure.scopeValid || !failure.budgetAvailable) return "stop";
+  if (!failure.scopeValid || !failure.budgetAvailable || failure.retriesRemaining === 0)
+    return "stop";
+  if (
+    ["attempts_exhausted", "deadline_expired", "scope_invalid", "registration_failed"].includes(
+      failure.code,
+    )
+  )
+    return "stop";
+  if (["permission_denied", "policy_required", "review_rejected"].includes(failure.code))
+    return "ask_owner";
+  if (/exhausted|limit reached/i.test(failure.summary)) return "stop";
+  if (/Workflow ownership changed|another_workflow_owns/i.test(failure.summary))
+    return "retry_read";
+  if (
+    /HTTP (401|403)|unauthorized|credential|permission|business policy|Independent review reject|changed|differs|mismatch|Unexpected Cursor result|bounded descendant|protected|outside/i.test(
+      failure.summary,
+    )
+  )
+    return "ask_owner";
+  if (failure.code === "read_transient") return "retry_read";
   if (/invalid_model/i.test(failure.summary)) return "ask_owner";
   if (/ended with (ERROR|EXPIRED)/i.test(failure.summary)) return "repair";
   if (
@@ -70,8 +94,6 @@ export function routeFromEvidence(failure: Failure): Route | undefined {
     /not valid JSON/i.test(failure.summary) ||
     /Unexpected token/i.test(failure.summary)
   )
-    return "retry_read";
-  if (/Workflow ownership changed|another_workflow_owns/i.test(failure.summary))
     return "retry_read";
 }
 
@@ -107,7 +129,7 @@ export async function classifyFailure(
     mode: "shadow" as const,
     execution: "hold" as const,
   };
-  if (!failure.scopeValid || !failure.budgetAvailable) {
+  if (!failure.scopeValid || !failure.budgetAvailable || failure.retriesRemaining === 0) {
     return recommend(base, "stop");
   }
   const known = routeFromEvidence(failure);
@@ -122,9 +144,20 @@ export async function classifyFailure(
     ) {
       throw new Error("Invalid probability distribution");
     }
+    const probability = answer.probabilities?.[answer.choice];
+    // A model's actionable recommendation must carry sufficiently strong,
+    // unique evidence. Missing probabilities are not confidence.
+    const actionable = answer.choice === "repair" || answer.choice === "retry_read";
+    const uncertain =
+      actionable &&
+      (probability === undefined ||
+        probability < MIN_ROUTE_PROBABILITY ||
+        Object.entries(answer.probabilities ?? {}).some(
+          ([route, p]) => route !== answer.choice && p >= probability,
+        ));
     return {
-      ...recommend(base, answer.choice),
-      probability: answer.probabilities?.[answer.choice],
+      ...recommend(base, uncertain ? "investigate" : answer.choice),
+      probability,
     };
   } catch {
     // Provider errors may contain credentials or request data. Store neither.

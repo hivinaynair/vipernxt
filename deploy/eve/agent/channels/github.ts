@@ -1,8 +1,11 @@
 import { defaultGitHubAuth, githubChannel } from "eve/channels/github";
+import { resumeHook } from "workflow/api";
 import { mentionPattern, resolveBotName } from "../lib/bot-name.js";
 import { repository } from "../lib/config.js";
 import { githubCredentials } from "../lib/credentials.js";
+import { readState } from "../lib/store.js";
 import { stampAutonomous, stampTrusted } from "../lib/trust.js";
+import { wakeToken } from "../lib/wake.js";
 
 export default githubChannel({
   credentials: githubCredentials,
@@ -30,7 +33,7 @@ export default githubChannel({
     return {
       auth: stampAutonomous(defaultGitHubAuth(ctx), issue.issueNumber),
       context: [
-        "Always call start_batch now, even if a batch is already running. The tool adopts the same issue and intake; skipping it leaves the old workflow in place. If the manifest is missing or invalid, explain the exact error and stop. Never invent its contents.",
+        "Call start_batch now without a preliminary status comment, even if a batch is already running. The tool adopts the same issue and intake; skipping it leaves the old workflow in place. A queued task is only a dispatch request; never report running or adoption before checkpoint confirmation. If the manifest is missing or invalid, explain the exact error and stop. Never invent its contents.",
       ],
     };
   },
@@ -53,5 +56,47 @@ export default githubChannel({
     };
   },
   onPullRequest: () => null,
-  onCheckSuite: () => null,
+  async onCheckSuite(ctx, suite) {
+    if (
+      `${ctx.repository.owner}/${ctx.repository.name}` !== repository() ||
+      suite.action !== "completed" ||
+      suite.app.slug !== "github-actions"
+    )
+      return null;
+    const b = (await readState()).state.batch;
+    if (
+      b?.status === "running" &&
+      b.coverage?.ci &&
+      suite.headSha === b.candidate &&
+      b.pr &&
+      suite.pullRequests.some((n) => b.pr!.endsWith(`/${n}`))
+    ) {
+      try {
+        await resumeHook(wakeToken("ci", `${b.intakeHash}:${b.candidate}`, b.workflowOwner), {});
+      } catch {
+        /* periodic reconciliation is sufficient */
+      }
+    }
+    return null;
+  },
+  async onWorkflowRun(ctx, run) {
+    if (
+      `${ctx.repository.owner}/${ctx.repository.name}` !== repository() ||
+      run.action !== "completed"
+    )
+      return null;
+    const b = (await readState()).state.batch;
+    if (
+      b?.status === "running" &&
+      b.automaticDeployment &&
+      (!b.automaticDeployment.runId || b.automaticDeployment.runId === run.workflowRunId)
+    ) {
+      try {
+        await resumeHook(wakeToken("deployment", b.automaticDeployment.id, b.workflowOwner), {});
+      } catch {
+        /* next durable reconciliation verifies actual records */
+      }
+    }
+    return null;
+  },
 });
