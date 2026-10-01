@@ -142,8 +142,7 @@ vs **Waiting on the site**. "Go and find a customer" is `kind: gather`, `who: fd
 it is a fact about the real world and finding it is the FDE's job. There is no third
 persona.
 
-**`engagement.site` is the entry condition.** A named person other than the builder independently has the
-problem. This can be a remote participant; it does not require a physical site. Without it, phase 0 and bounded category research may run; field and product phases stay pending:
+**`engagement.site` is the entry condition.** A named intended user has the problem. For personal/internal projects this may be the builder with documented real workflow evidence; customer validation requires external evidence. This can be a remote participant; it does not require a physical site. Without it, phase 0 and bounded category research may run; field and product phases stay pending:
 `check-drift` fails on any of `field`, `shape`, `journeys`, `build` that is not
 `pending` while the site is empty, because no customer means no last-ten-cases, which
 means no eval set, which means there is nothing to score a slice against. A design doc

@@ -1,6 +1,6 @@
 # Golden path: one site, week one
 
-Token-cheap sequence. Procedure: [fde-loop.md](fde-loop.md). Research: [fde-workflow.md](../research/fde-workflow.md). Tools: [fde-tools.md](fde-tools.md).
+Token-cheap sequence. Procedure: [fde-loop.md](fde-loop.md). Tools: [fde-tools.md](fde-tools.md).
 
 Dry-run on a **throwaway clone**. Do not commit a live site, pile, or `docs/product/state.yaml` into the kit.
 

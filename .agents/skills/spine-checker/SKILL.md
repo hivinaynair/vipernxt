@@ -1,15 +1,12 @@
 ---
 name: spine-checker
-description: >-
-  Child job: reconcile a requirements packet or validate a journey spine YAML.
-  Use before design approval, after drafting docs/journeys/*.yaml, or before
-  implementation handoff. Reads assigned contracts and evidence; no file writes.
+description: Independently check assigned requirements or journey expansion for material omissions and contradictions.
 ---
 
-Read only assigned inputs; no file writes. For a requirements review, use [readiness](../shape/requirements-readiness.md) and [acceptance](../shape/requirements-acceptance.md): check applicable area coverage, evidence versus assumptions, field/model/access consistency, exceptions and traceability. Report material unknowns; never approve policy for the customer. A pre-spine review uses design beats and does not require nonexistent YAML.
+# spine-checker
 
-For a spine review, read the assigned YAML and its source design table/clip plus linked requirements/cases. Run `bun scripts/journey.ts validate <file>` and `bun run check-journeys`. Do not use `--complete` for an unbuilt draft.
+No file writes. For requirements, use [readiness](../shape/requirements-readiness.md)/[acceptance](../shape/requirements-acceptance.md): applicability, provenance/assumptions, field/model/access consistency, exceptions and traceability. Flag policy unknowns; never approve for the owner. Pre-spine review uses design beats.
 
-Check seat/beat fidelity, stable IDs, EARS, labeled outcome branches and valid terminal exits. Interactive steps need declared screen/state; headless script/judgment or out-of-band human steps do not. Report missing criteria even if the validator calls them warnings.
+For journeys, read assigned YAML, source clip/table and linked contracts/cases. Run journey validate and check-journeys; no --complete on unbuilt drafts. Check fidelity, stable IDs, EARS, outcome branches/exits and declared interactive screen/states. Headless/out-of-band steps need no screen. Report missing criteria even when validators warn.
 
-Return pass/fail, concise command evidence and actionable gaps. Never edit generated markdown or invent a new product story to repair an expansion.
+Return pass/fail, concise command evidence and actionable gaps. Never rewrite the story or generated markdown.

@@ -1,32 +1,16 @@
 ---
 name: field-kit
-description: >-
-  Writes the field-research homework — who to talk to, what to ask, what to
-  observe, what to collect — then turns what comes back into cited findings. Use
-  when the product serves people the user is not, before shaping something in an
-  unfamiliar domain, or when the user returns from talking to real users.
+description: Collect real workflow evidence and turn it into sourced requirements and eval cases.
 ---
 
-# Field research
+# field-kit
 
-Input: salvage/research gaps. Output: homework or findings plus a cited eval set. Follow [CONTRACT.md](../CONTRACT.md) and [artifacts](../artifacts/SKILL.md). Real field evidence comes from people.
+Follow [CONTRACT](../CONTRACT.md)/[artifacts](../artifacts/SKILL.md). Inputs: research/salvage gaps. On-site: live checklist; pile: analyze supplied evidence; trip: fillable homework.
 
-| Mode | Use | Artifact |
-|---|---|---|
-| on-site | Operator is available now | Live checklist; absorb the same day |
-| pile | Existing materials answer most questions | Analyze; ask only the gaps |
-| trip | Later visit | Fillable DOCX, one stage per setting |
+Answer discoverable questions yourself. Ask about yesterday, last ten cases and last failure—not wishlists. Include operators, money/reporting owners and affected people; about five priorities/15 prompts. Photograph only with permission.
 
-Markdown is the questionnaire. Trip DOCX: `bun scripts/homework.mjs build docs/product/homework/<name>.md`. Eval-set rules: [fde-loop.md](../../../docs/playbook/fde-loop.md) U4.
+Observe one completed form and one table decision. Follow ordinary/incomplete/exception records from source to receipt: values, ownership, transitions, rules, corrections, failures and offline work. Use [readiness](../shape/requirements-readiness.md)/[data surfaces](../shape/data-surfaces.md) only for applicable gaps.
 
-## Prepare
+Write `docs/product/homework/<nn>-<topic>.md`: who/where, prompts, capture checks, done-when; move settled answers to Closed/Settled. `bun scripts/homework.mjs build <md>` creates DOCX; `read <file>` absorbs answers. Photos use salvage-inbox; originals stay private.
 
-Answer discoverable questions yourself. Ask about yesterday, the last ten cases, the last failure. Avoid compliments and wishlists. Five priority questions; ~15 typed prompts. Photograph screens only with permission. Include the operator, the money/reporting owner, and someone affected.
-
-Observe one completed form and one real table decision for the [data-surface contract](../shape/data-surfaces.md). Follow a normal, incomplete and exception record from source to receipt: who knows each value, entity ownership/state changes, rules, corrections, failures and work outside the software. Use [requirements readiness](../shape/requirements-readiness.md) to identify applicable evidence gaps, not to recite every question. Write `docs/product/homework/<nn>-<topic>.md`: who/where, bullet questions, capture checkboxes, done-when. Move answered material under `## Closed`/`## Settled`.
-
-## Absorb
-
-`bun scripts/homework.mjs read <file>`. Photos through salvage-inbox; originals stay out of git. Findings start with provenance (observation, recollection, committee, authorized simulation). Write `docs/research/field-<topic>.md`. Freeze the last ten real cases in `docs/research/eval-set.md` — starting sample, not statistics. Synthetic cases stay labeled.
-
-Return to `/next` to draft shape. Keep research going when new evidence changes the story.
+Write sourced `docs/research/field-<topic>.md` and eval-set.md with last ten real cases. Label observation/recollection/simulation. This is a starting sample, not statistics ([U4](../../../docs/playbook/fde-loop.md)). Return findings to /next; reopen research when evidence changes the story.

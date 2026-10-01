@@ -70,7 +70,7 @@ surfaces:
     # a drizzle-kit that could not load drizzle-orm. `bun install` is enough.
   agent:
     path: apps/agent
-    command: bunx eve@latest
+    command: bunx eve@0.63.0
     args:
       - init
       - apps/agent

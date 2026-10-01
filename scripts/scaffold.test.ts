@@ -65,7 +65,7 @@ describe("scaffold", () => {
     expect(r.code).toBe(0);
     expect(r.out).toContain("scaffold catalog");
     expect(r.out).toContain("create-next-app@16.3.5");
-    expect(r.out).toContain("eve@latest");
+    expect(r.out).toContain("eve@0.63.0");
     // No `bun add` for db, deliberately: 75cfc9c removed it because `bun add
     // drizzle-orm` resolved `latest` and rewrote the overlay's pin to the 0.45
     // line while drizzle-kit stayed on 1.x, so every fresh clone got a
@@ -90,13 +90,13 @@ describe("scaffold", () => {
     expect(r.out).toContain("resend");
     expect(r.out).toContain("@vercel/blob");
     expect(r.out).toContain("--cwd apps/web");
-    expect(r.out).not.toContain("eve@latest");
+    expect(r.out).not.toContain("eve@0.63.0");
   });
 
   test("--add agent is Eve only", () => {
     const r = run(["--add", "agent"]);
     expect(r.code).toBe(0);
-    expect(r.out).toContain("eve@latest");
+    expect(r.out).toContain("eve@0.63.0");
     expect(r.out).not.toContain("create-next-app@16.3.5");
     expect(r.out).toContain("judgment-gate");
     expect(r.out).toContain("skip Neon");

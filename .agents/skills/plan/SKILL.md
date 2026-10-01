@@ -1,21 +1,16 @@
 ---
 name: plan
-description: >-
-  Turns one spine feature into a short spec and the smallest set of slices that
-  can be built. Use after the journey spine exists, when the user picks a
-  feature, or when next is about to build. Do not reopen the product interview.
+description: Plan minimal dependency-aware slices traced to approved criteria and acceptance cases.
 ---
 
-# Plan one spine feature
+# plan
 
-Input: feature ID, valid spine, accepted design and ontology. Follow [CONTRACT.md](../CONTRACT.md). Output: `docs/plans/F<n>-<slug>-spec.md`, target 250 words, max 400.
+Read [CONTRACT](../CONTRACT.md). Input: feature ID, validated spine, design/ontology. Output: docs/plans/F<n>-<slug>-spec.md, target 250/max400 words.
 
-Validate the spine. The spec is a delta: extra behavior, slice dependencies, cases, exclusions. Missing steps or product decisions return to `/next`. Forms/tables: link surface IDs from [data-surfaces.md](../shape/data-surfaces.md); do not paste the inventory. Unaffected slices record non-applicability.
+Describe only delta behavior, dependencies, cases and exclusions. Link [surface IDs](../shape/data-surfaces.md), not inventories. Missing steps/policy return to /next; do not replay discovery.
 
-Reconcile the scoped [requirements review](../shape/requirements-readiness.md) before wave 0. Map applicable rule/entity/field/operating IDs to acceptance cases and exact spine criteria. Include denial, boundary, retry/conflict and recovery cases where relevant; linked case definitions keep the spec short. Workers cannot settle missing business policy.
+Reconcile scoped [readiness](../shape/requirements-readiness.md): rules/entities/fields/operating promises to exact criteria/cases, including applicable denial, boundary, retry/conflict/recovery. Wave 0 owns schema/routes/seed before consumers.
 
-Unattended MVP handoff: reconcile every spine criterion in the [coverage catalog](../../../deploy/eve/COVERAGE.md). Foundations before consumers. Mark `first-slice` or `mvp`; only first-slice may exclude criteria with reasons. Plan integrated checks before dispatch. Run `bun run check-requirements` and pin `requirementsFile`; changed business contracts require a new hash-bound decision.
+First slice delivers one useful actor journey. Each slice names served steps, cases and shared dependencies. For factory handoff reconcile every criterion in [coverage](../../../deploy/eve/COVERAGE.md); only first-slice scope may explicitly exclude criteria. Plan integrated checks, run check-requirements, pin requirementsFile/hash. Changed business contracts need a revised decision.
 
-Small coherent slices. First slice walks one actor through useful behavior. Each names served steps, eval cases and shared-surface deps. Wave 0 owns schema/routes/seed.
-
-Confirm only unsettled scope. Linear: attach the spec, do not rewrite EARS. Return to `/next` — no extra go.
+Confirm only unsettled scope. Linear may link the spec without rewriting EARS. Return to /next and continue authorized work.

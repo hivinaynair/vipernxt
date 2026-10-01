@@ -24,6 +24,7 @@ import {
   specHash,
   validate,
 } from "./factory/core";
+import { readFactoryConfig } from "./lib/factory-config";
 
 const [action, input] = process.argv.slice(2);
 if (!action || action === "--help") {
@@ -33,6 +34,7 @@ if (!action || action === "--help") {
   process.exit(0);
 }
 const root = git(process.cwd(), "rev-parse", "--show-toplevel");
+Object.assign(process.env, readFactoryConfig(root));
 const manifestPath = resolve(input ?? "docs/product/factory.json");
 const m = read<Manifest>(manifestPath);
 if (!/^[a-z0-9][a-z0-9-]{0,48}$/.test(m.id)) throw new Error("Invalid run id");

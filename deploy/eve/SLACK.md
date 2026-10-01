@@ -8,8 +8,7 @@ links the GitHub evidence. GitHub remains the fallback when Slack is unavailable
 
 1. Create a Slack app **From a manifest** at <https://api.slack.com/apps> using
    [slack-app-manifest.yaml](slack-app-manifest.yaml). The supplied callback is
-   `https://vipernxt-factory.vercel.app/callbacks/slack`; replace both URLs if the
-   factory runs elsewhere. For a new app, initially omit the entire
+   `https://your-factory.vercel.app/callbacks/slack`; replace both URLs with your own factory origin. For a new app, initially omit the entire
    `event_subscriptions` section; Slack verifies that URL after the signing secret
    is deployed in step 4. Keep Interactivity configured.
 2. Install the app to your workspace. Create a private operations channel and
@@ -17,7 +16,7 @@ links the GitHub evidence. GitHub remains the fallback when Slack is unavailable
    posting and reading messages in that channel, plus receiving thread replies.
    `metadata.message:read` lets Eve confirm the notification's stable identity
    after an uncertain send.
-3. In Vercel project **vipernxt-factory → Settings → Environment Variables**, set
+3. In Vercel project **your factory → Settings → Environment Variables**, set
    these for **Production**. Enter credentials there, never in chat or Git:
 
    | Variable | Where to get it |

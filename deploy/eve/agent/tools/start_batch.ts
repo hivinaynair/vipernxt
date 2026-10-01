@@ -25,7 +25,7 @@ import { intakeIssueNumber } from "../lib/trust.js";
 
 export default defineWorkflowTool({
   description:
-    "Run or adopt the approved hash-bound batch through build, independent review, CI repair and optional staging acceptance. Manual staging can use an operator-approved deployment receipt. Durable wakes/reconciliation cannot accept a slice.",
+    "Start/adopt the approved batch; durable execution owns build, independent review, CI and authorized staging. Dispatch is not registration or acceptance.",
   inputSchema: z.object({}),
   execution: "background",
   async execute(_, ctx) {

@@ -5,7 +5,7 @@ import { readState } from "../lib/store.js";
 import { intakeIssueNumber, isTrusted } from "../lib/trust.js";
 export default defineTool({
   description:
-    "Read current batch progress for a mention. On a factory-labeled dispatch session this only tells you to call start_batch — it does not start, adopt, or skip the batch.",
+    "Read progress on mentions. Factory-label sessions must call start_batch; status does not dispatch or adopt.",
   inputSchema: z.object({}),
   async execute(_, ctx) {
     const auth = ctx.session.auth.current;

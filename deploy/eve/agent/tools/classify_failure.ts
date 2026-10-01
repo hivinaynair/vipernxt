@@ -6,7 +6,7 @@ import { classifyStoredFailure } from "../lib/triage.js";
 
 export default defineWorkflowTool({
   description:
-    "Record one advisory Jev classification from stored state. If Eve may resume, this tool continues the durable Cursor loop itself — do not call start_batch after it. Does not approve work, reset budgets, or invent scope.",
+    "Classify stored failure with Jev; safe recovery continues here. Do not call start_batch afterward. Never changes scope, approval or budgets.",
   inputSchema: z.object({}),
   execution: "background",
   async execute(_, ctx) {

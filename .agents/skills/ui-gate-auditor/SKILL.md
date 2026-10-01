@@ -1,11 +1,10 @@
 ---
 name: ui-gate-auditor
-description: >-
-  Child job: report whether product UI/routes/features were edited before the
-  design doc is approved. Use after a build-shaped turn, or when next is about
-  to start implementation. Does not fix.
+description: Inspect current state and diff for product edits forbidden by the shaping gate.
 ---
 
-Read current state and inspect relevant status/diff; no file writes. Product paths are `apps/*/src/app` and `apps/*/src/features`.
+# ui-gate-auditor
 
-No state means kit work is allowed. Explicit `ui_writes: allow/deny` wins; otherwise shape must be done. Report current permission, reason and violating paths. A current snapshot cannot prove historical edit/approval order. Do not manufacture such evidence or silently repair the state.
+Read state/status/diff; no writes. Product paths: apps/*/src/app and apps/*/src/features. No state permits kit work; explicit ui_writes allow/deny wins; otherwise shape must be done.
+
+Return permission, reason and violating paths. Current state cannot prove historical approval order; do not invent evidence or repair state.

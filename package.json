@@ -24,8 +24,16 @@
     "preinstall": "bun x only-allow@1.2.2 bun",
     "prepare": "bun scripts/install-hooks.mjs",
     "factory": "bun scripts/factory.ts",
-    "check-factory-types": "tsc --noEmit --strict --skipLibCheck --target ESNext --module ESNext --moduleResolution Bundler --types bun scripts/factory.ts scripts/factory/core.ts scripts/factory/attempt.ts scripts/factory/review.ts scripts/factory/browser.ts scripts/check-requirements.ts .github/scripts/factory-staging.ts",
-    "check-requirements": "bun scripts/check-requirements.ts"
+    "check-factory-types": "tsc --noEmit --strict --skipLibCheck --target ESNext --module ESNext --moduleResolution Bundler --types bun scripts/factory.ts scripts/factory/core.ts scripts/factory/attempt.ts scripts/factory/review.ts scripts/factory/browser.ts scripts/check-requirements.ts .github/scripts/factory-staging.ts scripts/setup.ts scripts/lib/factory-config.ts scripts/check-skills.ts",
+    "check-requirements": "bun scripts/check-requirements.ts",
+    "setup": "bun scripts/setup.ts",
+    "doctor": "bun scripts/setup.ts doctor",
+    "factory:verify": "bun scripts/setup.ts verify",
+    "factory:link": "bun scripts/setup.ts link",
+    "factory:env": "bun scripts/setup.ts env",
+    "factory:deploy": "bun scripts/setup.ts deploy",
+    "factory:dev": "bun scripts/setup.ts dev",
+    "check-skills": "bun scripts/check-skills.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.8",
