@@ -7,6 +7,9 @@ J1.S1 requirements, independent reviewers and acceptance checks. Controlled
 fault injection is not evidence of spontaneous provider outages or a measured
 reliability rate. Production main is unchanged.
 
+This report preserves the campaign's deployment evidence. Subsequent active
+runtime and Slack owner-notification checks are recorded in [slack.md](slack.md).
+
 ## Isolation and evidence
 
 Runtime source `ac205ad00a015e0e9b4a5ae831af94a9a1b3df7a` deployed READY as

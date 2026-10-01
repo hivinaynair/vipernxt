@@ -141,6 +141,8 @@ without buttons. Inbound Slack is ignored unless the acting user is
 message; stale controls cannot affect another batch. Follow the
 [Slack setup guide](SLACK.md) and [private-channel app manifest](slack-app-manifest.yaml)
 to install and verify live delivery.
+The [owner-notification evidence](evals/slack.md) records local tests, hosted holds
+and the remaining live Slack configuration checks.
 
 Local tests cover acceptance, scope, dispatch reconciliation, leases, owner pager
 and callback authentication. Hosted workflow replay, real stop-hook delivery and end-to-end
