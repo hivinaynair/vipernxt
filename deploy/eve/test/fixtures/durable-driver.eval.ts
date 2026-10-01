@@ -7,6 +7,8 @@ let batch = {} as Batch;
 let ticks = 0;
 let waits = 0;
 let rejectConflict = false;
+let failFirst = false;
+let classifications = 0;
 const tokens: string[] = [];
 mock.module("workflow", () => ({
   createHook({ token }: { token: string }) {
@@ -28,16 +30,36 @@ mock.module("workflow", () => ({
     waits++;
   },
 }));
-mock.module("../../agent/lib/store.js", () => ({ readState: async () => ({ state: { batch } }) }));
+mock.module("../../agent/lib/store.js", () => ({
+  readState: async () => ({ state: { batch } }),
+  saveState: async () => "mock-sha",
+}));
 mock.module("../../agent/lib/engine.js", () => ({
   tick: async () => {
     ticks++;
+    if (ticks === 1 && failFirst) batch.status = "blocked";
     if (ticks === 3) batch.status = "slice-complete";
+  },
+}));
+mock.module("../../agent/lib/triage.js", () => ({
+  classifyStoredFailure: async ({
+    workflowOwner,
+    automatic,
+  }: {
+    workflowOwner: string;
+    automatic: boolean;
+  }) => {
+    assert.equal(automatic, true);
+    assert.equal(workflowOwner, batch.workflowOwner);
+    assert.equal(batch.status, "blocked");
+    classifications++;
+    batch.status = "running";
+    return { resumed: true };
   },
 }));
 const { runBatch } = await import("../../agent/lib/run-batch.js");
 const ctx = { callId: "call_new" } as WorkflowStepToolContext;
-for (const kind of ["cursor", "conflict", "ci", "deployment"] as const) {
+for (const kind of ["cursor", "conflict", "ci", "deployment", "triage"] as const) {
   const start = Date.now();
   batch = {
     workflowOwner: "call_new",
@@ -65,12 +87,14 @@ for (const kind of ["cursor", "conflict", "ci", "deployment"] as const) {
     if (kind === "deployment")
       batch.automaticDeployment = { id: "deployment-same" } as Batch["automaticDeployment"];
   }
-  ticks = waits = 0;
+  ticks = waits = classifications = 0;
+  failFirst = kind === "triage";
   rejectConflict = kind === "conflict";
   await runBatch(ctx);
   assert.equal(batch.status, "slice-complete");
   assert.equal(ticks, 3);
   assert.equal(waits, 1);
+  assert.equal(classifications, kind === "triage" ? 1 : 0);
   assert.equal(batch.startedAt, start);
   assert.deepEqual(batch.attempts, { SELECT: 1 });
   if (batch.active) {

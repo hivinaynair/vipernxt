@@ -45,7 +45,12 @@ export class CursorError extends Error {
     super(detail ? `Cursor HTTP ${status}: ${detail}` : `Cursor HTTP ${status}`);
   }
 }
-export async function cursor<T>(path: string, method = "GET", body?: unknown): Promise<T> {
+export async function cursor<T>(
+  path: string,
+  method = "GET",
+  body?: unknown,
+  timeoutMs = 30000,
+): Promise<T> {
   const r = await fetch(`https://api.cursor.com/v1${path}`, {
     method,
     headers: {
@@ -54,7 +59,7 @@ export async function cursor<T>(path: string, method = "GET", body?: unknown): P
     },
     body: body === undefined ? undefined : JSON.stringify(body),
     redirect: "error",
-    signal: AbortSignal.timeout(30000),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   if (!r.ok) {
     const detail = (await r.text()).replace(/\s+/g, " ").trim().slice(0, 180);

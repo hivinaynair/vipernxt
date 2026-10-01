@@ -238,6 +238,8 @@ export async function tick(overrides: Partial<typeof live> = {}) {
       startedAt: b.active.startedAt,
     };
   };
+  let operation: "read" | "write" | "remote" | "validation" = "read";
+  let failureJob: string | undefined;
   const persist = async (event: string) => {
     await checkpoint();
     if (!b) return;
@@ -255,7 +257,7 @@ export async function tick(overrides: Partial<typeof live> = {}) {
           : undefined,
         error: b.error,
         pr: b.pr,
-        attention: b.status === "blocked" || b.status === "paused" ? "owner" : undefined,
+        attention: b.status === "paused" ? "owner" : undefined,
       },
       github,
     );
@@ -266,6 +268,7 @@ export async function tick(overrides: Partial<typeof live> = {}) {
   }
   try {
     b.retryAfter = undefined;
+    b.failure = undefined;
     if (!b.coverage)
       throw new Error("Batch predates required coverage contract; create a newly approved batch");
     if (!b.readiness)
@@ -303,6 +306,7 @@ export async function tick(overrides: Partial<typeof live> = {}) {
       : b.deployment
         ? deployedJob(b)
         : (nextJob ?? integratedJob(b));
+    failureJob = job.id;
     if (!b.deployment && !nextJob && b.integratedReview?.commit === b.candidate) {
       const branch = b.resultBranch;
       if (!branch || (await head(branch)) !== b.candidate)
@@ -316,6 +320,7 @@ export async function tick(overrides: Partial<typeof live> = {}) {
         `/pulls?state=open&head=${encodeURIComponent(repository().split("/")[0] + ":" + branch)}&base=${encodeURIComponent(base)}`,
       );
       await assertLease(store, owner);
+      operation = existing[0] ? "read" : "write";
       const pr =
         existing[0] ??
         (await github<{ html_url: string }>("/pulls", "POST", {
@@ -326,6 +331,7 @@ export async function tick(overrides: Partial<typeof live> = {}) {
           body: `Implements approved batch #${b.issue}.\n\nScope: ${b.coverage?.scope}. Integrated acceptance verified at ${b.candidate}.\n\nJourney steps: ${[...new Set(b.manifest.jobs.flatMap((j) => j.steps))].join(", ")}\n\nIndependent verification receipts: [factory checkpoint](https://github.com/${repository()}/blob/factory/state/factory-state.json).\n\nNo staging merge or product deployment was performed.`,
         }));
       b.pr = pr.html_url;
+      operation = "read";
       if (b.coverage.ci) {
         const ciResult = await inspectCI(b, github);
         if (ciResult === "pending") {
@@ -357,7 +363,9 @@ export async function tick(overrides: Partial<typeof live> = {}) {
           await checkpoint(true);
           await assertLease(store, owner);
           try {
+            operation = "write";
             await dispatchDeployment(b, ref, github);
+            operation = "read";
           } catch (e) {
             if (e instanceof GitHubError && e.status >= 400 && e.status < 500 && e.status !== 429)
               throw e;
@@ -395,13 +403,16 @@ export async function tick(overrides: Partial<typeof live> = {}) {
             : "integrated-review",
         branch: nextJob || repairing ? undefined : b.resultBranch,
         base: b.pendingRevision?.job === job.id ? b.pendingRevision.base : b.candidate,
-        startedAt: Date.now(),
+        startedAt: b.retryStartedAt ?? Date.now(),
       };
+      b.retryStartedAt = undefined;
       await persist("station-reserved");
       return; // Identity is committed BEFORE the next tick can launch.
     }
     await assertLease(store, owner);
     if (!b.active.posted) {
+      if (Date.now() >= b.active.startedAt + b.manifest.limits.jobSeconds * 1000)
+        throw new Error("Cursor stage time budget exhausted before launch");
       // Cursor v1 rejected raw commit startingRef in the live test. Give it a
       // dedicated branch pinned to that commit, never a moving product branch.
       const ref = `factory/input/${b.active.agentId}`;
@@ -414,6 +425,7 @@ export async function tick(overrides: Partial<typeof live> = {}) {
         throw new Error("Cursor input ref differs from pinned commit");
       b.active.startingRef = ref;
     }
+    operation = b.active.posted ? "read" : "remote";
     const run = await advanceRemote(b.active, workerPrompt(b, job));
     if (!run || ["CREATING", "RUNNING"].includes(run.status)) {
       if (Date.now() >= runDeadline(b))
@@ -423,11 +435,13 @@ export async function tick(overrides: Partial<typeof live> = {}) {
       await checkpoint();
       return;
     }
+    operation = "validation";
     if (run.status !== "FINISHED") {
       if (run.status === "ERROR" || run.status === "EXPIRED") {
         const reason = `Cursor ${b.active.phase} ended with ${run.status}`;
         if (b.active.phase === "build") {
           b.feedback = reason;
+          b.retryStartedAt = b.active.startedAt;
           b.active = undefined;
         } else retryReview(reason, job);
         await persist("station-retry");
@@ -445,6 +459,7 @@ export async function tick(overrides: Partial<typeof live> = {}) {
           `github.com/${repository()}`
       )
         throw new Error("Unexpected Cursor result repository or branch");
+      operation = "read";
       const candidate = await head(branch);
       const diff = await github<{
         status: string;
@@ -452,6 +467,7 @@ export async function tick(overrides: Partial<typeof live> = {}) {
       }>(`/compare/${b.candidate}...${candidate}`);
       if (diff.status !== "ahead" || !diff.files?.length || diff.files.length >= 300)
         throw new Error("Candidate is not a bounded descendant diff");
+      operation = "validation";
       validateDiff(diff.files, job, [...b.manifest.specFiles, b.manifestPath]);
       b.active = {
         agentId: `bc-${randomUUID()}`,
@@ -464,10 +480,12 @@ export async function tick(overrides: Partial<typeof live> = {}) {
       await persist("review-station");
       return;
     }
+    operation = "read";
     if (b.active.phase !== "deployed-review") {
       if (!b.active.branch || (await head(b.active.branch)) !== b.active.base)
         throw new Error("Worker branch changed during independent review");
     }
+    operation = "validation";
     let reviewJson: unknown;
     try {
       reviewJson = extractReviewJson(run.result);
@@ -530,6 +548,7 @@ export async function tick(overrides: Partial<typeof live> = {}) {
         `Independent review ${parsed.verdict}: ${parsed.review.findings.join("; ") || "contract not met"}`,
       );
     }
+    operation = "read";
     const review = parsed.review;
     if (b.active.phase === "deployed-review") {
       if (b.coverage.ci && (await inspectCI(b, github)) !== "passed") {
@@ -565,10 +584,12 @@ export async function tick(overrides: Partial<typeof live> = {}) {
         throw new Error("Delivery branch changed during CI repair");
       if (currentHead !== b.active.base) {
         await assertLease(store, owner);
+        operation = "write";
         await github(`/git/refs/heads/${b.resultBranch}`, "PATCH", {
           sha: b.active.base,
           force: false,
         });
+        operation = "read";
       }
       if (b.ci) b.ci = { ...b.ci, commit: b.active.base, result: "pending" };
       if (b.integrationRepair) b.integrationRepair.pending = false;
@@ -599,6 +620,16 @@ export async function tick(overrides: Partial<typeof live> = {}) {
     }
     b.status = "blocked";
     b.error = message;
+    b.failure = {
+      code:
+        (e instanceof GitHubError || e instanceof CursorError) && [401, 403].includes(e.status)
+          ? "permission_denied"
+          : transient && operation === "read"
+            ? "read_transient"
+            : "transition_failed",
+      operation,
+      jobId: failureJob,
+    };
     await persist("blocked");
   }
 }

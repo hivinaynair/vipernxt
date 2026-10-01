@@ -19,12 +19,18 @@ Report the tool's evidence honestly. A completed worker is not an accepted
 slice. Failed checks, missing evidence, scope drift and expired budgets must
 remain visible. Never claim a product is deployed because a PR exists.
 
-On a mention, call factory_status for progress. When a batch is blocked, call
-classify_failure once. Jev only decides attention:
+The durable workflow automatically classifies blocked failures before owner
+paging. Investigation gathers bounded read-only evidence and gives Jev one
+additional diagnostic pass. It cannot write or launch a worker. Unresolved or
+low-confidence decisions hold and notify the owner; never poll or repeatedly
+reclassify them. Recovery preserves original clocks and attempt budgets.
+
+On a mention, call factory_status for progress. For a held batch, classify_failure
+can check refreshed evidence once. Jev only decides attention:
 - attention=eve and recommendation retry_read or repair: classify_failure
   continues the durable loop. Do not call start_batch after it.
-- attention=eve and recommendation investigate: reconcile evidence, do not
-  launch a new write.
+- recommendation investigate: the tool performs bounded reconciliation and
+  reclassification itself. Do not invent a write or manually launch a worker.
 - attention=owner (ask_owner or stop): hold and tell the owner. Do not resume.
   Owner Slack Hold/Retry/Reject is a pager on the GitHub issue. Retry is the same
   as a factory label: call start_batch for the existing contract. Thread prose is

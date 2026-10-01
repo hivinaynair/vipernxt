@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { extractReviewJson, parseReview } from "../agent/lib/contract.js";
+import { digest, extractReviewJson, parseReview } from "../agent/lib/contract.js";
 import { stationFor } from "../agent/lib/cursor.js";
 import { attentionFor, classifyFailure, eveMayResume } from "../agent/lib/jev.js";
 import { formatReceipt } from "../agent/lib/receipt.js";
@@ -29,7 +29,10 @@ describe("Jev routes owner vs Eve", () => {
         scopeValid: true,
         budgetAvailable: true,
       },
-      async () => ({ choice: "repair" }),
+      async () => ({
+        choice: "repair",
+        probabilities: { repair: 1, retry_read: 0, investigate: 0, ask_owner: 0, stop: 0 },
+      }),
     );
     expect(repair.attention).toBe("eve");
     expect(repair.execution).toBe("hold");
@@ -58,7 +61,10 @@ describe("Jev routes owner vs Eve", () => {
         scopeValid: false,
         budgetAvailable: true,
       },
-      async () => ({ choice: "repair" }),
+      async () => ({
+        choice: "repair",
+        probabilities: { repair: 1, retry_read: 0, investigate: 0, ask_owner: 0, stop: 0 },
+      }),
     );
     expect(result.recommendation).toBe("stop");
     expect(result.attention).toBe("owner");
@@ -77,12 +83,19 @@ test("Eve repair resumes the reserved batch", async () => {
     version: 1,
     batch: {
       issue: 8,
-      intakeHash: "x",
+      intakeHash: digest({ commit: "a".repeat(40), manifest: "docs/batch.json" }),
       commit: "a".repeat(40),
       manifestPath: "docs/batch.json",
       startedAt: Date.now(),
       status: "blocked",
       error: "check failed",
+      active: {
+        agentId: "bc-failed",
+        phase: "build",
+        base: "a".repeat(40),
+        posted: true,
+        startedAt: Date.now(),
+      },
       candidate: "a".repeat(40),
       accepted: [],
       attempts: { select: 1 },
@@ -130,11 +143,15 @@ test("Eve repair resumes the reserved batch", async () => {
           scopeValid: true,
           budgetAvailable: true,
         },
-        async () => ({ choice: "repair" }),
+        async () => ({
+          choice: "repair",
+          probabilities: { repair: 1, retry_read: 0, investigate: 0, ask_owner: 0, stop: 0 },
+        }),
       ),
     postReceipt: async (_issue, receipt) => {
       receipts.push(receipt);
     },
+    investigate: async () => ({ facts: ["Verified terminal ERROR"], action: "retry-build" }),
     workflowOwner: "call-classify",
   });
   expect(result).toMatchObject({ attention: "eve", recommendation: "repair", resumed: true });

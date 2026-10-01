@@ -1,6 +1,6 @@
 # Requirements and factory implementation validation
 
-Latest validation: **400 tests, zero failures, 45 files (217 Eve tests included)**, required root checks, strict Eve types and Vercel-target build. The separately authorized sixth hosted trial completed independent two-slice/combined review, exact-SHA CI, automatic staging and actual-site acceptance without intervention after launch. [Final hosted evidence](../../deploy/eve/evals/hosted.md) records the immutable checkpoint and preserved earlier failures. Hosted readiness is **9/10** for this bounded workflow.
+Latest validation: **430 tests, zero failures, 46 files (247 Eve tests included)**, required root checks, strict Eve types and Vercel-target build. The separately authorized sixth hosted trial completed independent two-slice/combined review, exact-SHA CI, automatic staging and actual-site acceptance without intervention after launch. [Final hosted evidence](../../deploy/eve/evals/hosted.md) records the immutable checkpoint and preserved earlier failures. Hosted readiness is **9/10** for this bounded workflow. Automatic Jev triage and 24 additional recovery fault scenarios are documented in [triage validation](../../deploy/eve/evals/triage.md); they do not constitute a new hosted failure pilot.
 
 The initial offline validation below ran on 2026-09-30 (UTC) in the staging-based `codex/requirements-readiness` worktree. Base staging commit: `bbd3357f717b752d6f0075e263498fd8d9672f14`. This is kit/runtime validation, not customer product acceptance.
 

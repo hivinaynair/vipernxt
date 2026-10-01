@@ -7,6 +7,7 @@ import { digest, intake, validateManifest } from "../lib/contract.js";
 import { deploymentReceipt, runDeadline, verifyDeployment } from "../lib/deployment.js";
 import { file, github, head, type Issue, isAncestor } from "../lib/github.js";
 import { assertApprovedIntake } from "../lib/intake.js";
+import { classifyFailure } from "../lib/jev.js";
 import { postReceipt } from "../lib/receipt.js";
 import { runBatch } from "../lib/run-batch.js";
 import { verifyRuntime } from "../lib/runtime.js";
@@ -50,12 +51,26 @@ async function failRegister(
     commit: source?.commit,
     manifestPath: source?.manifest,
   };
+  if (state.batch?.issue === issueNumber) {
+    state.batch.status = "blocked";
+    state.batch.error = message;
+    state.batch.failure = { code: "registration_failed", operation: "validation" };
+  }
   await saveState(state, sha);
+  const classification = await classifyFailure({
+    stage: "dispatch",
+    code: "registration_failed",
+    summary: message,
+    retriesRemaining: 0,
+    scopeValid: false,
+    budgetAvailable: false,
+  });
   await postReceipt(issueNumber, {
-    event: "blocked",
+    event: "classified",
     status: "blocked",
     error: message,
-    attention: "owner",
+    attention: classification.attention,
+    recommendation: classification.recommendation,
   });
   throw error instanceof Error ? error : new Error(message);
 }

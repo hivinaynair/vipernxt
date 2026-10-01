@@ -85,16 +85,41 @@ otherwise any non-builder model) and must return JSON. A fresh authorized label 
 The build limits generated Vercel function invocations to 60 seconds, shorter
 than the five-minute lease expiry.
 
-Jev classifies blocked failures in shadow mode. It cannot accept a slice, change
-scope or reset budgets. It does decide **attention**: `owner` (you need to look)
-or `eve` (the coordinator may continue inside the approved contract).
-`retry_read` and `repair` are Eve-delegable; `ask_owner` and `stop` hold.
-`classify_failure` never 403s — missing state returns `no_batch`. When Eve may
-resume, `classify_failure` claims the workflow and continues the durable station
-loop itself so the composer does not have to call `start_batch` again. A factory
-label session cannot substitute `factory_status` for `start_batch`. Cursor
-`ERROR`/`EXPIRED` and unreadable review JSON retry inside the engine; Jev routes
-those same strings without calling the model if a prior deploy left them blocked.
+Jev is an advisory classifier (`mode: shadow` means the model cannot execute),
+and the durable driver now invokes it automatically before owner paging. Typed
+read failures may resume; ambiguous launches first reconcile the same reserved
+Cursor identity. A bounded read-only investigator collects at most two Cursor
+records, then Jev receives one additional diagnostic pass. Investigation cannot
+launch a worker or write. Verified terminal runs and unreadable reviews can be
+replaced within the existing phase budget; active work is never duplicated.
+Unknown write outcomes without conclusive evidence hold for the owner.
+
+Model recommendations for `repair` or `retry_read` require a complete probability
+distribution, a unique selected route and probability at least 0.8. This is a
+conservative initial policy, not a calibrated accuracy claim. Weak/missing
+confidence investigates once; unavailable or inconclusive diagnoses end in an
+owner hold. Scope, credentials, policy, rejection and exhausted-budget guards
+bypass the model. Every recovery independently rechecks the complete intake
+hash, original batch/station deadlines, phase-specific budget and checkpoint
+lease. Recovery counters cap additional triage continuations at two per phase,
+job and candidate. Classification caching includes that evidence and budgets.
+Registration failures have no approved batch and cannot resume automatically.
+
+`classify_failure` remains a manual diagnostic entry point; when recovery is
+safe it claims the workflow and continues the same durable loop. Missing state
+returns `no_batch`, not an access error. A factory label session must still call
+`start_batch`. Ordinary worker `ERROR`/`EXPIRED` and review-format failures retain
+their engine retries. Builder replacements preserve the original stage clock.
+
+The [triage validation report](evals/triage.md) records the current checks.
+The fault suite in `test/recovery.test.ts` exercises the actual engine,
+automatic driver and triage using injected provider responses, through accepted
+slice/integrated checkpoints and owner holds. It includes lost launch responses,
+weak confidence, model outages, uncertain writes, expired clocks, revoked
+credentials and authorization changes. These deterministic simulations are not
+a claim of hosted provider-failure recovery; that still requires a separate live
+fault pilot. The prior hosted happy-path completion remains documented in
+[evals/hosted.md](evals/hosted.md).
 
 Owner attention is a pager, not a second work queue. The first owner hold for an
 issue+error @mentions `FACTORY_OWNER` on the GitHub receipt and posts Slack when

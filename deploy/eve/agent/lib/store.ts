@@ -45,10 +45,18 @@ export type Batch = {
   retryAfter?: number;
   active?: Attempt;
   error?: string;
+  failure?: { code: string; operation: "read" | "write" | "remote" | "validation"; jobId?: string };
+  recoveryAttempts?: Record<string, number>;
+  retryStartedAt?: number;
   pr?: string;
   feedback?: string;
   resultBranch?: string;
-  triage?: { key: string; result: Recommendation };
+  triage?: {
+    key: string;
+    result: Recommendation;
+    investigation?: { facts: string[]; action: string };
+    resumed?: boolean;
+  };
   evidence: { job: string; commit: string; review: unknown }[];
 };
 export type HistoryEntry = {

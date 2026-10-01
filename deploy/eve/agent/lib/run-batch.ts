@@ -1,5 +1,6 @@
 import type { WorkflowStepToolContext } from "eve/tools";
 import { createHook, sleep } from "workflow";
+import { recoverStations } from "./advance-stations.js";
 import { runDeadline } from "./deployment.js";
 import { tick } from "./engine.js";
 import { readState } from "./store.js";
@@ -10,6 +11,10 @@ export async function runBatch(ctx: WorkflowStepToolContext) {
   "use workflow";
   for (let transition = 0; transition < 10000; transition++) {
     let snapshot = await advance(ctx);
+    if (snapshot.status === "blocked") {
+      await recover(ctx);
+      snapshot = await inspect(ctx);
+    }
     if (snapshot.status !== "running") return snapshot;
     if (!snapshot.token) continue;
     using done = createHook({ token: snapshot.token });
@@ -23,6 +28,10 @@ export async function runBatch(ctx: WorkflowStepToolContext) {
     }
     const registered = snapshot.token;
     snapshot = await advance(ctx);
+    if (snapshot.status === "blocked") {
+      await recover(ctx);
+      snapshot = await inspect(ctx);
+    }
     if (snapshot.status !== "running") return snapshot;
     if (snapshot.token !== registered) continue;
     // A callback is a wake, never acceptance. Periodic reconciliation also
@@ -44,7 +53,32 @@ async function advance(ctx: WorkflowStepToolContext) {
       deadline: Date.now(),
     };
   await tick();
-  const b = (await readState()).state.batch!;
+  return snapshot(ctx);
+}
+async function recover(ctx: WorkflowStepToolContext) {
+  "use step";
+  await recoverStations(ctx.callId);
+}
+async function inspect(ctx: WorkflowStepToolContext) {
+  "use step";
+  return snapshot(ctx);
+}
+async function snapshot(ctx: WorkflowStepToolContext) {
+  "use step";
+  const after = (await readState()).state;
+  const b = after.batch;
+  if (!b || b.workflowOwner !== ctx.callId)
+    return {
+      status: "superseded" as const,
+      waitMs: 0,
+      token: undefined,
+      pr: b?.pr,
+      error: undefined,
+      deadline: Date.now(),
+    };
+  // A concurrent transition may hold the lease. Keep the durable driver alive
+  // until classification can claim it, instead of abandoning a blocked batch.
+  const triagePending = b.status === "blocked" && (after.lease?.until ?? 0) > Date.now();
   const deadline = Math.min(
     runDeadline(b),
     b.active ? b.active.startedAt + b.manifest.limits.jobSeconds * 1000 : Infinity,
@@ -53,22 +87,30 @@ async function advance(ctx: WorkflowStepToolContext) {
     waitMs: Math.max(
       1,
       Math.min(
-        b.retryAfter ? b.retryAfter - Date.now() : b.active ? 300000 : 60000,
-        deadline - Date.now(),
+        triagePending
+          ? after.lease!.until - Date.now()
+          : b.retryAfter
+            ? b.retryAfter - Date.now()
+            : b.active
+              ? 300000
+              : 60000,
+        triagePending ? 300000 : deadline - Date.now(),
       ),
     ),
-    status: b.status,
+    status: triagePending ? "running" : b.status,
     pr: b.pr,
     error: b.error,
     deadline,
-    token: b.retryAfter
+    token: triagePending
       ? wakeToken("retry", b.intakeHash, ctx.callId)
-      : b.active
-        ? wakeToken("cursor", b.active.agentId, ctx.callId)
-        : b.automaticDeployment
-          ? wakeToken("deployment", b.automaticDeployment.id, ctx.callId)
-          : b.coverage?.ci && b.pr
-            ? wakeToken("ci", `${b.intakeHash}:${b.candidate}`, ctx.callId)
-            : undefined,
+      : b.retryAfter
+        ? wakeToken("retry", b.intakeHash, ctx.callId)
+        : b.active
+          ? wakeToken("cursor", b.active.agentId, ctx.callId)
+          : b.automaticDeployment
+            ? wakeToken("deployment", b.automaticDeployment.id, ctx.callId)
+            : b.coverage?.ci && b.pr
+              ? wakeToken("ci", `${b.intakeHash}:${b.candidate}`, ctx.callId)
+              : undefined,
   };
 }
