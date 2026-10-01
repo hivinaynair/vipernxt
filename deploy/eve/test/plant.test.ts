@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { extractReviewJson, parseReview } from "../agent/lib/contract.js";
+import { digest, extractReviewJson, parseReview } from "../agent/lib/contract.js";
 import { stationFor } from "../agent/lib/cursor.js";
 import { attentionFor, classifyFailure, eveMayResume } from "../agent/lib/jev.js";
 import { formatReceipt } from "../agent/lib/receipt.js";
@@ -29,7 +29,10 @@ describe("Jev routes owner vs Eve", () => {
         scopeValid: true,
         budgetAvailable: true,
       },
-      async () => ({ choice: "repair" }),
+      async () => ({
+        choice: "repair",
+        probabilities: { repair: 1, retry_read: 0, investigate: 0, ask_owner: 0, stop: 0 },
+      }),
     );
     expect(repair.attention).toBe("eve");
     expect(repair.execution).toBe("hold");
@@ -58,7 +61,10 @@ describe("Jev routes owner vs Eve", () => {
         scopeValid: false,
         budgetAvailable: true,
       },
-      async () => ({ choice: "repair" }),
+      async () => ({
+        choice: "repair",
+        probabilities: { repair: 1, retry_read: 0, investigate: 0, ask_owner: 0, stop: 0 },
+      }),
     );
     expect(result.recommendation).toBe("stop");
     expect(result.attention).toBe("owner");
@@ -77,12 +83,19 @@ test("Eve repair resumes the reserved batch", async () => {
     version: 1,
     batch: {
       issue: 8,
-      intakeHash: "x",
+      intakeHash: digest({ commit: "a".repeat(40), manifest: "docs/batch.json" }),
       commit: "a".repeat(40),
       manifestPath: "docs/batch.json",
       startedAt: Date.now(),
       status: "blocked",
       error: "check failed",
+      active: {
+        agentId: "bc-failed",
+        phase: "build",
+        base: "a".repeat(40),
+        posted: true,
+        startedAt: Date.now(),
+      },
       candidate: "a".repeat(40),
       accepted: [],
       attempts: { select: 1 },
@@ -95,6 +108,7 @@ test("Eve repair resumes the reserved batch", async () => {
         verification: "cursor-cloud",
         specFiles: ["docs/coverage.json"],
         coverageFile: "docs/coverage.json",
+        requirementsFile: "docs/readiness.json",
         setup: [],
         worker: { kind: "cursor", repository: "https://github.com/acme/product" },
         limits: { attempts: 3, jobSeconds: 600, runSeconds: 3600 },
@@ -129,11 +143,15 @@ test("Eve repair resumes the reserved batch", async () => {
           scopeValid: true,
           budgetAvailable: true,
         },
-        async () => ({ choice: "repair" }),
+        async () => ({
+          choice: "repair",
+          probabilities: { repair: 1, retry_read: 0, investigate: 0, ask_owner: 0, stop: 0 },
+        }),
       ),
     postReceipt: async (_issue, receipt) => {
       receipts.push(receipt);
     },
+    investigate: async () => ({ facts: ["Verified terminal ERROR"], action: "retry-build" }),
     workflowOwner: "call-classify",
   });
   expect(result).toMatchObject({ attention: "eve", recommendation: "repair", resumed: true });
@@ -165,6 +183,7 @@ test("stale batches archive instead of blocking the next label", () => {
         verification: "cursor-cloud",
         specFiles: ["docs/coverage.json"],
         coverageFile: "docs/coverage.json",
+        requirementsFile: "docs/readiness.json",
         setup: [],
         worker: { kind: "cursor", repository: "https://github.com/acme/product" },
         limits: { attempts: 1, jobSeconds: 600, runSeconds: 3600 },
@@ -201,26 +220,23 @@ test("reviewer cannot invent criterion IDs", () => {
   ).toThrow("invented criterion");
 });
 
-test("journey-step IDs cover the assigned requirement IDs when they all passed", () => {
+test("journey-step labels cannot substitute for individually verified requirement IDs", () => {
   const commit = "a".repeat(40);
-  const parsed = parseReview(
-    {
+  expect(() =>
+    parseReview(
+      {
+        commit,
+        verdict: "approve",
+        unchanged: true,
+        findings: [],
+        checks: [{ command: ["bun", "test"], exitCode: 0, evidence: "ok" }],
+        criteria: [{ step: "J1.S1", passed: true, evidence: "desk ordered" }],
+      },
       commit,
-      verdict: "approve",
-      unchanged: true,
-      findings: [],
-      checks: [{ command: ["bun", "test"], exitCode: 0, evidence: "ok" }],
-      criteria: [{ step: "J1.S1", passed: true, evidence: "desk orders by due date" }],
-    },
-    commit,
-    [["bun", "test"]],
-    ["order-by-due", "clear-filters"],
-  );
-  expect(parsed.verdict).toBe("approve");
-  expect(parsed.review.criteria.map((c) => c.step).sort()).toEqual([
-    "clear-filters",
-    "order-by-due",
-  ]);
+      [["bun", "test"]],
+      ["order-by-due", "clear-filters"],
+    ),
+  ).toThrow("invented criterion");
 });
 
 test("review JSON can sit after plan-mode prose", () => {

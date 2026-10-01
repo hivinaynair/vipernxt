@@ -1,25 +1,17 @@
-# Playbook execution contract
+# Execution contract
 
-`/next` owns progression, state transitions and user pauses. Phase skills do their one job and return control; they never demand a second “go” for already authorized work. A standalone skill ends when its requested artifact is ready. User instructions take precedence.
+/next owns progression/state; phase skills return completed | needs-input | blocked, artifacts, evidence, unresolved items and next action. Continue authorized work without repeated go prompts. User instructions prevail.
 
-## State and evidence
+State owns progress/decisions; documents own content. Read current phase inputs only. Record answers verbatim with ID/owner/date; don't re-ask settled choices or infer approval from prose.
 
-`docs/product/state.yaml` owns progress, artifact references and decisions. Documents own their content; never reconstruct progress from prose. Read the current state and only the current phase inputs. Record each answer verbatim, with a stable ID, owner and date. Do not re-ask settled decisions. A done phase requires its artifact. Report contradictions before repairing them; do not silently manufacture approval.
+Identify a real intended user and workflow. Personal/internal use may use the builder's documented evidence; external customer claims need external validation. Label synthetic facts/approvals; simulations never count as customer validation.
 
-A real engagement requires at least one named person other than the builder who independently has the problem, including for self-use products. `engagement.site` identifies that person and their context; a physical customer site is not required. No person: category scan plus one gather, no product build. An explicitly authorized simulation labels every invented fact and approval; it never counts as customer validation.
+Ask the highest-impact missing question with a recommendation. Hold affected work for missing real facts, material unsettled choices, expanded scope, destructive actions or spending outside authorization; continue independent work. Repeated same-theme fixes require revisiting the model.
 
-## Questions and autonomy
+Held items: kind gather|decide, who fde|site, what, done_when, status; deferrals need until. Scope expansion states original ask, added commitment, smaller option, costs and recommendation.
 
-Ask one highest-impact unresolved question at a time, with a recommendation. Only hold work for missing real-world facts, a material unsettled product choice, expanded scope, a destructive/irreversible action or spending outside existing authorization. Continue independent work. Repeated corrections on one theme mean revisit the model, not add another patch.
+No product UI before approved U5/design (shape done), unless explicit ui_writes applies. Reconcile applicable [requirements](shape/requirements-readiness.md) before schema/UI: material unknowns block affected scope. Approval may include design/contracts together; faithful technical expansion needs no new product approval.
 
-Held items use `kind: gather | decide`, `who: fde | site`, `what`, `done_when`, `status`; deferrals need `until`. Scope-expanding decisions state the original ask, added commitment, smaller alternative, accept/decline costs and recommendation. In conversation say “waiting on you/the customer”, not pipeline jargon.
+Review first slice before full provisioning/remaining work. A dedicated cloud product repo may be created earlier when authorized. Review simulation needs existing explicit authorization. First-slice readiness is not MVP readiness.
 
-## Gates and return contract
-
-No product UI before confirmed U5 and approved design (`shape: done`), unless the explicit `ui_writes` override applies. Never disguise assumptions as confirmations. Review the first working slice before full provisioning/remaining factory work. A dedicated product repository may be provisioned earlier for explicitly selected cloud implementation. The first-slice review may be simulated only when the user already authorized simulation of that review.
-
-For input/data-display scope, implementation readiness also requires the [data-surface contract](shape/data-surfaces.md): reviewed fields, columns, rules and information needs tied to the approved journeys. Material unknowns block the affected scope before schema or UI implementation. Approval of the design can include this contract; do not re-ask settled decisions.
-
-Each skill returns a compact result: `completed | needs-input | blocked`, artifact paths, evidence, unresolved items, and next action. `/next` records it and continues. Do not repeat the result in multiple reports. Missing optional tools are disclosed; missing required acceptance evidence prevents completion.
-
-Use `artifacts` for product/research documents. Follow AGENTS.md for stack, boundaries and branch/worktree rules. Commit product artifacts under the repo's existing policy; do not commit raw customer material or secrets. External publishing, merging and spending follow the engagement's existing authorization, not a worker's interpretation of a ticket.
+Use [artifacts](artifacts/SKILL.md), AGENTS boundaries and existing delivery policy. Missing optional tools are disclosed; missing required acceptance evidence blocks completion. Never commit secrets/raw customer material. Publishing, merging and spending follow existing engagement authorization.

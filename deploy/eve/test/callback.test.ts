@@ -85,3 +85,24 @@ test("failed wake is not acknowledged, inactive batch is not resumed", async () 
   expect((await handleCallback(req(), deps)).status).toBe(503);
   expect((await handleCallback(req(), { ...deps, active: async () => null })).status).toBe(204);
 });
+test("a signed stop wakes the current workflow owner after adoption, ignoring the payload owner", async () => {
+  const { wakeToken } = await import("../agent/lib/wake.js");
+  const wakes: string[] = [];
+  const authorization = await token();
+  const response = await handleCallback(
+    new Request(audience, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${authorization}` },
+      body: JSON.stringify({ workflowOwner: "call_old", approved: true }),
+    }),
+    {
+      active: async () => ({ agentId: "bc-expected", running: true, workflowOwner: "call_new" }),
+      verify: (signed, agent) => verifyCallback(signed, audience, agent, keys),
+      resume: async (agent, owner) => {
+        wakes.push(wakeToken("cursor", agent, owner));
+      },
+    },
+  );
+  expect(response.status).toBe(202);
+  expect(wakes).toEqual(["cursor:bc-expected:call_new"]);
+});

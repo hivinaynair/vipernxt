@@ -19,9 +19,11 @@ Begin with scope (MVP or named change), revision, linked design and decision IDs
 | Field ID / label | Purpose / evidence | Source / type / units | Required / default / allowed values | Validation / conditions | Who sees or edits |
 |---|---|---|---|---|---|
 
-Specify date/time zone, numeric precision, length/range, uniqueness or cross-field rules where relevant; use an explicit “not applicable” only where ambiguity would otherwise remain. Define reference lookup choices, missing options, create versus edit differences and preservation of entered values after errors. Record automatic fields so workers do not turn them into unnecessary inputs.
+Specify date/time zone, numeric precision/currency/rounding, length/range, uniqueness scope or cross-field rules where relevant; use an explicit “not applicable” only where ambiguity would otherwise remain. Distinguish unknown, absent, empty and zero. Define reference lookup choices, missing options, create versus edit differences and preservation of entered values after errors. Link fields to ontology attribute/rule IDs; record automatic fields so workers do not turn them into unnecessary inputs.
 
 Per form, define submission effects, success destination/receipt, loading, validation and server errors, duplicate submission, cancellation/unsaved changes and relevant concurrent-edit behavior. Say where a rule is enforced; business validation must not rely only on a browser control.
+
+For conditional/repeating sections, specify visibility, minimum/maximum items and what happens to previously entered hidden values. For drafts or multi-step entry, settle save/resume/expiry and review-before-submit where needed. Files/imports need formats, size/count, duplicate/partial/invalid outcomes and ownership. Record keyboard/labels/focus/error announcements, supported locale and required consequential-action correction. Separate invalid input, permission denial and dependency failure; each has its own recovery. Do not require a particular widget unless its behavior matters.
 
 ### Tables and detail views
 

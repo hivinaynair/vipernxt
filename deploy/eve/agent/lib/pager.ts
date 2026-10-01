@@ -1,7 +1,8 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { repository } from "./config.js";
+import { type OwnerAlert, ownerAlert, safeAlertText } from "./owner-alert.js";
 import type { Receipt } from "./receipt.js";
-import { type OwnerPing, readState, type State, saveState } from "./store.js";
+import { type OwnerPing, readState, saveState } from "./store.js";
 
 export function ownerLogin(value = process.env.FACTORY_OWNER) {
   return value && /^[A-Za-z0-9-]{1,39}$/.test(value) ? value : undefined;
@@ -63,48 +64,54 @@ function repoName(override?: string) {
 
 export function formatSlackAlert(
   receipt: Receipt,
-  options: { repo?: string; buttons?: boolean } = {},
+  options: { repo?: string; buttons?: boolean; alert?: OwnerAlert; id?: string } = {},
 ) {
   const url = issueUrl(receipt.issue, repoName(options.repo));
-  const error = (receipt.error ?? "Eve is holding.").slice(0, 400);
-  const route = receipt.recommendation ? `Jev: ${receipt.recommendation}` : "Eve needs you";
-  const text = `Factory #${receipt.issue} needs you. ${route}. ${error} ${url}`;
+  const alert = options.alert ?? ownerAlert(receipt, { version: 1 });
+  const slackEscape = (s: string) =>
+    safeAlertText(s).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+  const mention = slackOwnerUserId();
+  const text = `${mention ? `<@${mention}> ` : ""}Eve needs your attention: #${receipt.issue} — ${slackEscape(alert.task)}. ${slackEscape(alert.failure)}\nWhat Eve tried: ${slackEscape(alert.tried.join(" "))}\nWhat I need from you: ${slackEscape(alert.needed)}\n${url}`;
+  const details = `Task: ${alert.task}
+${alert.status}
+
+What failed: ${alert.failure}
+
+What Eve tried:
+${alert.tried.join("\n")}
+
+What I need from you: ${alert.needed}
+
+As of ${new Date(alert.at).toISOString()}`;
   const blocks: unknown[] = [
     {
       type: "section",
       text: {
         type: "mrkdwn",
-        text: `*Factory #${receipt.issue} needs you*\n${route}\n${error}\n<${url}|Open issue>`,
+        text: `${mention ? `<@${mention}> ` : ""}*Eve needs your attention — #${receipt.issue}*`,
+      },
+    },
+    { type: "section", text: { type: "plain_text", text: safeAlertText(details, 2900) } },
+    {
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: `<${url}|Open issue and evidence>${alert.pr?.startsWith(`https://github.com/${repoName(options.repo)}/pull/`) ? ` · <${alert.pr}|Open PR>` : ""}`,
       },
     },
   ];
-  if (options.buttons) {
-    blocks.push({
-      type: "actions",
-      block_id: "factory_owner",
-      elements: [
-        {
-          type: "button",
-          action_id: "factory_hold",
-          text: { type: "plain_text", text: "Hold" },
-          value: String(receipt.issue),
-        },
-        {
-          type: "button",
-          action_id: "factory_retry",
-          text: { type: "plain_text", text: "Retry" },
-          style: "primary",
-          value: String(receipt.issue),
-        },
-        {
-          type: "button",
-          action_id: "factory_reject",
-          text: { type: "plain_text", text: "Reject" },
-          style: "danger",
-          value: String(receipt.issue),
-        },
-      ],
+  if (options.buttons && options.id) {
+    const value = JSON.stringify({ issue: receipt.issue, id: options.id });
+    const button = (command: string, label: string) => ({
+      type: "button",
+      action_id: `factory_${command}`,
+      text: { type: "plain_text", text: label },
+      value,
     });
+    const elements: unknown[] = [button("hold", "Hold")];
+    if (alert.retryAllowed) elements.push(button("retry", "Retry"));
+    if (alert.rejectAllowed) elements.push({ ...button("reject", "Reject"), style: "danger" });
+    blocks.push({ type: "actions", block_id: "factory_owner", elements });
   }
   return { text, blocks };
 }
@@ -126,95 +133,49 @@ export function verifySlackRequest(
   return timingSafeEqual(a, b);
 }
 
-export type SlackPost = (body: {
-  text: string;
-  blocks?: unknown[];
-  channel?: string;
-}) => Promise<{ channel?: string; ts?: string } | void>;
-
-const livePost: SlackPost = async (body) => {
-  const token = slackBotToken();
-  const channel = slackOwnerChannel();
-  if (token && channel) {
-    const response = await fetch("https://slack.com/api/chat.postMessage", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json; charset=utf-8",
-      },
-      body: JSON.stringify({ channel, ...body }),
-      signal: AbortSignal.timeout(10000),
-      redirect: "error",
-    });
-    const json = (await response.json()) as { ok?: boolean; channel?: string; ts?: string };
-    if (!json.ok) return;
-    return { channel: json.channel, ts: json.ts };
-  }
-  const webhook = slackWebhook();
-  if (!webhook) return;
-  await fetch(webhook, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text: body.text }),
-    signal: AbortSignal.timeout(10000),
-    redirect: "error",
-  });
-};
-
+/** Queue delivery before returning the first GitHub owner mention. No Slack I/O in engine steps. */
 export async function notifyOwner(
   receipt: Receipt,
   deps: {
     readState?: typeof readState;
     saveState?: typeof saveState;
-    postSlack?: SlackPost;
-    repo?: string;
+    slackConfigured?: boolean;
   } = {},
 ): Promise<boolean> {
   if (receipt.attention !== "owner") return false;
-  const canMention = Boolean(ownerLogin());
-  const canSlack = Boolean((slackBotToken() && slackOwnerChannel()) || slackWebhook());
-  if (!canMention && !canSlack && !deps.postSlack) return false;
+  const configured =
+    deps.slackConfigured ?? Boolean((slackBotToken() && slackOwnerChannel()) || slackWebhook());
+  if (!ownerLogin() && !configured) return false;
+  const read = deps.readState ?? readState,
+    save = deps.saveState ?? saveState;
   const key = ownerPingKey(receipt);
-  const read = deps.readState ?? readState;
-  const save = deps.saveState ?? saveState;
-  let state: State | undefined;
-  let sha: string | undefined;
-  try {
-    const snapshot = await read();
-    state = snapshot.state;
-    sha = snapshot.sha;
-    if (state.ownerPing?.key === key) return false;
-  } catch {
-    /* A missed dedupe can double-ping. A missed first ping cannot. */
-  }
-  if (canSlack || deps.postSlack) {
+  for (let retry = 0; retry < 2; retry++) {
+    const { state, sha } = await read();
+    const prior = state.ownerPing?.key === key ? state.ownerPing : undefined;
+    const newHeldWorkflow =
+      prior &&
+      state.batch?.issue === receipt.issue &&
+      state.batch.workflowOwner !== prior.workflowOwner &&
+      ["blocked", "paused"].includes(state.batch.status);
+    const existing = newHeldWorkflow ? undefined : prior;
+    if (existing?.slack && (existing.slack.status !== "unconfigured" || !configured)) return false;
+    const destination = slackOwnerChannel() ?? (slackWebhook() ? "webhook" : undefined);
+    const ping: OwnerPing = {
+      ...existing,
+      key,
+      issue: receipt.issue,
+      id: existing?.id ?? randomUUID(),
+      workflowOwner: state.batch?.issue === receipt.issue ? state.batch.workflowOwner : undefined,
+      alert: ownerAlert(receipt, state),
+      slack: { status: configured ? "pending" : "unconfigured", attempts: 0, destination },
+    };
+    state.ownerPing = ping;
     try {
-      const posted = await (deps.postSlack ?? livePost)(
-        formatSlackAlert(receipt, {
-          repo: deps.repo,
-          buttons: Boolean(slackBotToken() && slackOwnerChannel()) || Boolean(deps.postSlack),
-        }),
-      );
-      if (state) {
-        const ping: OwnerPing = {
-          key,
-          issue: receipt.issue,
-          channel: posted?.channel,
-          ts: posted?.ts,
-        };
-        state.ownerPing = ping;
-        if (sha !== undefined) await save(state, sha);
-      }
-    } catch {
-      // Slack is a pager. A post failure must not roll back a checkpoint.
-    }
-  } else if (state) {
-    state.ownerPing = { key, issue: receipt.issue };
-    try {
-      if (sha !== undefined) await save(state, sha);
-    } catch {
-      /* GitHub mention still fires. */
+      await save(state, sha);
+      return !existing;
+    } catch (error) {
+      if (retry === 1) throw error;
     }
   }
-  return true;
+  return false;
 }

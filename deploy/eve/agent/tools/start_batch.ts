@@ -1,16 +1,19 @@
 import { defineWorkflowTool, type WorkflowStepToolContext } from "eve/tools";
-import { createHook, sleep } from "workflow";
-import { parse as parseYaml } from "yaml";
+import { FatalError, RetryableError } from "workflow";
 import { z } from "zod";
+import { approvedContract } from "../lib/approved-contract.js";
 import { repository, required } from "../lib/config.js";
 import { digest, intake, validateManifest } from "../lib/contract.js";
-import { coverageSchema, validateCoverage } from "../lib/coverage.js";
 import { deploymentReceipt, runDeadline, verifyDeployment } from "../lib/deployment.js";
-import { tick } from "../lib/engine.js";
+import { assertFaultIntake } from "../lib/faults.js";
 import { file, github, head, type Issue, isAncestor } from "../lib/github.js";
 import { assertApprovedIntake } from "../lib/intake.js";
+import { classifyFailure } from "../lib/jev.js";
+import { flushOwnerNotification } from "../lib/notify-owner.js";
 import { postReceipt } from "../lib/receipt.js";
+import { runBatch } from "../lib/run-batch.js";
 import { verifyRuntime } from "../lib/runtime.js";
+import { simulationIntake } from "../lib/simulation.js";
 import {
   archiveBatch,
   isAuthorizedResume,
@@ -22,41 +25,26 @@ import { intakeIssueNumber } from "../lib/trust.js";
 
 export default defineWorkflowTool({
   description:
-    "Run the approved GitHub batch or resume draft-PR delivery for deployed acceptance using an operator-approved factory-deployment receipt and durable Cursor waits. Deadline or callback is enough; the hook body cannot accept a slice.",
+    "Start/adopt the approved batch; durable execution owns build, independent review, CI and authorized staging. Dispatch is not registration or acceptance.",
   inputSchema: z.object({}),
   execution: "background",
   async execute(_, ctx) {
     "use workflow";
-    await register(ctx);
-    // Hook is a faster wake. Deadline is a complete wake. Either one is enough.
-    for (let transition = 0; transition < 200; transition++) {
-      let snapshot = await prepare(ctx);
-      if (snapshot.status !== "running") return snapshot;
-      if (!snapshot.agentId) continue;
-      using done = createHook({ token: `cursor:${snapshot.agentId}` });
-      const hookHeld = await done.getConflict();
-      const registeredAgent = snapshot.agentId;
-      snapshot = await advance(ctx);
-      if (snapshot.status !== "running") return snapshot;
-      if (snapshot.agentId !== registeredAgent) continue;
-      const waitingAgent = snapshot.agentId;
-      const deadline = new Date(snapshot.deadline!);
-      // A previous workflow may still hold the wake token. Deadline is enough.
-      await (hookHeld ? sleep(deadline) : Promise.race([done, sleep(deadline)]));
-      snapshot = await advance(ctx);
-      if (snapshot.status !== "running") return snapshot;
-      if (snapshot.agentId !== waitingAgent) continue;
-      for (const delay of [5000, 15000]) {
-        await sleep(delay);
-        snapshot = await advance(ctx);
-        if (snapshot.status !== "running" || snapshot.agentId !== waitingAgent) break;
+    try {
+      await register(ctx);
+    } catch (error) {
+      try {
+        await flushOwnerNotification();
+      } catch {
+        /* Preserve the original registration hold. */
       }
+      throw error;
     }
-    throw new Error("Batch transition limit reached");
+    return runBatch(ctx);
   },
 });
 
-async function failRegister(
+export async function failRegister(
   state: State,
   sha: string | undefined,
   issueNumber: number,
@@ -74,14 +62,30 @@ async function failRegister(
     commit: source?.commit,
     manifestPath: source?.manifest,
   };
+  if (state.batch?.issue === issueNumber) {
+    state.batch.status = "blocked";
+    state.batch.error = message;
+    state.batch.failure = { code: "registration_failed", operation: "validation" };
+  }
   await saveState(state, sha);
+  const classification = await classifyFailure({
+    stage: "dispatch",
+    code: "registration_failed",
+    summary: message,
+    retriesRemaining: 0,
+    scopeValid: false,
+    budgetAvailable: false,
+  });
   await postReceipt(issueNumber, {
-    event: "blocked",
+    event: "classified",
     status: "blocked",
     error: message,
-    attention: "owner",
+    attention: classification.attention,
+    recommendation: classification.recommendation,
   });
-  throw error instanceof Error ? error : new Error(message);
+  // The checkpoint and owner receipt already declare a hold. SDK retries must
+  // not silently reattempt intake or repeat its receipt after that decision.
+  throw new FatalError(message);
 }
 
 async function register(ctx: WorkflowStepToolContext) {
@@ -97,6 +101,8 @@ async function register(ctx: WorkflowStepToolContext) {
     throw new Error("Issue is not eligible");
   const source = intake(issue.body ?? "");
   const { state, sha } = await readState();
+  if (state.lease && state.lease.until > Date.now())
+    throw new RetryableError("Factory transition lease is busy; retry registration");
   if (state.batch) {
     if (
       state.batch.issue === issueNumber &&
@@ -133,7 +139,7 @@ async function register(ctx: WorkflowStepToolContext) {
       state.batch.workflowOwner = ctx.callId;
       state.batch.status = "running";
       state.batch.error = undefined;
-      if (state.batch.active) state.batch.active.startedAt = Date.now();
+
       await saveState(state, sha);
       await postReceipt(issueNumber, {
         event: "resuming",
@@ -165,17 +171,18 @@ async function register(ctx: WorkflowStepToolContext) {
       required("FACTORY_CALLBACK_AUDIENCE"),
       file,
     );
-    for (const p of manifest.specFiles) await file(p, source.commit);
-    const catalog = coverageSchema.parse(
-      JSON.parse((await file(manifest.coverageFile, source.commit)).text),
-    );
-    if (!manifest.specFiles.includes(catalog.spineFile))
-      throw new Error("Journey spine must be pinned");
-    const coverage = validateCoverage(
-      catalog,
+    const simulation = simulationIntake(
       manifest,
-      parseYaml((await file(catalog.spineFile, source.commit)).text),
+      repository(),
+      process.env.FACTORY_SIMULATION_REPO,
+      required("FACTORY_BASE_BRANCH"),
     );
+    assertFaultIntake(manifest);
+    const { coverage, readiness } = await approvedContract(manifest, source.commit, file, {
+      allowSimulation: simulation,
+    });
+    if (simulation && coverage.scope !== "first-slice")
+      throw new Error("Hosted simulation cannot certify an MVP");
     state.batch = {
       workflowOwner: ctx.callId,
       issue: issueNumber,
@@ -184,6 +191,7 @@ async function register(ctx: WorkflowStepToolContext) {
       manifestPath: source.manifest,
       manifest,
       coverage,
+      readiness,
       startedAt: Date.now(),
       status: "running",
       candidate: source.commit,
@@ -194,7 +202,7 @@ async function register(ctx: WorkflowStepToolContext) {
     state.lastFailure = undefined;
     await saveState(state, sha);
     await postReceipt(issueNumber, {
-      event: "registered",
+      event: simulation ? "simulation-registered" : "registered",
       status: "running",
       candidate: source.commit,
     });
@@ -205,41 +213,4 @@ async function register(ctx: WorkflowStepToolContext) {
   } catch (error) {
     await failRegister(state, sha, issueNumber, source, error);
   }
-}
-
-async function advance(ctx: WorkflowStepToolContext) {
-  "use step";
-  const before = await readState();
-  if (before.state.batch?.workflowOwner !== ctx.callId)
-    throw new Error("Workflow ownership changed");
-  await tick();
-  const { state } = await readState();
-  const b = state.batch!;
-  return {
-    status: b.status,
-    agentId: b.active?.agentId,
-    deadline: b.active
-      ? Math.min(runDeadline(b), b.active.startedAt + b.manifest.limits.jobSeconds * 1000)
-      : undefined,
-    pr: b.pr,
-    error: b.error,
-  };
-}
-
-async function prepare(ctx: WorkflowStepToolContext) {
-  "use step";
-  const { state } = await readState();
-  const b = state.batch;
-  if (!b || b.workflowOwner !== ctx.callId) throw new Error("Workflow ownership changed");
-  if (!b.active) await tick();
-  const next = (await readState()).state.batch!;
-  return {
-    status: next.status,
-    agentId: next.active?.agentId,
-    deadline: next.active
-      ? Math.min(runDeadline(next), next.active.startedAt + next.manifest.limits.jobSeconds * 1000)
-      : undefined,
-    pr: next.pr,
-    error: next.error,
-  };
 }

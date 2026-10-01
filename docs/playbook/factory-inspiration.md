@@ -24,7 +24,7 @@ We do not need to install Sandcastle to use Cursor's hosted environments. Adopt 
 
 ## Local decisions, cloud implementation
 
-1. Locally: validate the problem with another person, gather workflow evidence, agree scope, design journeys and scaffold the selected stack.
+1. Locally: validate the intended user and real workflow, gather workflow evidence, agree scope, design journeys and scaffold the selected stack.
 2. Prepare a dedicated product GitHub repository and a reproducible cloud development environment. GitHub access is needed before the first cloud implementation; production infrastructure can still wait.
 3. Cursor implements one approved first slice. Verification runs on the controller host; the first slice stops at `awaiting-review`.
 4. After acceptance, release the remaining pinned ticket set. Cursor builds; separate review and deterministic checks decide acceptance; the supervisor integrates serially.

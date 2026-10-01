@@ -1,39 +1,21 @@
 ---
 name: customize
-description: >-
-  Names this clone and scaffolds the stack from docs/kit/recipe.yaml — product
-  name, package scope, surfaces (web / agent), Clerk, Neon, Workflows, PostHog,
-  Resend, Blob. Invoked
-  by /next after the design doc is approved, or when the user asks to customize,
-  or the root package is still vipernxt. Setup waits until they accept the clip.
+description: Name the clone and scaffold only approved recipe surfaces and optional services.
 ---
 
-# Name and scaffold the clone
+# customize
 
-Input: accepted design and recipe selections. Follow [execution contract](../CONTRACT.md). This names/configures the local clone; `setup` provisions cloud resources after the slice review.
-
-Read `docs/kit/recipe.yaml`. Reuse settled choices; ask one unresolved decision at a time. Record product/repo name, workspace scope (default @repo), app directory (default web), surfaces, facets, language/metadata, region and review provider. Do not repeat questions the design answers. No billing vendor unless the recipe includes it.
-
-Run the rename script first:
+Read [CONTRACT](../CONTRACT.md) and `docs/kit/recipe.yaml`. Inputs: approved design/selections. Reuse settled choices; resolve only unknown name/scope/app, surfaces/facets, metadata, region and review provider.
 
 ```sh
 bun scripts/customize.mjs --name <kebab> [--scope @acme] [--app dashboard]
 bun scripts/customize.mjs --name <kebab> [--scope @acme] [--app dashboard] --apply
-```
-
-Inspect the dry-run file list. The script owns package/path renames and writes PRODUCT to `.env.playbook`. Do not hand-edit scattered package names.
-
-Scaffold the approved surfaces:
-
-```sh
 bun scripts/scaffold.mjs --add web --add db --without jobs
 bun scripts/scaffold.mjs --add web --add db --without jobs --run
 ```
 
-The first command previews; `--run` creates missing CLI paths, writes overlays, installs dependencies and verifies. For manual execution, run the printed CLIs, `--apply`, printed dependency installs, then `--verify`. `--apply` alone never means done. Manifest: `docs/kit/scaffolded.yaml`; state: `clone.scaffolded`.
+Inspect previews. Scripts own renames and PRODUCT; `--run` executes CLIs, overlays, installs and verification. Manual execution requires all printed steps; `--apply` alone is incomplete. Record `docs/kit/scaffolded.yaml` and clone.scaffolded.
 
-`--add` retains prior surfaces and excluded facets. `--without` selects exclusions initially; removal from an existing application needs an explicit change plan. Product-owned files are preserved; custom environment changes belong in `env.ts`, vendor definitions in `env.generated.ts`. DB selection generates its migration workflow; a no-DB project has none.
+`--add` preserves prior selections; `--without` selects initial exclusions. Removing existing services needs a change plan. Preserve product-owned files; custom env belongs in env.ts, generated vendors in env.generated.ts. DB generates migration CI; no DB means none.
 
-Script steps do not automatically require a web screen; pick surfaces from actual accepted interactions. Judgment does not automatically require Eve: select the smallest mechanism. Auth/jobs/analytics/email/files may be excluded when unnecessary. Database fallback allows the local clip before Neon setup; package installation is not proof of live vendor connectivity.
-
-Return the selected stack, verification and remaining runtime work to `/next`. Do not stop to ask whether to continue already-authorized build, and do not invoke setup here.
+Choose the smallest accepted mechanism: headless work needs no web, judgment needs no automatic Eve selection, auth/jobs/analytics/email/files are optional. Local DB fallback supports the first slice before cloud provisioning. Return verification/runtime gaps to /next; setup follows slice acceptance.

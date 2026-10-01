@@ -132,3 +132,47 @@ describe("Jev shadow boundary", () => {
     expect(a.evidenceHash).not.toBe(b.evidenceHash);
   });
 });
+
+test("zero remaining retries cannot authorize a deterministic worker repair", async () => {
+  let calls = 0;
+  const result = await classifyFailure(
+    { ...failure, retriesRemaining: 0, summary: "Cursor build ended with ERROR" },
+    async () => {
+      calls++;
+      return { choice: "repair" };
+    },
+  );
+  expect(result.recommendation).toBe("stop");
+  expect(calls).toBe(0);
+});
+
+test("actionable model routes require confidence; ties and missing probabilities investigate", async () => {
+  for (const answer of [
+    { choice: "repair" },
+    {
+      choice: "repair",
+      probabilities: { repair: 0.45, retry_read: 0.3, investigate: 0.25, ask_owner: 0, stop: 0 },
+    },
+    {
+      choice: "retry_read",
+      probabilities: { repair: 0.5, retry_read: 0.5, investigate: 0, ask_owner: 0, stop: 0 },
+    },
+  ])
+    expect((await classifyFailure(failure, async () => answer)).recommendation).toBe("investigate");
+});
+
+for (const summary of [
+  "Cursor HTTP 403",
+  "Independent review reject: missing policy",
+  "Pinned evaluator changed",
+  "Review retry budget exhausted",
+])
+  test(`owner guard bypasses the model: ${summary}`, async () => {
+    let calls = 0;
+    const result = await classifyFailure({ ...failure, summary }, async () => {
+      calls++;
+      return { choice: "repair" };
+    });
+    expect(result.attention).toBe("owner");
+    expect(calls).toBe(0);
+  });

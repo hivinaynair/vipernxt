@@ -1,6 +1,8 @@
 import { expect, test } from "bun:test";
+import { digest } from "../agent/lib/contract.js";
 import {
   applyOwnerCommand,
+  issueFromPing,
   looksLikeSecret,
   parseOwnerCommand,
   postSlackEvidence,
@@ -14,7 +16,7 @@ function blockedState(overrides: Partial<Batch> = {}): State {
     version: 1,
     batch: {
       issue: 15,
-      intakeHash: "h",
+      intakeHash: digest({ commit, manifest: "docs/batch.json" }),
       commit,
       manifestPath: "docs/batch.json",
       startedAt: Date.now(),
@@ -32,6 +34,7 @@ function blockedState(overrides: Partial<Batch> = {}): State {
         verification: "cursor-cloud",
         specFiles: ["docs/coverage.json"],
         coverageFile: "docs/coverage.json",
+        requirementsFile: "docs/readiness.json",
         setup: [],
         worker: { kind: "cursor", repository: "https://github.com/acme/product" },
         limits: { attempts: 2, jobSeconds: 600, runSeconds: 3600 },
@@ -56,6 +59,8 @@ test("secrets never become issue comments", () => {
 test("Hold comments and leaves the batch blocked", async () => {
   const comments: string[] = [];
   const result = await applyOwnerCommand("hold", 15, {
+    readState: async () => ({ state: blockedState(), sha: "1" }),
+    saveState: async () => "2",
     github: async (_path, _method, body) => {
       comments.push(String((body as { body?: string }).body));
       return undefined as never;
@@ -92,8 +97,7 @@ test("Retry dispatches only inside the same contract and budget", async () => {
       ({
         state: "open",
         labels: [{ name: "factory" }],
-        body:
-          "```factory-batch\n" + JSON.stringify({ commit, manifest: "docs/batch.json" }) + "\n```",
+        body: `\`\`\`factory-batch\n${JSON.stringify({ commit, manifest: "docs/batch.json" })}\n\`\`\``,
       }) as never,
   });
   expect(ok).toEqual({ status: "retry_dispatch", issue: 15 });
@@ -106,8 +110,7 @@ test("Retry dispatches only inside the same contract and budget", async () => {
       ({
         state: "open",
         labels: [{ name: "factory" }],
-        body:
-          "```factory-batch\n" + JSON.stringify({ commit, manifest: "docs/batch.json" }) + "\n```",
+        body: `\`\`\`factory-batch\n${JSON.stringify({ commit, manifest: "docs/batch.json" })}\n\`\`\``,
       }) as never,
   });
   expect(expired).toMatchObject({ status: "cannot_retry" });
@@ -162,18 +165,35 @@ test("only the configured Slack owner can Retry", async () => {
         body: JSON.stringify({
           type: "block_actions",
           user: { id: "UOTHER0001" },
-          actions: [{ action_id: "factory_retry", value: "15" }],
+          channel: { id: "C12345678" },
+          message: { ts: "1.0" },
+          actions: [
+            { action_id: "factory_retry", value: JSON.stringify({ issue: 15, id: "current" }) },
+          ],
         }),
       }),
       {
         verify: () => true,
+        readState: async () => ({
+          state: {
+            version: 1,
+            ownerPing: {
+              key: "15:x",
+              issue: 15,
+              id: "current",
+              channel: "C12345678",
+              ts: "1.0",
+              slack: { status: "delivered", attempts: 1 },
+            },
+          },
+        }),
         apply: async () => ({ status: "retry_dispatch", issue: 15 }),
         dispatchRetry: async (issue) => {
           dispatched.push(issue);
         },
       },
     );
-    expect(denied.status).toBe(204);
+    expect(denied.status).toBe(200);
     expect(dispatched).toEqual([]);
     const allowed = await handleSlackCallback(
       new Request("https://factory.example/callbacks/slack", {
@@ -182,18 +202,35 @@ test("only the configured Slack owner can Retry", async () => {
         body: JSON.stringify({
           type: "block_actions",
           user: { id: "UOWNER0001" },
-          actions: [{ action_id: "factory_retry", value: "15" }],
+          channel: { id: "C12345678" },
+          message: { ts: "1.0" },
+          actions: [
+            { action_id: "factory_retry", value: JSON.stringify({ issue: 15, id: "current" }) },
+          ],
         }),
       }),
       {
         verify: () => true,
+        readState: async () => ({
+          state: {
+            version: 1,
+            ownerPing: {
+              key: "15:x",
+              issue: 15,
+              id: "current",
+              channel: "C12345678",
+              ts: "1.0",
+              slack: { status: "delivered", attempts: 1 },
+            },
+          },
+        }),
         apply: async () => ({ status: "retry_dispatch", issue: 15 }),
         dispatchRetry: async (issue) => {
           dispatched.push(issue);
         },
       },
     );
-    expect(allowed.status).toBe(204);
+    expect(allowed.status).toBe(200);
     expect(dispatched).toEqual([15]);
   } finally {
     if (previous === undefined) delete process.env.SLACK_OWNER_USER_ID;
@@ -247,4 +284,249 @@ test("evidence helper refuses secrets", async () => {
   expect(await postSlackEvidence(15, "xoxb-secret", async () => undefined as never)).toEqual({
     status: "secret",
   });
+});
+
+test("stale Reject cannot archive another issue or a running batch", async () => {
+  let writes = 0;
+  for (const state of [
+    blockedState({ issue: 16 }),
+    blockedState({ status: "running" }),
+    { version: 1 } as State,
+  ]) {
+    expect(
+      await applyOwnerCommand("reject", 15, {
+        readState: async () => ({ state, sha: "1" }),
+        saveState: async () => {
+          writes++;
+          return "2";
+        },
+      }),
+    ).toMatchObject({ status: "ignored" });
+  }
+  expect(writes).toBe(0);
+});
+test("Retry preserves original station and attempt budgets", async () => {
+  const startedAt = Date.now();
+  const issue = {
+    state: "open",
+    labels: [{ name: "factory" }],
+    body: `\`\`\`factory-batch\n${JSON.stringify({ commit, manifest: "docs/batch.json" })}\n\`\`\``,
+  };
+  const states = [
+    blockedState({
+      active: { phase: "build", agentId: "same", base: commit, startedAt: startedAt - 700000 },
+    }),
+    blockedState({ failure: { code: "attempts_exhausted", operation: "validation" } }),
+  ];
+  let writes = 0;
+  for (const state of states) {
+    expect(
+      await applyOwnerCommand("retry", 15, {
+        now: startedAt,
+        readState: async () => ({ state, sha: "1" }),
+        saveState: async () => {
+          writes++;
+          return "2";
+        },
+        github: async () => issue as never,
+      }),
+    ).toMatchObject({ status: "cannot_retry" });
+    expect(state.batch?.startedAt).toBeGreaterThan(startedAt - 1000);
+  }
+  expect(writes).toBe(0);
+});
+test("notification ID and transition lease are checked again at the mutation", async () => {
+  let writes = 0;
+  for (const state of [
+    { ...blockedState(), ownerPing: { key: "15:x", issue: 15, id: "new" } },
+    { ...blockedState(), lease: { owner: "factory", until: Date.now() + 10000 } },
+  ]) {
+    expect(
+      await applyOwnerCommand("reject", 15, {
+        pingId: "old",
+        readState: async () => ({ state, sha: "1" }),
+        saveState: async () => {
+          writes++;
+          return "2";
+        },
+      }),
+    ).toMatchObject({ status: "ignored" });
+  }
+  expect(writes).toBe(0);
+});
+test("a retried Slack callback cannot dispatch the same notification twice", async () => {
+  const state = blockedState();
+  state.ownerPing = { key: "15:x", issue: 15, id: "current", command: "retry" };
+  let writes = 0;
+  expect(
+    await applyOwnerCommand("retry", 15, {
+      pingId: "current",
+      readState: async () => ({ state, sha: "1" }),
+      saveState: async () => {
+        writes++;
+        return "2";
+      },
+    }),
+  ).toMatchObject({ status: "ignored" });
+  expect(writes).toBe(0);
+});
+
+test("a confirmed old alert cannot reject a newer held workflow on the same issue", async () => {
+  const state = blockedState({ workflowOwner: "new-workflow" });
+  state.ownerPing = { key: "15:x", issue: 15, id: "old-alert", workflowOwner: "old-workflow" };
+  let writes = 0;
+  expect(
+    await applyOwnerCommand("reject", 15, {
+      pingId: "old-alert",
+      readState: async () => ({ state, sha: "1" }),
+      saveState: async () => {
+        writes++;
+        return "2";
+      },
+    }),
+  ).toMatchObject({ status: "ignored" });
+  expect(writes).toBe(0);
+  expect(state.batch?.workflowOwner).toBe("new-workflow");
+});
+
+test("a new held workflow gets a fresh alert even when its issue and error repeat", async () => {
+  const { notifyOwner } = await import("../agent/lib/pager.js");
+  let state = blockedState({ workflowOwner: "new-workflow" });
+  state.ownerPing = {
+    key: "15:repeated",
+    issue: 15,
+    id: "old-alert",
+    workflowOwner: "old-workflow",
+    command: "hold",
+    slack: { status: "delivered", attempts: 1 },
+  };
+  expect(
+    await notifyOwner(
+      { issue: 15, event: "blocked", error: "repeated", attention: "owner" },
+      {
+        slackConfigured: true,
+        readState: async () => ({ state, sha: "1" }),
+        saveState: async (next) => {
+          state = next;
+          return "2";
+        },
+      },
+    ),
+  ).toBe(true);
+  expect(state.ownerPing?.id).not.toBe("old-alert");
+  expect(state.ownerPing).toMatchObject({
+    workflowOwner: "new-workflow",
+    slack: { status: "pending", attempts: 0 },
+  });
+  expect(state.ownerPing?.command).toBeUndefined();
+});
+test("thread identity requires both stored channel and message timestamp", () => {
+  expect(
+    issueFromPing({ version: 1, ownerPing: { key: "15:x", issue: 15 } }, "C12345678", "1.0"),
+  ).toBeUndefined();
+  const state: State = {
+    version: 1,
+    ownerPing: { key: "15:x", issue: 15, channel: "C12345678", ts: "1.0" },
+  };
+  expect(issueFromPing(state, "COTHER0001", "1.0")).toBeUndefined();
+  expect(issueFromPing(state, "C12345678", "2.0")).toBeUndefined();
+  expect(issueFromPing(state, "C12345678", "1.0")).toBe(15);
+});
+test("signed owner buttons with stale IDs, wrong channel, wrong message or legacy values do nothing", async () => {
+  const previous = process.env.SLACK_OWNER_USER_ID;
+  process.env.SLACK_OWNER_USER_ID = "UOWNER0001";
+  try {
+    let applies = 0;
+    const base = {
+      type: "block_actions",
+      user: { id: "UOWNER0001" },
+      channel: { id: "C12345678" },
+      message: { ts: "1.0" },
+      actions: [
+        { action_id: "factory_reject", value: JSON.stringify({ issue: 15, id: "current" }) },
+      ],
+    };
+    for (const overrides of [
+      { actions: [{ action_id: "factory_reject", value: "15" }] },
+      {
+        actions: [{ action_id: "factory_reject", value: JSON.stringify({ issue: 15, id: "old" }) }],
+      },
+      { channel: { id: "COTHER0001" } },
+      { message: { ts: "2.0" } },
+    ]) {
+      const response = await handleSlackCallback(
+        new Request("https://factory.example/callbacks/slack", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ ...base, ...overrides }),
+        }),
+        {
+          verify: () => true,
+          readState: async () => ({
+            state: {
+              version: 1,
+              ownerPing: {
+                key: "15:x",
+                issue: 15,
+                id: "current",
+                channel: "C12345678",
+                ts: "1.0",
+                slack: { status: "delivered", attempts: 1 },
+              },
+            },
+          }),
+          apply: async () => {
+            applies++;
+            return { status: "rejected" };
+          },
+        },
+      );
+      expect(response.status).toBe(200);
+    }
+    expect(applies).toBe(0);
+  } finally {
+    if (previous === undefined) delete process.env.SLACK_OWNER_USER_ID;
+    else process.env.SLACK_OWNER_USER_ID = previous;
+  }
+});
+test("Slack acknowledgement does not wait on checkpoint I/O", async () => {
+  const previous = process.env.SLACK_OWNER_USER_ID;
+  process.env.SLACK_OWNER_USER_ID = "UOWNER0001";
+  try {
+    let release!: () => void;
+    const blocked = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let pending: Promise<unknown> | undefined;
+    const response = await handleSlackCallback(
+      new Request("https://factory.example/callbacks/slack", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          type: "block_actions",
+          user: { id: "UOWNER0001" },
+          actions: [
+            { action_id: "factory_hold", value: JSON.stringify({ issue: 15, id: "current" }) },
+          ],
+        }),
+      }),
+      {
+        verify: () => true,
+        readState: async () => {
+          await blocked;
+          return { state: { version: 1 } };
+        },
+        waitUntil: (task) => {
+          pending = task;
+        },
+      },
+    );
+    expect(response.status).toBe(200);
+    expect(pending).toBeTruthy();
+    release();
+    await pending;
+  } finally {
+    if (previous === undefined) delete process.env.SLACK_OWNER_USER_ID;
+    else process.env.SLACK_OWNER_USER_ID = previous;
+  }
 });

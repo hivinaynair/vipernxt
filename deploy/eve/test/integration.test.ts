@@ -5,8 +5,10 @@ import {
   executionCommands,
   integratedJob,
   promptRequirements,
+  repairJob,
   tick,
 } from "../agent/lib/engine.js";
+import { GitHubError } from "../agent/lib/github.js";
 import type { Batch, State } from "../agent/lib/store.js";
 
 function fixture() {
@@ -24,6 +26,7 @@ function fixture() {
     accepted: ["loan"],
     attempts: {},
     evidence: [],
+    readiness: { sha256: "h", scope: "mvp", approval: "approved" },
     resultBranch: "cursor/loan",
     manifest: {
       version: 1,
@@ -33,9 +36,10 @@ function fixture() {
       verification: "cursor-cloud",
       specFiles: ["docs/coverage.json"],
       coverageFile: "docs/coverage.json",
+      requirementsFile: "docs/readiness.json",
       setup: [],
       worker: { kind: "cursor", repository: "https://github.com/acme/product" },
-      limits: { attempts: 1, jobSeconds: 600, runSeconds: 3600 },
+      limits: { attempts: 3, jobSeconds: 600, runSeconds: 3600 },
       jobs: [
         {
           id: "loan",
@@ -123,6 +127,7 @@ function fixture() {
             creator: { login: "vercel[bot]" },
           },
         ] as T;
+      if (path === "/git/refs" && method === "POST") return {} as T;
       if (path.startsWith("/pulls?")) return [] as T;
       if (path === "/pulls" && method === "POST") {
         prs++;
@@ -213,6 +218,116 @@ test("all slice receipts reserve final review rather than creating a PR", async 
   expect(f.state().batch!.active?.phase).toBe("integrated-review");
   expect(f.prs()).toBe(0);
 });
+
+for (const phase of ["integrated-review", "deployed-review"] as const) {
+  test(`${phase} rejects surplus failures and obtains fresh verification without resetting identity or clocks`, async () => {
+    const f = fixture();
+    if (phase === "deployed-review") f.enableDeployment();
+    f.startReview();
+    f.state().batch!.active!.phase = phase;
+    const before = { ...f.state().batch!.active! };
+    const previousIntegrated = structuredClone(f.state().batch!.integratedReview);
+    const r = phase === "deployed-review" ? f.deployedReview() : f.goodReview();
+    r.checks.push({
+      command: ["bunx", "playwright", "test"],
+      exitCode: 1,
+      evidence: "Supplementary suite contains an excluded journey",
+    });
+    f.setReview(r);
+    await tick(f.deps);
+    const b = f.state().batch!;
+    expect(b.status).toBe("running");
+    expect(b.integratedReview).toEqual(previousIntegrated);
+    expect(b.deployedReview).toBeUndefined();
+    expect(b.active?.agentId).not.toBe(before.agentId);
+    expect(b.active?.base).toBe(before.base);
+    expect(b.active?.startedAt).toBe(before.startedAt);
+    expect(b.active?.phase).toBe(phase);
+    expect(b.attempts).toEqual({});
+    expect(Object.values(b.unreadable!)).toEqual([1]);
+    f.setReview(phase === "deployed-review" ? f.deployedReview() : f.goodReview());
+    await tick(f.deps);
+    expect(f.state().batch!.active).toBeUndefined();
+    expect(f.state().batch!.status).toBe(phase === "deployed-review" ? "mvp-complete" : "running");
+  });
+  test(`${phase} supplementary contradictions cannot buy unlimited reviewers or any builder attempt`, async () => {
+    const f = fixture();
+    if (phase === "deployed-review") f.enableDeployment();
+    f.startReview();
+    f.state().batch!.active!.phase = phase;
+    const before = { ...f.state().batch!.active! };
+    const r = phase === "deployed-review" ? f.deployedReview() : f.goodReview();
+    r.checks.push({
+      command: ["bunx", "playwright", "test"],
+      exitCode: 1,
+      evidence: "Unrequested suite failed",
+    });
+    f.setReview(r);
+    for (let n = 0; n < 3; n++) await tick(f.deps);
+    const b = f.state().batch!;
+    expect(b.status).toBe("blocked");
+    expect(b.error).toContain("Review retry budget exhausted");
+    expect(b.active?.base).toBe(before.base);
+    expect(b.active?.startedAt).toBe(before.startedAt);
+    expect(b.attempts).toEqual({});
+    expect(Object.values(b.unreadable!)).toEqual([2]);
+  });
+  test(`${phase} required failure still holds even when supplementary records also fail`, async () => {
+    const f = fixture();
+    if (phase === "deployed-review") f.enableDeployment();
+    f.startReview();
+    f.state().batch!.active!.phase = phase;
+    const r = phase === "deployed-review" ? f.deployedReview() : f.goodReview();
+    r.checks[0].exitCode = 1;
+    r.checks.push({
+      command: ["bunx", "playwright", "test"],
+      exitCode: 1,
+      evidence: "Unrequested suite failed",
+    });
+    f.setReview(r);
+    await tick(f.deps);
+    expect(f.state().batch!.status).toBe("blocked");
+    expect(f.state().batch!.unreadable).toBeUndefined();
+    expect(f.state().batch!.attempts).toEqual({});
+  });
+  test(`${phase} malformed output retries the same candidate without rebuilding or resetting its clock`, async () => {
+    const f = fixture();
+    if (phase === "deployed-review") f.enableDeployment();
+    f.startReview();
+    const before = { ...f.state().batch!.active!, phase };
+    f.state().batch!.active = before;
+    f.setReview("not a valid reviewer object");
+    await tick(f.deps);
+    const b = f.state().batch!;
+    expect(b.status).toBe("running");
+    expect(b.active?.phase).toBe(phase);
+    expect(b.active?.base).toBe(before.base);
+    expect(b.active?.branch).toBe(before.branch);
+    expect(b.active?.startedAt).toBe(before.startedAt);
+    expect(b.active?.agentId).not.toBe(before.agentId);
+    expect(b.attempts).toEqual({});
+    expect(Object.values(b.unreadable!)).toEqual([1]);
+    f.setReview(phase === "deployed-review" ? f.deployedReview() : f.goodReview());
+    await tick(f.deps);
+    expect(f.state().batch!.status).toBe(phase === "deployed-review" ? "mvp-complete" : "running");
+    expect(f.state().batch!.active).toBeUndefined();
+  });
+  test(`${phase} format retries exhaust without replacing the candidate or spending a builder attempt`, async () => {
+    const f = fixture();
+    if (phase === "deployed-review") f.enableDeployment();
+    f.startReview();
+    f.state().batch!.active!.phase = phase;
+    const candidate = f.state().batch!.active!.base;
+    f.setReview("unreadable JSON object");
+    for (let n = 0; n < 3; n++) await tick(f.deps);
+    expect(f.state().batch!.status).toBe("blocked");
+    expect(f.state().batch!.error).toContain("Review retry budget exhausted");
+    expect(f.state().batch!.active?.base).toBe(candidate);
+    expect(f.state().batch!.active?.phase).toBe(phase);
+    expect(f.state().batch!.attempts).toEqual({});
+    expect(Object.values(f.state().batch!.unreadable!)).toEqual([2]);
+  });
+}
 test("final review must include already implemented requirements", async () => {
   const f = fixture();
   f.startReview();
@@ -536,7 +651,7 @@ test("expired batch clock still accepts a finished posted run", async () => {
   expect(f.state().batch!.active?.phase).toBe("review");
 });
 
-test("unreadable slice review returns to the builder once", async () => {
+test("unreadable slice review reserves only a new reviewer of the same candidate", async () => {
   const f = fixture();
   const b = f.state().batch!;
   b.accepted = [];
@@ -552,9 +667,12 @@ test("unreadable slice review returns to the builder once", async () => {
   };
   await tick(f.deps);
   expect(f.state().batch!.status).toBe("running");
-  expect(f.state().batch!.unreadable?.loan).toBe(1);
+  expect(Object.values(f.state().batch!.unreadable!)).toEqual([1]);
   expect(f.state().batch!.revisions?.loan).toBeUndefined();
-  expect(f.state().batch!.active).toBeUndefined();
+  expect(f.state().batch!.active?.phase).toBe("review");
+  expect(f.state().batch!.active?.base).toBe(b.active!.base);
+  expect(f.state().batch!.active?.startedAt).toBe(b.active!.startedAt);
+  expect(f.state().batch!.active?.agentId).not.toBe("bc-review");
   expect(f.state().batch!.feedback).toBeTruthy();
 });
 
@@ -603,7 +721,8 @@ test("review ERROR returns to a new station instead of blocking", async () => {
   });
   await tick(f.deps);
   expect(f.state().batch!.status).toBe("running");
-  expect(f.state().batch!.active).toBeUndefined();
+  expect(f.state().batch!.active?.phase).toBe("review");
+  expect(f.state().batch!.active?.agentId).not.toBe("bc-review");
   expect(f.state().batch!.feedback).toContain("ERROR");
 });
 
@@ -637,4 +756,319 @@ test("slice review reject holds without another builder turn", async () => {
   expect(f.state().batch!.status).toBe("blocked");
   expect(f.state().batch!.error).toContain("reject");
   expect(f.state().batch!.accepted).toEqual([]);
+});
+
+test("review retry exhaustion holds the same candidate without a builder dispatch", async () => {
+  const f = fixture();
+  f.state().batch!.accepted = [];
+  f.startReview();
+  f.state().batch!.active!.phase = "review";
+  f.setReview({ commit: "b".repeat(40), verdict: "approve" });
+  const startedAt = f.state().batch!.active!.startedAt;
+  const attempts = structuredClone(f.state().batch!.attempts);
+  for (let n = 0; n < 3; n++) {
+    f.state().batch!.active!.posted = true;
+    await tick(f.deps);
+  }
+  expect(f.state().batch!.status).toBe("blocked");
+  expect(f.state().batch!.error).toContain("Review retry budget exhausted");
+  expect(f.state().batch!.active?.phase).toBe("review");
+  expect(f.state().batch!.active?.startedAt).toBe(startedAt);
+  expect(f.state().batch!.attempts).toEqual(attempts);
+  expect(f.prs()).toBe(0);
+});
+
+test("legacy readiness and changed staging baseline hold before publication", async () => {
+  for (const defect of ["readiness", "target-head"]) {
+    const f = fixture();
+    f.state().batch!.integratedReview = {
+      commit: f.state().batch!.candidate,
+      review: f.goodReview(),
+    };
+    if (defect === "readiness") f.state().batch!.readiness = undefined;
+    else f.deps.head = async (branch) => (branch === "staging" ? "c".repeat(40) : "b".repeat(40));
+    await tick(f.deps);
+    expect(f.state().batch!.status).toBe("blocked");
+    expect(f.state().batch!.error).toContain(
+      defect === "readiness" ? "readiness gate" : "Target branch changed",
+    );
+    expect(f.prs()).toBe(0);
+  }
+});
+
+test("transient provider failure retries the same identity with backoff and a fixed ceiling", async () => {
+  const f = fixture();
+  f.startReview();
+  const id = f.state().batch!.active!.agentId;
+  let reads = 0;
+  f.deps.github = async (path) => {
+    if (path === "/issues/1") reads++;
+    throw new GitHubError(503, "GET issue");
+  };
+  await tick(f.deps);
+  expect(f.state().batch!.status).toBe("running");
+  expect(f.state().batch!.active!.agentId).toBe(id);
+  expect(f.state().batch!.retryAfter).toBeGreaterThan(Date.now());
+  await tick(f.deps);
+  expect(reads).toBe(1);
+  for (let n = 0; n < 3; n++) {
+    f.state().batch!.retryAfter = 0;
+    await tick(f.deps);
+  }
+  expect(f.state().batch!.status).toBe("blocked");
+  expect(f.state().batch!.networkRetries?.[id]).toBe(3);
+});
+
+test("authorization failures never become automatic network retries", async () => {
+  const f = fixture();
+  f.deps.github = async () => {
+    throw new GitHubError(403, "GET issue");
+  };
+  await tick(f.deps);
+  expect(f.state().batch!.status).toBe("blocked");
+  expect(f.state().batch!.networkRetries).toBeUndefined();
+});
+
+test("integrated implementation defects reserve bounded repairs without reopening approval", async () => {
+  const f = fixture();
+  f.setReview({
+    ...f.goodReview(),
+    approved: false,
+    verdict: "request_changes",
+    findings: ["Combined journey loses its persisted receipt"],
+  });
+  for (let n = 1; n <= 3; n++) {
+    f.startReview();
+    await tick(f.deps);
+    if (n <= 2) {
+      expect(f.state().batch!.status).toBe("running");
+      expect(f.state().batch!.integrationRepair).toEqual({ attempts: n, pending: true });
+    }
+  }
+  expect(f.state().batch!.status).toBe("blocked");
+  expect(f.state().batch!.error).toContain("Integrated repair budget exhausted");
+  expect(f.prs()).toBe(0);
+});
+
+test("automatic deployed defects invalidate old receipts and reserve implementation repair", async () => {
+  const f = fixture();
+  f.enableDeployment();
+  f.startReview();
+  const b = f.state().batch!;
+  b.startedAt = Date.now();
+  b.active!.phase = "deployed-review";
+  b.automaticDeployment = {
+    id: "factory-approved-request",
+    candidate: b.candidate,
+    requestedAt: Date.now(),
+    posted: true,
+    workflowHash: "h",
+    scriptHash: "h",
+    coverageHash: "h",
+  };
+  b.integratedReview = { commit: b.candidate, review: f.goodReview() };
+  f.setReview({
+    ...f.deployedReview(),
+    approved: false,
+    verdict: "request_changes",
+    findings: ["Approved receipt disappears on navigation"],
+  });
+  await tick(f.deps);
+  expect(f.state().batch!.status).toBe("running");
+  expect(f.state().batch!.integrationRepair?.pending).toBe(true);
+  expect(f.state().batch!.deployment).toBeUndefined();
+  expect(f.state().batch!.automaticDeployment).toBeUndefined();
+  expect(f.state().batch!.integratedReview).toBeUndefined();
+  await tick(f.deps);
+  expect(f.state().batch!.active?.phase).toBe("build");
+});
+
+test("CI repair is reviewed, updates the existing delivery branch, and repeats integrated acceptance", async () => {
+  const f = fixture(),
+    candidate = "b".repeat(40),
+    fixed = "c".repeat(40);
+  const b = f.state().batch!;
+  b.coverage!.ci = { app: "github-actions", checks: ["Test"], maxRepairs: 2 };
+  b.integratedReview = { commit: candidate, review: f.goodReview() };
+  let branchHead = candidate,
+    checksPass = false,
+    patches = 0;
+  const gh = f.deps.github;
+  f.deps.github = async <T>(path: string, method?: string): Promise<T> => {
+    if (path.includes("/check-runs?"))
+      return {
+        total_count: 1,
+        check_runs: [
+          {
+            id: checksPass ? 2 : 1,
+            name: "Test",
+            head_sha: branchHead,
+            status: "completed",
+            conclusion: checksPass ? "success" : "failure",
+            app: { slug: "github-actions" },
+          },
+        ],
+      } as T;
+    if (path.startsWith("/compare/"))
+      return { status: "ahead", files: [{ filename: "apps/fix.ts" }] } as T;
+    if (method === "PATCH" && path === "/git/refs/heads/cursor/loan") {
+      patches++;
+      branchHead = fixed;
+      checksPass = true;
+      return {} as T;
+    }
+    if (path.startsWith("/pulls?") && f.state().batch!.pr)
+      return [{ html_url: f.state().batch!.pr }] as T;
+    return gh<T>(path, method);
+  };
+  f.deps.head = async (branch: string) =>
+    branch === "staging"
+      ? "a".repeat(40)
+      : branch === "cursor/fix"
+        ? fixed
+        : branch.startsWith("factory/input/")
+          ? f.state().batch!.active!.base
+          : branchHead;
+  await tick(f.deps); // Fresh failing CI reserves one repair before dispatch.
+  expect(f.state().batch!.ci?.repairs).toBe(1);
+  expect(f.state().batch!.integratedReview).toBeUndefined();
+  await tick(f.deps);
+  expect(f.state().batch!.active?.phase).toBe("build");
+  f.deps.advanceRemote = async () => ({
+    result: "",
+    id: "build-fix",
+    agentId: f.state().batch!.active!.agentId,
+    status: "FINISHED",
+    git: { branches: [{ repoUrl: "https://github.com/acme/product", branch: "cursor/fix" }] },
+  });
+  await tick(f.deps);
+  expect(f.state().batch!.active?.phase).toBe("review");
+  const commands = executionCommands(f.state().batch!, repairJob(f.state().batch!));
+  f.deps.advanceRemote = async () => ({
+    id: "review-fix",
+    agentId: f.state().batch!.active!.agentId,
+    status: "FINISHED",
+    result: JSON.stringify({
+      ...f.goodReview(),
+      commit: fixed,
+      checks: commands.map((command) => ({
+        command,
+        exitCode: 0,
+        evidence: "independent CI repair verification",
+      })),
+    }),
+  });
+  await tick(f.deps);
+  expect(patches).toBe(1);
+  expect(f.state().batch!.resultBranch).toBe("cursor/loan");
+  expect(f.state().batch!.candidate).toBe(fixed);
+  expect(f.state().batch!.accepted).toEqual(["loan"]);
+  expect(f.state().batch!.integratedReview).toBeUndefined();
+  await tick(f.deps);
+  expect(f.state().batch!.active?.phase).toBe("integrated-review");
+  const combined = executionCommands(f.state().batch!, integratedJob(f.state().batch!));
+  f.deps.advanceRemote = async () => ({
+    id: "integrated-fixed",
+    agentId: f.state().batch!.active!.agentId,
+    status: "FINISHED",
+    result: JSON.stringify({
+      ...f.goodReview(),
+      commit: fixed,
+      checks: combined.map((command) => ({
+        command,
+        exitCode: 0,
+        evidence: "full candidate verified",
+      })),
+    }),
+  });
+  await tick(f.deps);
+  await tick(f.deps);
+  expect(f.state().batch!.status).toBe("review");
+  expect(f.state().batch!.ci?.result).toBe("passed");
+  expect(f.prs()).toBe(1);
+});
+
+test("ambiguous deployment dispatch is checkpointed once and reconciled after restart", async () => {
+  const f = fixture(),
+    b = f.state().batch!;
+  b.integratedReview = { commit: b.candidate, review: f.goodReview() };
+  b.coverage!.ci = { app: "github-actions", checks: ["Test"], maxRepairs: 1 };
+  b.coverage!.deployed = {
+    environment: "staging",
+    origin: "https://staging.example.com",
+    creator: "github-actions[bot]",
+    checks: [["bun", "run", "e2e"]],
+    automatic: {
+      workflow: ".github/workflows/factory-staging.yml",
+      setup: [],
+      command: ["bun", "scripts/deploy.ts"],
+      sources: ["scripts/deploy.ts"],
+    },
+  };
+  b.manifest.specFiles.push(
+    ".github/workflows/factory-staging.yml",
+    ".github/scripts/factory-staging.ts",
+  );
+  let dispatches = 0;
+  const gh = f.deps.github;
+  const deps = { ...f.deps, file: async () => ({ text: "approved control", sha: "blob" }) };
+  deps.head = async (branch) =>
+    branch.startsWith("factory/deployment/") || branch === "staging" ? b.commit : b.candidate;
+  deps.github = async <T>(path: string, method?: string): Promise<T> => {
+    if (path.includes("/check-runs?"))
+      return {
+        total_count: 1,
+        check_runs: [
+          {
+            id: 1,
+            name: "Test",
+            head_sha: b.candidate,
+            status: "completed",
+            conclusion: "success",
+            app: { slug: "github-actions" },
+          },
+        ],
+      } as T;
+    if (path.endsWith("/dispatches")) {
+      dispatches++;
+      expect(f.state().batch!.automaticDeployment?.posted).toBe(true);
+      expect(f.state().lease).toBeDefined();
+      throw new Error("response lost after acceptance");
+    }
+    if (path.includes("/runs?"))
+      return {
+        workflow_runs: [
+          {
+            id: 7,
+            display_title: f.state().batch!.automaticDeployment!.id,
+            head_sha: b.commit,
+            head_branch: `factory/deployment/${f.state().batch!.automaticDeployment!.id}`,
+            status: "completed",
+            conclusion: "success",
+          },
+        ],
+      } as T;
+    if (path.includes("sha="))
+      return [
+        {
+          id: 10,
+          sha: b.candidate,
+          payload: { request_id: f.state().batch!.automaticDeployment!.id, run_id: 7 },
+        },
+      ] as T;
+    const response = await gh<any>(path, method);
+    if (path === "/deployments/10") response.creator.login = "github-actions[bot]";
+    if (path.includes("/statuses?")) response[0].creator.login = "github-actions[bot]";
+    return response as T;
+  };
+  await tick(deps); // Reserve immutable request.
+  const requestId = f.state().batch!.automaticDeployment!.id;
+  await tick(deps); // Persist dispatch intent, ambiguous network response.
+  expect(f.state().lease).toBeUndefined();
+  await tick(deps); // Fresh transition recovers authenticated deployment records.
+  expect(dispatches).toBe(1);
+  expect(f.state().batch!.automaticDeployment?.id).toBe(requestId);
+  expect(f.state().batch!.deployment?.commit).toBe(b.candidate);
+  expect(f.state().batch!.status).toBe("running");
+  expect(f.state().batch!.deployedReview).toBeUndefined();
 });

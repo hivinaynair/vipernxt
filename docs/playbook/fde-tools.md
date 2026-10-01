@@ -1,6 +1,6 @@
 # FDE tools (this kit)
 
-What an FDE actually opens, mapped onto ViperNxt. Citations: [fde-workflow.md](../research/fde-workflow.md). Procedure: [fde-loop.md](fde-loop.md).
+What an FDE actually opens, mapped onto ViperNxt. Procedure: [fde-loop.md](fde-loop.md).
 
 Do not add a vendor because a 2026 stack blog named it. Add one when a dry-run proves a layer is empty.
 

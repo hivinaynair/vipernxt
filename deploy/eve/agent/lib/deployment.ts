@@ -17,6 +17,15 @@ export const deployedContractSchema = z
         return u.protocol === "https:" && u.origin === value && !u.username && !u.password;
       }),
     creator: z.string().min(1),
+    automatic: z
+      .object({
+        workflow: z.literal(".github/workflows/factory-staging.yml"),
+        command: z.array(z.string().min(1)).min(1),
+        setup: z.array(z.array(z.string().min(1)).min(1)),
+        sources: z.array(z.string().regex(/^[A-Za-z0-9_.@/-]+$/)).min(1),
+      })
+      .strict()
+      .optional(),
     checks: z.array(z.array(z.string().min(1)).min(1)).min(1),
     browser: z.array(z.string().min(1)).min(1).optional(),
   })
@@ -78,6 +87,9 @@ export async function verifyDeployment(
 }
 export function runDeadline(b: Batch) {
   return b.deployment
-    ? b.deployment.startedAt + b.manifest.limits.jobSeconds * 1000
+    ? Math.min(
+        b.automaticDeployment ? b.startedAt + b.manifest.limits.runSeconds * 1000 : Infinity,
+        b.deployment.startedAt + b.manifest.limits.jobSeconds * 1000,
+      )
     : b.startedAt + b.manifest.limits.runSeconds * 1000;
 }

@@ -1,33 +1,16 @@
 ---
 name: journeys
-description: >-
-  Turns confirmed user journeys into an ID'd spine (YAML) that screens,
-  features, plans and tests can cite, then generates the Mermaid diagrams and
-  tables from it. Use after a product design doc exists, when the user asks to
-  map journeys, map a feature's journey, add a screen or state, cut features
-  from journeys, regenerate journey diagrams, or fix an expansion that does
-  not match the design-doc table. If the product story itself is wrong, /next
-  reopens shape first — this skill does not invent a new clip.
+description: Expand the accepted story into stable journey IDs, observable criteria and generated views.
 ---
 
-# Journey spine
+# journeys
 
-Input: approved design Actors, numbered Clip, Journeys table, Screens. Output: `docs/journeys/<name>.yaml` (markdown is generated). Follow [CONTRACT.md](../CONTRACT.md). Schema: [spine-schema.md](spine-schema.md). Examples: [screens](example.yaml), [headless](example-wrap.yaml).
+Follow [CONTRACT](../CONTRACT.md). Input: settled actors, numbered clip, journey table/screens. Output: `docs/journeys/<name>.yaml`; markdown is generated. [Schema](spine-schema.md), [screen example](example.yaml), [headless example](example-wrap.yaml).
 
-## Expand
+One journey per accepted seat; one stable ID per beat. Tag script/judgment/human; interactive steps declare screen/state. Observable sees/does, outcome branches `{to, when}`, valid terminal exits. Use behavioral EARS: WHEN/IF … THE SYSTEM SHALL …; every implemented step needs criteria. Cut modules by served steps, not menus.
 
-1. One journey per accepted seat; one stable ID per beat (`J1.S1`). Do not invent an actor, click or promise.
-2. Tag `script | judgment | human`. Interactive steps name a declared screen/state. `sees`/`does` are observable.
-3. `next` follows the accepted story. Distinct outcomes use `{to, when}`. Terminals name one exit if exits are declared.
-4. Behavioral EARS only (`WHEN`/`IF … THE SYSTEM SHALL …`). Result, not click script. Every implemented step needs criteria.
-5. Cut features as modules serving step IDs.
+Reconcile [data surfaces](../shape/data-surfaces.md) and [requirements/cases](../shape/requirements-readiness.md) to exact criteria. Separate rule, denial, recovery and operating promises. Keep inventories in contracts. Missing policy returns to /next; faithful expansion adds no product gate.
 
-Validate/render with `bun scripts/journey.ts` (`validate`, `render --out`). Independent check: `spine-checker`. Faithful expansion of approved content returns to `/next` with no extra gate.
+Validate/render with `bun scripts/journey.ts`; independent review uses spine-checker. Never hand-edit generated markdown, renumber gaps or reuse retired IDs; insert J1.S2b. Wrong story returns to shape; wrong expansion changes YAML. Citation coverage is not behavior proof.
 
-Reconcile [data-surfaces.md](../shape/data-surfaces.md) to step IDs. Keep the inventory in the contract, not the YAML. Missing information requirements return to shape/plan.
-
-## Stable IDs
-
-Never hand-edit generated markdown, renumber to close gaps, or reuse a retired ID. Insert `J1.S2b`. Same meaning keeps its ID. Wrong story → shape; wrong expansion → YAML only. Tests cite step IDs. `check-journeys` is citation coverage, not behavior proof.
-
-EARS cannot decide AI. Use deterministic code when a known rule covers the input. A model needs measured quality, abstention and a deterministic gate. Never add an agent because a step is labeled judgment.
+Judgment does not automatically require AI. Prefer known deterministic rules; model behavior needs measured quality, abstention and deterministic gates.

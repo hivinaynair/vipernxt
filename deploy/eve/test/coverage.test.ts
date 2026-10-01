@@ -22,8 +22,15 @@ const manifest = () =>
       base,
       approval: "approved",
       verification: "cursor-cloud",
-      specFiles: ["docs/coverage.json", "docs/evidence.md", "docs/spine.yaml", "docs/access.md"],
+      specFiles: [
+        "docs/coverage.json",
+        "docs/evidence.md",
+        "docs/spine.yaml",
+        "docs/access.md",
+        "docs/readiness.json",
+      ],
       coverageFile: "docs/coverage.json",
+      requirementsFile: "docs/readiness.json",
       setup: [],
       worker: { kind: "cursor", repository: "https://github.com/acme/product" },
       limits: { attempts: 1, jobSeconds: 600, runSeconds: 3600 },
@@ -55,7 +62,7 @@ const manifest = () =>
   );
 const catalog = () => ({
   version: 1,
-  approval: "design-1",
+  approval: "approved",
   scope: "mvp",
   deployed: {
     environment: "staging",

@@ -6,7 +6,10 @@
   "specFiles": [
     "docs/plans/product-design.md",
     "docs/journeys/product.yaml",
-    "docs/plans/feature-plan.md"
+    "docs/plans/feature-plan.md",
+    "docs/product/requirements.json",
+    "docs/product/state.yaml",
+    "docs/product/coverage.json"
   ],
   "worker": {
     "kind": "cursor",
@@ -39,5 +42,7 @@
     ["bun", "run", "check-journeys"],
     ["bun", "run", "build"],
     ["bun", "test"]
-  ]
+  ],
+  "requirementsFile": "docs/product/requirements.json",
+  "coverageFile": "docs/product/coverage.json"
 }

@@ -142,8 +142,7 @@ vs **Waiting on the site**. "Go and find a customer" is `kind: gather`, `who: fd
 it is a fact about the real world and finding it is the FDE's job. There is no third
 persona.
 
-**`engagement.site` is the entry condition.** A named person other than the builder independently has the
-problem. This can be a remote participant; it does not require a physical site. Without it, phase 0 and bounded category research may run; field and product phases stay pending:
+**`engagement.site` is the entry condition.** A named intended user has the problem. For personal/internal projects this may be the builder with documented real workflow evidence; customer validation requires external evidence. This can be a remote participant; it does not require a physical site. Without it, phase 0 and bounded category research may run; field and product phases stay pending:
 `check-drift` fails on any of `field`, `shape`, `journeys`, `build` that is not
 `pending` while the site is empty, because no customer means no last-ten-cases, which
 means no eval set, which means there is nothing to score a slice against. A design doc
@@ -164,3 +163,5 @@ after shape. No state file = boilerplate, not gated. An **instrument** (eval rep
 baseline count — U4) is not product UI — keep it out of those trees.
 
 **`clip.acceptance`.** Set `accepted` only after the user accepts the working slice (or explicitly authorizes a synthetic review). Record `acceptance_decision` and an existing `evidence` artifact. An approved design alone does not accept the implementation.
+
+**Requirements approval.** The design links the human review and canonical contracts. A final decision keeps the user's verbatim answer and `requirements: {file, sha256, scope, actions}` binding the exact machine packet; see [packet contract](../../../docs/playbook/requirements-packet.md). Draft ontology/spine/coverage/cases before this approval; product UI remains gated. Material findings use `held` items, optionally annotated with `material` and affected `requirements` IDs. A deferral cannot keep dependent behavior in approved scope. Both real local factory runs and hosted intake validate the packet. `check-drift` and the UI hook do not establish semantic completeness. A changed packet needs a new recorded decision, not an edited historical approval.

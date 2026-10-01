@@ -12,7 +12,7 @@ alwaysApply: false
 
 Every table the ontology names lands **before** any feature slice starts. A feature slice never writes a migration: that is what lets five agents build in parallel without colliding on the database. If a slice needs a column that does not exist, stop and hand back to `/next`.
 
-Migrations are additive. Both `staging` and `main` run [migrate.yml](../../.github/workflows/migrate.yml) on push.
+Migrations are additive. Database scaffolding generates migrate.yml for pushes to staging/main; the bare starter has none. See the [recipe](../../docs/kit/recipe.yaml).
 
 ## Seed data is deterministic
 

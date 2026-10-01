@@ -47,6 +47,7 @@ test("new label archives the previous batch so register can start", () => {
         verification: "cursor-cloud",
         specFiles: ["docs/coverage.json"],
         coverageFile: "docs/coverage.json",
+        requirementsFile: "docs/readiness.json",
         setup: [],
         worker: { kind: "cursor", repository: "https://github.com/acme/product" },
         limits: { attempts: 1, jobSeconds: 60, runSeconds: 60 },

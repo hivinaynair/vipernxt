@@ -28,7 +28,7 @@ test("missing batch is no_batch, never access denied", async () => {
   expect(result).toEqual({ status: "no_batch", attention: "owner" });
 });
 
-test("lastFailure still classifies so Eve can decide attention", async () => {
+test("unregistered failure holds without inventing scope or budgets", async () => {
   const receipts: string[] = [];
   const result = await classifyStoredFailure({
     readState: async () => ({
@@ -51,8 +51,8 @@ test("lastFailure still classifies so Eve can decide attention", async () => {
       receipts.push(`${receipt.attention}:${receipt.recommendation}`);
     },
   });
-  expect(result).toMatchObject({ status: "no_batch", attention: "eve" });
-  expect(receipts).toEqual(["eve:repair"]);
+  expect(result).toMatchObject({ status: "no_batch", attention: "owner" });
+  expect(receipts).toEqual(["owner:stop"]);
 });
 
 test("blocked batch records Jev attention without requiring a principal", async () => {
@@ -65,6 +65,13 @@ test("blocked batch records Jev attention without requiring a principal", async 
     startedAt: Date.now(),
     status: "blocked",
     error: "Cursor stage ended with ERROR",
+    active: {
+      agentId: "bc-failed",
+      phase: "build",
+      base: source.commit,
+      startedAt: Date.now(),
+      posted: true,
+    },
     candidate: source.commit,
     accepted: [],
     attempts: { loan: 1 },
@@ -77,6 +84,7 @@ test("blocked batch records Jev attention without requiring a principal", async 
       verification: "cursor-cloud",
       specFiles: ["docs/coverage.json"],
       coverageFile: "docs/coverage.json",
+      requirementsFile: "docs/readiness.json",
       setup: [],
       worker: { kind: "cursor", repository: "https://github.com/acme/product" },
       limits: { attempts: 2, jobSeconds: 600, runSeconds: 3600 },
@@ -98,9 +106,10 @@ test("blocked batch records Jev attention without requiring a principal", async 
         body: "```factory-batch\n" + JSON.stringify(source) + "\n```",
       }) as never,
     classify: async () => repair,
+    investigate: async () => ({ facts: ["Verified terminal ERROR"], action: "retry-build" }),
     postReceipt: async () => {},
   });
-  expect(result).toMatchObject({ attention: "eve", recommendation: "repair" });
+  expect(result).toMatchObject({ attention: "eve", recommendation: "repair", resumed: true });
   expect(state.batch?.triage?.result.attention).toBe("eve");
 });
 

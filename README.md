@@ -1,107 +1,108 @@
 # ViperNxt
 
-**Plan your product, define the requirements, and build it with cloud agents.**
+### Turn an idea into clear requirements. Turn approved requirements into a working MVP.
 
-ViperNxt is a SaaS starter and an agent workflow for solo developers. Start with
-`/next` and describe what you want to build. It researches the problem, helps you
-validate it with real people, and works through the journeys, screens, form
-fields and permissions before writing product code. You review the first working
-slice; the factory then builds and verifies the remaining approved work.
+ViperNxt gives solo builders and small teams a repeatable path from “I want to build this” to a product they can try. It combines a requirements playbook, an opinionated SaaS stack and Eve, a hosted orchestrator that coordinates Cursor Cloud agents.
 
-**The flow:** idea → research → requirements → first working slice → your review → MVP.
+Use it for a SaaS idea, an internal tool or a personal workflow. Bring your idea, examples and decisions; the repository supplies the structure. You can work locally on requirements before connecting cloud services.
 
-## Get started
-
-Create your own repository from this template, then clone it and run:
-
-```bash
-bun install
+```mermaid
+flowchart LR
+  A[Your idea] --> B[Research and concrete requirements]
+  B --> C[Your approval]
+  C --> D[First working slice]
+  D --> E[Your review]
+  E --> F[Eve builds and verifies the approved MVP]
 ```
 
-Open it in an agent editor that supports repository skills, such as Cursor or
-Claude Code, and type:
+## 1 · Get the requirements right
+
+Start with `/next`. The playbook researches existing solutions, gathers workflow evidence and helps settle the decisions that implementation needs:
+
+- Users, roles, tenant boundaries and permissions.
+- Entities, relationships, ownership, lifecycle and business rules.
+- Screens, form fields, validation, table columns, search/filter/sort and empty/error states.
+- Integrations, failure recovery, operational constraints and observable acceptance cases.
+
+The result is a versioned design, domain model, journey spine and requirements packet. Material unknowns stay visible. You approve concrete scope; the playbook remembers settled decisions across sessions.
+
+## 2 · Build the MVP
+
+The selected stack is scaffolded, then one useful journey is built for you to review. After you accept it and authorize the remaining scope, Eve implements slices, runs independent reviews, checks the integrated result and follows the approved staging-delivery policy.
+
+Eve handles bounded recoverable failures. Jev helps classify problems that require an owner decision; Slack can notify you with the failure, attempted recovery, evidence and next action. Scope changes and unresolved business choices return to you. Production release is a separate owner action.
+
+## Before you start
+
+| Requirement | When / purpose |
+|---|---|
+| [Bun](https://bun.sh) 1.4.0, Node.js 24, Git | Install and run the starter/Eve tooling |
+| Agent editor with repository skills | Discovery and /next; Cursor and Claude Code aliases are included |
+| Your own GitHub repository | Product work; do not push an idea into the upstream starter |
+| `CURSOR_API_KEY` | Hosted implementation via Cursor Cloud Agents |
+| `AI_GATEWAY_API_KEY` | Eve and Jev model access through Vercel AI Gateway |
+| `VERCEL_TOKEN` | Link/configure/deploy the factory; this is **not** an AI Gateway key |
+| GitHub connection through Vercel Connect | Eve reads issues, starts approved work and delivers PRs |
+| Slack bot token + signing secret + owner/channel IDs | Optional interactive owner alerts |
+
+There is no separate required `EVE_TOKEN` in this integration. “Eve access” means an AI Gateway key and the factory's authenticated provider connections. Product services such as Clerk or Neon need their own credentials only when your approved recipe uses them.
+
+See [the setup guide](docs/START.md) for credential links, exact permissions and deployment steps.
+
+## Start your own project
+
+Fork this repository or create a dedicated copy, then clone **your** repository:
+
+```sh
+git clone https://github.com/<you>/<your-product>.git
+cd <your-product>
+bun install --frozen-lockfile
+bun run setup
+bun run doctor --stage=shape
+```
+
+Open the clone in your agent editor:
 
 ```text
-/next I want to build [idea] for [people]. Today they solve it by [workflow].
+/next I want to build [idea] for [people]. Today they solve it with [workflow].
 ```
 
-Use `/next` again to continue; it reads the saved project state. `/status` shows
-where you are and what needs your input. Requires [Bun](https://bun.sh) 1.4.x.
+Use `/next` to continue and `/status` to inspect progress. Personal/internal projects can use your own documented workflow; customer validation still requires real customer evidence.
 
-You can start with an idea, but implementation waits for evidence that another
-person has the problem. Research may conclude that improving an existing tool or
-not building is the better answer.
+For hosted implementation, fill the ignored `.env.factory.local` from [the example](.env.factory.example), then follow [START](docs/START.md). Tokens are never printed by doctor or copied into product code.
 
-## What happens next?
+## An opinionated stack, selected to fit your idea
 
-| Stage | What you get |
+| Layer | Default |
 |---|---|
-| Understand | Research on existing solutions, questions and homework for real users |
-| Shape | Agreed scope, user journeys, screens, fields, table columns and access rules |
-| Plan | Small implementation slices mapped to every MVP requirement, with dependencies |
-| First slice | One working journey for you to try before the rest is built |
-| Factory | Cloud implementation, independent reviews and integrated verification |
-| Acceptance | Verification of the staging deployment against the approved requirements |
-
-Authentication, tenant boundaries, persistence and shared navigation are planned
-early. The coverage check rejects missing requirements; completing a list of
-tickets alone does not count as completing the MVP.
-
-## What runs where?
-
-- **Your editor:** `/next` handles discovery, shaping and the implementation handoff.
-- **Vercel:** the Eve factory coordinates approved batches from GitHub Issues,
-  enforces execution limits and tracks verification.
-- **Cursor Cloud:** agents implement slices and independently check the result.
-- **You:** supply real-world evidence, approve the design and review the first slice.
-
-Cloud execution needs a dedicated product repository, Cursor API access and the
-factory configuration. `/next` guides setup; `bun install` alone does not connect
-these services.
-
-**Status:** the hosted factory is experimental. Automated checks pass, but the
-complete live delivery loop and Clerk cloud sign-in still need end-to-end proof.
-See the [Eve setup and limits](deploy/eve/README.md).
-
-## The stack
-
-| Purpose | Tools |
-|---|---|
-| Application | Next.js App Router, TypeScript, Bun, Turborepo |
-| UI | shadcn/ui in `packages/ui` |
-| Authentication | Clerk |
-| Database | Drizzle + Neon; PGlite for local development |
+| Application | Next.js App Router, React, TypeScript |
+| Workspace | Bun + Turborepo |
+| UI | Tailwind + shadcn/ui in a shared package |
+| Auth | Clerk |
+| Data | Drizzle + Neon; PGlite locally |
 | Background work | Vercel Workflows |
-| Analytics, email, files | PostHog, Resend, Vercel Blob |
-| Quality | Biome, Bun tests, Playwright |
+| Optional analytics / email / files | PostHog / Resend / Vercel Blob |
+| Verification | Biome, Bun tests, Playwright |
+| Factory | Eve on Vercel + Cursor Cloud |
 
-The [recipe](docs/kit/recipe.yaml) scaffolds only the surfaces and services the
-product needs. When auth is selected, setup can create or reuse a Clerk application
-and scaffold Playwright sign-in helpers. Cloud verification uses dedicated
-development users and runtime secrets. See [Clerk setup and testing](docs/kit/cloud-auth.md).
+The [recipe](docs/kit/recipe.yaml) creates only selected surfaces. Auth, jobs, analytics, email and files can be excluded; headless products need no web app. The bare starter deliberately contains no sample customer application.
 
-## Working in the repository
+## Develop and verify
 
-```bash
-bun run dev                 # after scaffolding the application
+```sh
+bun run dev                 # after scaffolding
 bun run check-types
 bun run check-boundaries
 bun run check-tokens
 bun run check-journeys
+bun run check-skills
 bun test
 ```
 
-Branch from `staging` and open PRs into `staging`; `main` is production.
-Database scaffolding generates the migration workflow. The bare kit has no active
-migration workflow.
+Branch from `staging` and open PRs into `staging`; `main` is production. Generated database scaffolds include migration CI.
 
-Keep product work in your own clone. Customer files, credentials and product state
-do not belong in this template.
+The factory is experimental: controlled hosted trials have demonstrated bounded staging delivery and recovery. A new installation still needs its own model, GitHub, Cursor Build, deployment and optional Slack checks. Tests do not promise flawless delivery for every product.
 
-## Read more
+[Setup](docs/START.md) · [Repository map](docs/map.md) · [Workflow](docs/playbook/fde-loop.md) · [Eve](deploy/eve/README.md) · [MVP coverage](deploy/eve/COVERAGE.md) · [Agent rules](AGENTS.md)
 
-- [The discovery-to-delivery workflow](docs/playbook/fde-loop.md)
-- [Eve factory setup](deploy/eve/README.md)
-- [MVP coverage and acceptance contract](deploy/eve/COVERAGE.md)
-- [Repository map](docs/map.md)
-- [Agent development rules](AGENTS.md)
+MIT for ViperNxt-owned material; [third-party notices](NOTICE.md) preserve bundled licenses.

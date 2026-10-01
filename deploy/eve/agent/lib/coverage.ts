@@ -29,6 +29,14 @@ export const coverageSchema = z
       ),
     ),
     deployed: deployedContractSchema.optional(),
+    ci: z
+      .object({
+        app: z.literal("github-actions"),
+        checks: z.array(id).min(1),
+        maxRepairs: z.number().int().min(1).max(2),
+      })
+      .strict()
+      .optional(),
     integrated: z
       .object({
         checks: z.array(z.array(id).min(1)).min(1),
@@ -63,6 +71,20 @@ export const coverageSchema = z
 // shrink scope. This checks structural coverage, not completeness of discovery.
 export function validateCoverage(value: unknown, manifest: Manifest, spine: unknown) {
   const catalog = coverageSchema.parse(value);
+  if (catalog.approval !== manifest.approval)
+    throw new Error("Coverage approval differs from manifest");
+  if (catalog.ci && new Set(catalog.ci.checks).size !== catalog.ci.checks.length)
+    throw new Error("Duplicate required CI names");
+  if (
+    catalog.deployed?.automatic &&
+    catalog.deployed.automatic.sources.some((p) => !manifest.specFiles.includes(p))
+  )
+    throw new Error("Deployment command sources must be pinned");
+  if (
+    catalog.deployed?.automatic &&
+    (!catalog.ci || catalog.deployed.creator !== "github-actions[bot]")
+  )
+    throw new Error("Automatic deployment requires approved CI and GitHub Actions creator");
   if (catalog.scope === "mvp" && !catalog.deployed)
     throw new Error("MVP requires deployed acceptance contract");
   if (

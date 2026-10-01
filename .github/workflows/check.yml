@@ -45,6 +45,9 @@ jobs:
       - name: Journey IDs
         run: bun run check-journeys
 
+      - name: Skill budget and setup smoke check
+        run: bun run check-skills && bun run doctor --stage=shape
+
       - name: Types
         run: bun run check-types
 
