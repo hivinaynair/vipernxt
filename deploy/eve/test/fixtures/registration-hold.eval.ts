@@ -8,7 +8,7 @@ class FatalError extends Error {
     this.name = "FatalError";
   }
 }
-mock.module("workflow", () => ({ FatalError, RetryableError: Error }));
+mock.module("workflow", () => ({ FatalError, RetryableError: Error, sleep: async () => {} }));
 mock.module("eve/tools", () => ({ defineWorkflowTool: (tool: unknown) => tool }));
 mock.module("../../agent/lib/run-batch.js", () => ({
   runBatch: () => {

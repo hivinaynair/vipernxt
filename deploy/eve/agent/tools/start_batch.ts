@@ -9,6 +9,7 @@ import { assertFaultIntake } from "../lib/faults.js";
 import { file, github, head, type Issue, isAncestor } from "../lib/github.js";
 import { assertApprovedIntake } from "../lib/intake.js";
 import { classifyFailure } from "../lib/jev.js";
+import { flushOwnerNotification } from "../lib/notify-owner.js";
 import { postReceipt } from "../lib/receipt.js";
 import { runBatch } from "../lib/run-batch.js";
 import { verifyRuntime } from "../lib/runtime.js";
@@ -29,7 +30,16 @@ export default defineWorkflowTool({
   execution: "background",
   async execute(_, ctx) {
     "use workflow";
-    await register(ctx);
+    try {
+      await register(ctx);
+    } catch (error) {
+      try {
+        await flushOwnerNotification();
+      } catch {
+        /* Preserve the original registration hold. */
+      }
+      throw error;
+    }
     return runBatch(ctx);
   },
 });

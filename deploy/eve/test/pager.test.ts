@@ -32,12 +32,13 @@ test("Slack alert names the issue, Jev route, and GitHub link", () => {
       recommendation: "stop",
       error: "Batch time budget exhausted",
     },
-    { repo: "hivinaynair/return-desk-cloud-test", buttons: true },
+    { repo: "hivinaynair/return-desk-cloud-test", buttons: true, id: "alert-15" },
   );
   expect(alert.text).toContain("#15");
-  expect(alert.text).toContain("stop");
+  expect(alert.text).toContain("Batch time budget exhausted");
   expect(alert.text).toContain("https://github.com/hivinaynair/return-desk-cloud-test/issues/15");
-  expect(JSON.stringify(alert.blocks)).toContain("factory_retry");
+  expect(JSON.stringify(alert.blocks)).toContain("factory_hold");
+  expect(JSON.stringify(alert.blocks)).not.toContain("factory_retry");
 });
 
 test("Slack signatures older than five minutes or unsigned are rejected", () => {
@@ -51,7 +52,7 @@ test("Slack signatures older than five minutes or unsigned are rejected", () => 
   expect(verifySlackRequest(body, ts, null, secret, 1531420618 * 1000)).toBe(false);
 });
 
-test("owner attention pings Slack once per issue error", async () => {
+test("owner attention queues Slack once per issue error without network I/O", async () => {
   let state: State = { version: 1 };
   const posts: string[] = [];
   const receipt = {
@@ -66,16 +67,13 @@ test("owner attention pings Slack once per issue error", async () => {
       state = next;
       return "2";
     },
-    postSlack: async (body: { text: string }) => {
-      posts.push(body.text);
-      return { channel: "C12345678", ts: "1.2" };
-    },
-    repo: "acme/product",
+    slackConfigured: true,
   };
   expect(await notifyOwner(receipt, deps)).toBe(true);
   expect(await notifyOwner({ ...receipt, event: "classified" }, deps)).toBe(false);
-  expect(posts).toHaveLength(1);
-  expect(state.ownerPing).toMatchObject({ issue: 15, ts: "1.2" });
+  expect(posts).toHaveLength(0);
+  expect(state.ownerPing).toMatchObject({ issue: 15, slack: { status: "pending", attempts: 0 } });
+  expect(state.ownerPing?.id).toBeTruthy();
 });
 
 test("Slack failure still cannot throw out of postReceipt", async () => {

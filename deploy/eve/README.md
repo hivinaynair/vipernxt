@@ -123,8 +123,11 @@ The prior hosted happy-path completion remains documented in
 [evals/hosted.md](evals/hosted.md).
 
 Owner attention is a pager, not a second work queue. The first owner hold for an
-issue+error @mentions `FACTORY_OWNER` on the GitHub receipt and posts Slack when
-configured. Slack **Hold** leaves Eve stopped, **Retry** dispatches `start_batch`
+issue+error @mentions `FACTORY_OWNER` on the GitHub receipt and queues Slack when
+configured. Alerts explain the failed task, attempted recovery, needed action and
+evidence links. Delivery uses a separate checkpoint and bounded durable retries;
+uncertain POSTs are reconciled through history instead of being reposted. Slack
+**Hold** leaves Eve stopped, **Retry** dispatches `start_batch`
 for the same issue and intake (no extra budget or scope), and **Reject** archives
 the batch and drops the `factory` label. Thread replies become issue comments.
 Secrets pasted in Slack are dropped. Slack cannot approve a slice.
@@ -134,7 +137,10 @@ Set `FACTORY_OWNER` (GitHub login). For Slack buttons and replies, set
 `SLACK_OWNER_USER_ID`, then point Event Subscriptions and Interactivity at
 `https://<factory>/callbacks/slack`. `SLACK_OWNER_WEBHOOK` is a text-only fallback
 without buttons. Inbound Slack is ignored unless the acting user is
-`SLACK_OWNER_USER_ID`.
+`SLACK_OWNER_USER_ID`. Buttons are bound to the current notification and confirmed
+message; stale controls cannot affect another batch. Follow the
+[Slack setup guide](SLACK.md) and [private-channel app manifest](slack-app-manifest.yaml)
+to install and verify live delivery.
 
 Local tests cover acceptance, scope, dispatch reconciliation, leases, owner pager
 and callback authentication. Hosted workflow replay, real stop-hook delivery and end-to-end

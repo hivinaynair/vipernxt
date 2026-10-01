@@ -87,6 +87,20 @@ export type OwnerPing = {
   channel?: string;
   ts?: string;
   command?: "hold" | "retry" | "reject";
+  id?: string;
+  workflowOwner?: string;
+  alert?: import("./owner-alert.js").OwnerAlert;
+  slack?: {
+    status: "pending" | "sending" | "delivered" | "failed" | "unconfigured";
+    attempts: number;
+    destination?: string;
+    nextAt?: number;
+    claim?: string;
+    until?: number;
+    ambiguous?: boolean;
+    lastError?: string;
+    confirmedAt?: number;
+  };
 };
 export type LastFailure = {
   at: number;

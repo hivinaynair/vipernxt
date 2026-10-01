@@ -8,6 +8,7 @@ export default defineChannel({
   routes: [
     POST("/callbacks/slack", async (request, ctx) =>
       handleSlackCallback(request, {
+        waitUntil: ctx.waitUntil,
         async dispatchRetry(issue, userId) {
           const [owner, repo] = repository().split("/");
           await ctx.to(github, { owner, repo, issueNumber: issue }).send(OWNER_RETRY_PROMPT, {

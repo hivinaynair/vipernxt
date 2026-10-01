@@ -4,6 +4,7 @@ import { recoverStations } from "./advance-stations.js";
 import { runDeadline } from "./deployment.js";
 import { tick } from "./engine.js";
 import { consumeFault } from "./faults.js";
+import { flushOwnerNotification } from "./notify-owner.js";
 import { readState, saveState } from "./store.js";
 import { hookConflict, wakeToken } from "./wake.js";
 
@@ -16,7 +17,10 @@ export async function runBatch(ctx: WorkflowStepToolContext) {
       await recover(ctx);
       snapshot = await inspect(ctx);
     }
-    if (snapshot.status !== "running") return snapshot;
+    if (snapshot.status !== "running") {
+      if (["blocked", "paused"].includes(snapshot.status)) await flushOwnerNotification();
+      return snapshot;
+    }
     if (!snapshot.token) continue;
     using done = createHook({ token: snapshot.token });
     let held = false;
@@ -33,7 +37,10 @@ export async function runBatch(ctx: WorkflowStepToolContext) {
       await recover(ctx);
       snapshot = await inspect(ctx);
     }
-    if (snapshot.status !== "running") return snapshot;
+    if (snapshot.status !== "running") {
+      if (["blocked", "paused"].includes(snapshot.status)) await flushOwnerNotification();
+      return snapshot;
+    }
     if (snapshot.token !== registered) continue;
     // A callback is a wake, never acceptance. Periodic reconciliation also
     // covers missing callbacks, workflow dispatch ambiguity and partial CI.
@@ -107,7 +114,7 @@ async function snapshot(ctx: WorkflowStepToolContext) {
       1,
       Math.min(
         triagePending
-          ? after.lease!.until - Date.now()
+          ? (after.lease?.until ?? Date.now()) - Date.now()
           : b.retryAfter
             ? b.retryAfter - Date.now()
             : b.active

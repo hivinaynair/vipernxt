@@ -1,5 +1,6 @@
 import { defineWorkflowTool, type WorkflowStepToolContext } from "eve/tools";
 import { z } from "zod";
+import { flushOwnerNotification } from "../lib/notify-owner.js";
 import { runBatch } from "../lib/run-batch.js";
 import { classifyStoredFailure } from "../lib/triage.js";
 
@@ -11,7 +12,10 @@ export default defineWorkflowTool({
   async execute(_, ctx) {
     "use workflow";
     const result = await classify(ctx);
-    if (!("resumed" in result) || result.resumed !== true) return result;
+    if (!("resumed" in result) || result.resumed !== true) {
+      await flushOwnerNotification();
+      return result;
+    }
     return runBatch(ctx);
   },
 });
