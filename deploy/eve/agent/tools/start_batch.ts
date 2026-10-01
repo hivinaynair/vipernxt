@@ -1,5 +1,5 @@
 import { defineWorkflowTool, type WorkflowStepToolContext } from "eve/tools";
-import { RetryableError } from "workflow";
+import { FatalError, RetryableError } from "workflow";
 import { z } from "zod";
 import { approvedContract } from "../lib/approved-contract.js";
 import { repository, required } from "../lib/config.js";
@@ -34,7 +34,7 @@ export default defineWorkflowTool({
   },
 });
 
-async function failRegister(
+export async function failRegister(
   state: State,
   sha: string | undefined,
   issueNumber: number,
@@ -73,7 +73,9 @@ async function failRegister(
     attention: classification.attention,
     recommendation: classification.recommendation,
   });
-  throw error instanceof Error ? error : new Error(message);
+  // The checkpoint and owner receipt already declare a hold. SDK retries must
+  // not silently reattempt intake or repeat its receipt after that decision.
+  throw new FatalError(message);
 }
 
 async function register(ctx: WorkflowStepToolContext) {
