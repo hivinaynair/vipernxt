@@ -33,7 +33,7 @@ export default githubChannel({
     return {
       auth: stampAutonomous(defaultGitHubAuth(ctx), issue.issueNumber),
       context: [
-        "Always call start_batch now, even if a batch is already running. The tool adopts the same issue and intake; skipping it leaves the old workflow in place. If the manifest is missing or invalid, explain the exact error and stop. Never invent its contents.",
+        "Call start_batch now without a preliminary status comment, even if a batch is already running. The tool adopts the same issue and intake; skipping it leaves the old workflow in place. A queued task is only a dispatch request; never report running or adoption before checkpoint confirmation. If the manifest is missing or invalid, explain the exact error and stop. Never invent its contents.",
       ],
     };
   },

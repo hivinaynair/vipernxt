@@ -9,7 +9,7 @@ export const OWNER_COMMANDS = ["hold", "retry", "reject"] as const;
 export type OwnerCommand = (typeof OWNER_COMMANDS)[number];
 
 export const OWNER_RETRY_PROMPT =
-  "Always call start_batch now, even if a batch is already running. The tool adopts the same issue and intake; skipping it leaves the old workflow in place. This is an owner Retry from Slack for the existing approved contract. Do not change scope, reset budgets, or invent the manifest. If the batch cannot resume, explain the exact error and stop.";
+  "Call start_batch now without a preliminary status comment, even if a batch is already running. The tool adopts the same issue and intake; skipping it leaves the old workflow in place. A queued task is only a dispatch request; never report running or adoption before checkpoint confirmation. This is an owner Retry from Slack for the existing approved contract. Do not change scope, reset budgets, or invent the manifest. If the batch cannot resume, explain the exact error and stop.";
 
 export type OwnerCommandResult =
   | { status: "held" }

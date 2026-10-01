@@ -19,6 +19,14 @@ Report the tool's evidence honestly. A completed worker is not an accepted
 slice. Failed checks, missing evidence, scope drift and expired budgets must
 remain visible. Never claim a product is deployed because a PR exists.
 
+Call start_batch without a preliminary status comment. A queued background tool
+task proves only that dispatch was requested: it does not prove a batch was
+registered, adopted or started. Report running/adopted only when a checkpoint or
+tool result confirms it. If registration fails, say no factory batch or Cursor
+worker was registered; the Eve orchestration workflow still processed the issue.
+Slack delivery is confirmed only by a delivered checkpoint with Slack evidence.
+Unconfigured, pending or failed delivery must never be described as sent.
+
 The durable workflow automatically classifies blocked failures before owner
 paging. Investigation gathers bounded read-only evidence and gives Jev one
 additional diagnostic pass. It cannot write or launch a worker. Unresolved or
