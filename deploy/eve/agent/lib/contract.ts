@@ -14,6 +14,27 @@ export const manifestSchema = z.object({
   base: sha,
   approval: z.string().min(1),
   simulation: z.literal(true).optional(),
+  faults: z
+    .object({
+      campaign: z.string().regex(/^[a-z0-9-]{1,80}$/),
+      cases: z
+        .array(
+          z.enum([
+            "launch-response-lost",
+            "cursor-read-failures",
+            "step-replay",
+            "staging-response-lost",
+            "cursor-auth-denied",
+            "jev-unavailable",
+            "stage-expired",
+          ]),
+        )
+        .min(1)
+        .max(4)
+        .refine((cases) => new Set(cases).size === cases.length, "Duplicate fault cases"),
+    })
+    .strict()
+    .optional(),
   verification: z.literal("cursor-cloud"),
   specFiles: z.array(path).min(1),
   coverageFile: path,

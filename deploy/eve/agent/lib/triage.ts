@@ -1,9 +1,16 @@
 import { randomUUID } from "node:crypto";
 import { digest, intake } from "./contract.js";
 import { runDeadline } from "./deployment.js";
+import { faultEvaluator } from "./faults.js";
 import { github, type Issue } from "./github.js";
 import { type Investigation, investigateFailure } from "./investigation.js";
-import { classifyFailure, eveMayResume, type Failure, type Recommendation } from "./jev.js";
+import {
+  classifyFailure,
+  evaluateFailure,
+  eveMayResume,
+  type Failure,
+  type Recommendation,
+} from "./jev.js";
 import { assertLease, claim } from "./lease.js";
 import { postReceipt } from "./receipt.js";
 import { type Batch, readState, type State, saveState } from "./store.js";
@@ -107,6 +114,7 @@ export async function classifyStoredFailure(
   const acquired = await claim(store);
   if (!acquired) return { status: "no_blocked_failure" };
   const { state, sha, owner } = acquired;
+  let checkpointSha = sha;
   const b = state.batch;
   if (
     !b ||
@@ -115,7 +123,7 @@ export async function classifyStoredFailure(
     (deps.automatic && b.workflowOwner !== deps.workflowOwner)
   ) {
     state.lease = undefined;
-    await save(state, sha);
+    await save(state, checkpointSha);
     return { status: "no_blocked_failure" };
   }
   async function authorized() {
@@ -152,14 +160,24 @@ export async function classifyStoredFailure(
   if (b.triage?.key === key) {
     await assertLease(store, owner);
     state.lease = undefined;
-    await save(state, sha);
+    await save(state, checkpointSha);
     return { ...b.triage.result, resumed: false };
   }
   let result: Recommendation;
   let investigation: Investigation | undefined;
   let action: Investigation["action"] = "unresolved";
   try {
-    result = await classify(failure);
+    const evaluate = faultEvaluator(
+      b,
+      async () => {
+        await assertLease(store, owner);
+        checkpointSha = await save(state, checkpointSha);
+      },
+      evaluateFailure,
+    );
+    const route = (input: Failure) =>
+      deps.classify ? classify(input) : classifyFailure(input, evaluate);
+    result = await route(failure);
     if (result.recommendation === "retry_read" && b.failure?.operation === "read")
       action = "reconcile";
     if (
@@ -175,7 +193,7 @@ export async function classifyStoredFailure(
       // Jev performs one bounded AI diagnostic pass over fetched facts. A
       // recommendation cannot execute without a verified recovery action.
       if (result.recommendation === "investigate")
-        result = await classify({
+        result = await route({
           ...failure,
           code: "diagnostic_evidence",
           summary: JSON.stringify({
@@ -231,7 +249,7 @@ export async function classifyStoredFailure(
   b.triage = { key, result, investigation, resumed: resume };
   await assertLease(store, owner);
   state.lease = undefined;
-  await save(state, sha);
+  await save(state, checkpointSha);
   await receipt(
     b.issue,
     {

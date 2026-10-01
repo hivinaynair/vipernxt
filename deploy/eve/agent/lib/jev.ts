@@ -52,9 +52,12 @@ export type Recommendation = {
   execution: "hold";
 };
 export type Evaluator = (failure: Failure) => Promise<unknown>;
-const evaluateFailure: Evaluator = async (failure) => {
+export const evaluateFailure = async (
+  failure: Failure,
+  model: Parameters<typeof evaluate>[0]["model"] = "typesafe-ai/jev",
+) => {
   const result = await evaluate({
-    model: "typesafe-ai/jev",
+    model,
     state: failure,
     questions,
     maxRetries: 0,

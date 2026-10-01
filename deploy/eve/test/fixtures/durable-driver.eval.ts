@@ -11,6 +11,7 @@ let failFirst = false;
 let classifications = 0;
 const tokens: string[] = [];
 mock.module("workflow", () => ({
+  RetryableError: class RetryableError extends Error {},
   createHook({ token }: { token: string }) {
     assert.ok(token.endsWith(":call_new"), "adoption must not reuse the predecessor's hook");
     tokens.push(token);

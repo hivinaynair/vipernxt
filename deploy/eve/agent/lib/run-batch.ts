@@ -1,9 +1,10 @@
 import type { WorkflowStepToolContext } from "eve/tools";
-import { createHook, sleep } from "workflow";
+import { createHook, RetryableError, sleep } from "workflow";
 import { recoverStations } from "./advance-stations.js";
 import { runDeadline } from "./deployment.js";
 import { tick } from "./engine.js";
-import { readState } from "./store.js";
+import { consumeFault } from "./faults.js";
+import { readState, saveState } from "./store.js";
 import { hookConflict, wakeToken } from "./wake.js";
 
 /** Shared durable driver for intake and recovery. Side effects live only in steps. */
@@ -53,6 +54,24 @@ async function advance(ctx: WorkflowStepToolContext) {
       deadline: Date.now(),
     };
   await tick();
+  const after = await readState();
+  const b = after.state.batch;
+  if (
+    b?.workflowOwner === ctx.callId &&
+    b.status === "running" &&
+    b.active &&
+    !b.active.posted &&
+    !after.state.lease
+  ) {
+    const expired = consumeFault(b, "stage-expired", 1);
+    const replay = expired ?? consumeFault(b, "step-replay", 1);
+    if (replay) {
+      await saveState(after.state, after.sha);
+      throw Object.assign(new RetryableError("Injected step failure after committed reservation"), {
+        retryAfter: new Date(Date.now() + (expired ? 75000 : 10000)),
+      });
+    }
+  }
   return snapshot(ctx);
 }
 async function recover(ctx: WorkflowStepToolContext) {

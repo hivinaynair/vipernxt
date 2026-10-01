@@ -5,6 +5,7 @@ import { approvedContract } from "../lib/approved-contract.js";
 import { repository, required } from "../lib/config.js";
 import { digest, intake, validateManifest } from "../lib/contract.js";
 import { deploymentReceipt, runDeadline, verifyDeployment } from "../lib/deployment.js";
+import { assertFaultIntake } from "../lib/faults.js";
 import { file, github, head, type Issue, isAncestor } from "../lib/github.js";
 import { assertApprovedIntake } from "../lib/intake.js";
 import { classifyFailure } from "../lib/jev.js";
@@ -164,6 +165,7 @@ async function register(ctx: WorkflowStepToolContext) {
       process.env.FACTORY_SIMULATION_REPO,
       required("FACTORY_BASE_BRANCH"),
     );
+    assertFaultIntake(manifest);
     const { coverage, readiness } = await approvedContract(manifest, source.commit, file, {
       allowSimulation: simulation,
     });

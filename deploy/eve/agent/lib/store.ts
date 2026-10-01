@@ -46,6 +46,19 @@ export type Batch = {
   active?: Attempt;
   error?: string;
   failure?: { code: string; operation: "read" | "write" | "remote" | "validation"; jobId?: string };
+  faultLedger?: Record<
+    string,
+    {
+      count: number;
+      at: number;
+      agentId?: string;
+      runId?: string;
+      requestId?: string;
+      originalStartedAt?: number;
+      outcome?: string;
+      providerStatus?: number;
+    }
+  >;
   recoveryAttempts?: Record<string, number>;
   retryStartedAt?: number;
   pr?: string;

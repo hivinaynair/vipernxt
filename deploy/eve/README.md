@@ -194,3 +194,25 @@ fail closed and need a newly approved batch; they are not retroactively certifie
 The [hosted evaluation](evals/hosted.md) completed the bounded two-slice CI,
 automatic staging and actual-site acceptance path. Local tests alone do not
 certify customer behavior or broader provider-failure windows.
+
+## Opt-in hosted fault campaign
+
+A simulation manifest may include `faults: { campaign, cases }`. Registration
+requires the matching non-secret `FACTORY_FAULT_CAMPAIGN` deployment setting,
+`simulation: true`, the exact configured disposable repository, and staging.
+Normal/customer manifests cannot opt into faults. Existing simulation station,
+attempt and time caps apply. There is no public fault-control endpoint.
+
+`faultLedger` checkpoints each consumed injection before its effect, so a restart
+cannot replay it indefinitely. The supported probes discard real Cursor launch
+or read responses, fail a durable step after reservation, discard a real staging
+dispatch response, send scoped invalid-auth requests, or delay a reservation past
+its original deadline. Invalid-auth probes use a test token without changing any
+real secret. A Jev-unavailability trial caps its diagnostic provider failures.
+Read-response failures are controlled injection after successful real reads,
+not evidence of a spontaneous upstream outage. A workflow-step retry does not
+by itself prove a physical cold-process restart.
+
+Disable the campaign setting and redeploy after testing. Fault manifests then
+reject registration, and historical fault plans cannot inject into normal work.
+The campaign report records actual observations rather than crediting unrun cases.

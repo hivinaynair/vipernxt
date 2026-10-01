@@ -16,8 +16,9 @@ import {
   validateDiff,
   verificationCommands,
 } from "./contract.js";
-import { advanceRemote, CursorError } from "./cursor.js";
+import { advanceRemote, CursorError, cursor } from "./cursor.js";
 import { deploymentReceipt, runDeadline, verifyDeployment } from "./deployment.js";
+import { faultCursor, faultDeploymentRequest } from "./faults.js";
 import { file, GitHubError, github, head, type Issue } from "./github.js";
 import { assertLease, claim } from "./lease.js";
 import { postReceipt } from "./receipt.js";
@@ -364,7 +365,11 @@ export async function tick(overrides: Partial<typeof live> = {}) {
           await assertLease(store, owner);
           try {
             operation = "write";
-            await dispatchDeployment(b, ref, github);
+            await dispatchDeployment(
+              b,
+              ref,
+              faultDeploymentRequest(b, () => checkpoint(true), github),
+            );
             operation = "read";
           } catch (e) {
             if (e instanceof GitHubError && e.status >= 400 && e.status < 500 && e.status !== 429)
@@ -426,7 +431,11 @@ export async function tick(overrides: Partial<typeof live> = {}) {
       b.active.startingRef = ref;
     }
     operation = b.active.posted ? "read" : "remote";
-    const run = await advanceRemote(b.active, workerPrompt(b, job));
+    const run = await advanceRemote(
+      b.active,
+      workerPrompt(b, job),
+      faultCursor(b, () => checkpoint(true), cursor),
+    );
     if (!run || ["CREATING", "RUNNING"].includes(run.status)) {
       if (Date.now() >= runDeadline(b))
         throw new Error("Batch time budget exhausted; remote may still be running");
