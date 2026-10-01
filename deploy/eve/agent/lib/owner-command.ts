@@ -60,6 +60,8 @@ export async function applyOwnerCommand(
   const batch = state.batch;
   if (deps.pingId && state.ownerPing?.id !== deps.pingId)
     return { status: "ignored", reason: "This notification is no longer current." };
+  if (deps.pingId && batch && state.ownerPing?.workflowOwner !== batch.workflowOwner)
+    return { status: "ignored", reason: "This notification belongs to a previous workflow." };
   if ((state.lease?.until ?? 0) > now)
     return {
       status: "ignored",

@@ -152,12 +152,12 @@ export async function notifyOwner(
   for (let retry = 0; retry < 2; retry++) {
     const { state, sha } = await read();
     const prior = state.ownerPing?.key === key ? state.ownerPing : undefined;
-    const resumedFailure =
-      prior?.command === "retry" &&
+    const newHeldWorkflow =
+      prior &&
       state.batch?.issue === receipt.issue &&
       state.batch.workflowOwner !== prior.workflowOwner &&
       ["blocked", "paused"].includes(state.batch.status);
-    const existing = resumedFailure ? undefined : prior;
+    const existing = newHeldWorkflow ? undefined : prior;
     if (existing?.slack && (existing.slack.status !== "unconfigured" || !configured)) return false;
     const destination = slackOwnerChannel() ?? (slackWebhook() ? "webhook" : undefined);
     const ping: OwnerPing = {

@@ -370,6 +370,56 @@ test("a retried Slack callback cannot dispatch the same notification twice", asy
   ).toMatchObject({ status: "ignored" });
   expect(writes).toBe(0);
 });
+
+test("a confirmed old alert cannot reject a newer held workflow on the same issue", async () => {
+  const state = blockedState({ workflowOwner: "new-workflow" });
+  state.ownerPing = { key: "15:x", issue: 15, id: "old-alert", workflowOwner: "old-workflow" };
+  let writes = 0;
+  expect(
+    await applyOwnerCommand("reject", 15, {
+      pingId: "old-alert",
+      readState: async () => ({ state, sha: "1" }),
+      saveState: async () => {
+        writes++;
+        return "2";
+      },
+    }),
+  ).toMatchObject({ status: "ignored" });
+  expect(writes).toBe(0);
+  expect(state.batch?.workflowOwner).toBe("new-workflow");
+});
+
+test("a new held workflow gets a fresh alert even when its issue and error repeat", async () => {
+  const { notifyOwner } = await import("../agent/lib/pager.js");
+  let state = blockedState({ workflowOwner: "new-workflow" });
+  state.ownerPing = {
+    key: "15:repeated",
+    issue: 15,
+    id: "old-alert",
+    workflowOwner: "old-workflow",
+    command: "hold",
+    slack: { status: "delivered", attempts: 1 },
+  };
+  expect(
+    await notifyOwner(
+      { issue: 15, event: "blocked", error: "repeated", attention: "owner" },
+      {
+        slackConfigured: true,
+        readState: async () => ({ state, sha: "1" }),
+        saveState: async (next) => {
+          state = next;
+          return "2";
+        },
+      },
+    ),
+  ).toBe(true);
+  expect(state.ownerPing?.id).not.toBe("old-alert");
+  expect(state.ownerPing).toMatchObject({
+    workflowOwner: "new-workflow",
+    slack: { status: "pending", attempts: 0 },
+  });
+  expect(state.ownerPing?.command).toBeUndefined();
+});
 test("thread identity requires both stored channel and message timestamp", () => {
   expect(
     issueFromPing({ version: 1, ownerPing: { key: "15:x", issue: 15 } }, "C12345678", "1.0"),
